@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
-import logo from "../assets/logo_bintang.png";
+import logo from "../assets/logo_bintangcompress.png";
 
 const navLinks = [
   { name: "Beranda", path: "/" },
