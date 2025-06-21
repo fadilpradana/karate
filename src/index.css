@@ -1,0 +1,72 @@
+/* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kelas untuk judul hero Anda - MODIFIED FOR GLOW ONLY */
+/* Kelas ini mungkin tidak lagi relevan jika .gradient-text adalah yang utama */
+.text-glow-only {
+  color: white; /* Atur warna teks menjadi putih solid */
+  text-shadow:
+    0 0 15px rgba(255, 255, 255, 0.276),
+    0 0 10px rgba(42, 20, 54, 0.6);
+}
+
+/* Tambahkan kelas khusus untuk backdrop filter */
+.glassmorphism-indicator {
+  background: rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* KODE BARU UNTUK GLOW BERGRADASI MENGGUNAKAN PSEUDO-ELEMENT DAN GLOW TEKS PUTIH */
+.gradient-text {
+  position: relative; /* Penting untuk posisi pseudo-element */
+  color: #FFFFFF;    /* Warna teks asli: PUTIH TERANG */
+
+  /* Menambahkan glow putih pada teks itu sendiri */
+  text-shadow:
+    0 0 4px rgba(239, 168, 16, 0.457),  /* Glow putih dekat, agak terang */
+    0 0 8px rgba(71, 6, 90, 0.532);  /* Glow putih sedikit lebih menyebar */
+
+  white-space: nowrap; /* Mencegah teks pecah baris */
+  display: inline-block; /* Agar white-space: nowrap berfungsi dengan baik */
+}
+
+/* Pseudo-element untuk efek glow bergradasi (ungu-kuning) */
+.gradient-text::before {
+  content: attr(data-text); /* Mengambil teks dari atribut data-text */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Pastikan pseudo-element berada di belakang teks asli */
+
+  /* Gradasi warna untuk glow, dari ATAS ke BAWAH (ungu ke kuning) */
+  background: linear-gradient(to bottom, #8A2BE2, #FFFF00); /* Ungu ke Kuning */
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent; /* Membuat teks pseudo-element transparan agar gradien terlihat */
+
+  /* PERUBAHAN DI SINI: Mengaburkan pseudo-element untuk menciptakan efek glow yang LEBIH TERANG & LEBAR */
+  filter: blur(30px); /* Meningkatkan blur lebih jauh untuk efek yang sangat menyebar dan bercahaya */
+  transform: scale(1.1); /* Memperbesar pseudo-element lebih jauh */
+  opacity: 1; /* Opasitas penuh untuk cahaya maksimum */
+}
+
+.glow-text-accent {
+  text-shadow:
+    0 5px 10px rgba(255, 159, 28, 0.7), /* Reduced opacity: 70% */
+    0 8px 20px rgba(255, 159, 28, 0.5), /* Reduced opacity: 50% */
+    0 10px 35px rgba(255, 159, 28, 0.3); /* Reduced opacity: 30% */
+}
+
+/* Define --color-accent if not already defined via Tailwind config */
+/* If you are using Tailwind's JIT mode or have properly configured the accent color,
+   this might not be strictly necessary, but it's good for direct CSS usage. */
+:root {
+  --color-accent: #FF9F1C; /* Example accent color, adjust to your Tailwind config */
+}
