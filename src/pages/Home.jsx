@@ -613,19 +613,17 @@ export default function Home() {
               exit={{ scale: 0.5, opacity: 0, y: -50 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="relative max-w-full max-h-full overflow-hidden rounded-lg"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on the content
             >
               <div
                 style={photoFrameContainerBaseStyle}
-                onMouseEnter={() => {}} // Tidak perlu hover di sini, karena ini modal
-                onMouseLeave={() => {}} // Tidak perlu hover di sini, karena ini modal
-                className="p-4"
+                className="p-4" // Apply padding here for the frame
               >
                 <img
                   src={modalImageSrc}
                   alt="Detail Prestasi"
-                  className="block max-w-full max-h-full object-contain rounded-xl"
-                  style={{ ...innerImageStyle, maxWidth: '90vw', maxHeight: '80vh' }}
+                  className="block object-contain rounded-xl"
+                  style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: '0.75rem' }} // Ensure image fits and has border radius
                   loading="lazy"
                 />
               </div>
@@ -636,7 +634,7 @@ export default function Home() {
               >
                 <X size={24} />
               </button>
-            </motion.div>
+            </motion.div> {/* This closing tag was the one missing or misplaced */}
           </motion.div>
         )}
       </AnimatePresence>
