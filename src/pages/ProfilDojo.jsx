@@ -12,7 +12,7 @@ import brevetLogo from "../assets/brevet.png";
 const profilData = {
   about: {
     title: "Tentang Kami",
-    history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran taruna, **didirikan pada tahun 2005 oleh Dr. Suko Adi Prayitno**. Dengan visi untuk melahirkan pribadi yang tangguh, berdisiplin tinggi, dan menguasai seni bela diri yang autentik, klub ini hadir sebagai pilar penting dalam pengembangan potensi taruna. Sejak awal, kami berkomitmen untuk menanamkan nilai-nilai luhur karate, membentuk individu yang berintegritas, bermental kuat, dan siap menghadapi tantangan di lingkungan kedinasan maupun masyarakat.",
+    history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran yang berdedikasi tinggi bagi para taruna dan taruni, **telah eksis sejak awal berdirinya lembaga ini dan didirikan atas inisiatif Bapak Dr. Suko Adi Prayitno**. Klub ini beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan dan arahan diberikan oleh Ibu **Ayu Adi Justicea S.T., S.ST., M.App.Sc.** Dengan semangat yang membara serta visi kuat untuk mencetak pribadi yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate autentik, klub ini menjadi pilar fundamental dalam pengembangan potensi holistik setiap taruna. Kami berkomitmen penuh menanamkan nilai-nilai inti karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kedinasan maupun dalam kehidupan bermasyarakat.",
     vision: "Menjadikan organisasi Karate yang unggul dalam membentuk Taruna berkarakter, berprestasi, dan berjiwa Bushido.",
     mission: [
       "Mengusahakan menjalin kerja sama dengan perguruan/yayasan karate yang legal secara hukum.",
@@ -21,17 +21,17 @@ const profilData = {
       "Revolusi mental anggota organisasi.",
       "Memfasilitasi Taruna/i untuk mempelajari bela diri praktis yang dapat diaplikasikan secara nyata."
     ],
-    philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopanan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
+    philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopopan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
   },
   highlights: {
     title: "Sekilas Klub",
     items: [
-      { id: 1, icon: "🗓️", text: "Latihan Rutin (Sabtu Pagi)" }, // Dipersingkat
-      { id: 2, icon: "🥋", text: "Latihan Khusus BDT (Senin Sore)" }, // Dipersingkat
+      { id: 1, icon: "🗓️", text: "Latihan Rutin (Sabtu Pagi)" },
+      { id: 2, icon: "🥋", text: "Latihan Khusus BDT (Senin Sore)" },
       { id: 3, icon: "🎓", text: "Pengembangan Karakter Taruna" },
       { id: 4, icon: "🤝", text: "Komunitas Solid & Suportif" },
-      { id: 5, icon: "🏆", text: "Fokus Pembinaan Bela Diri dan Prestasi" },
-      { id: 6, icon: "👨‍🏫", text: "Pembinaan oleh Senpai & Sensei Berpengalaman" }, // Teks diubah dan ikon disesuaikan
+      { id: 5, icon: "🏆", text: "Fokus Pembinaan Prestasi Internal" },
+      { id: 6, icon: "👨‍🏫", text: "Pembinaan oleh Senpai & Sensei Berpengalaman" },
     ]
   },
   testimonials: {
@@ -174,7 +174,7 @@ export default function ProfilDojo() {
       transition={{ duration: 0.5 }}
       className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
     >
-      {/* --- Section Tentang Kami --- */}
+      {/* --- Section Tentang Kami, Visi & Misi (2 Kolom) --- */}
       <motion.section
         ref={aboutRef}
         initial="hidden"
@@ -188,48 +188,57 @@ export default function ProfilDojo() {
         >
           {profilData.about.title}
         </h2>
-        <motion.p
-          variants={itemSlideUp}
-          className="max-w-4xl mx-auto text-lg md:text-xl font-[Montserrat] font-light leading-relaxed text-[#E7E7E7] mb-10"
-        >
-          {profilData.about.history}
-        </motion.p>
-
-        <div className="flex flex-col md:flex-row justify-center items-start gap-12 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-center items-start gap-12 max-w-6xl mx-auto">
+          {/* Kolom Kiri: Tentang Kami */}
           <motion.div variants={itemSlideUp} className="flex-1 text-left">
             <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
               style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
             >
-              Visi
+              Sejarah Singkat
             </h3>
-            <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-[#a7a7a7]">
-              {profilData.about.vision}
+            <p className="text-lg font-[Montserrat] font-light leading-relaxed text-justify text-[#a7a7a7]">
+              {profilData.about.history}
             </p>
           </motion.div>
 
-          <motion.div variants={itemSlideUp} className="flex-1 text-left">
-            <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
-              style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-            >
-              Misi
-            </h3>
-            <ul className="list-none p-0 text-lg font-[Montserrat] font-thin leading-relaxed text-[#a7a7a7]">
-              {profilData.about.mission.map((item, index) => (
-                <li key={index} className="mb-2 before:content-['\2022\00a0'] before:text-accent before:font-bold">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
+          {/* Kolom Kanan: Visi & Misi */}
+          <div className="flex-1 text-left">
+            <motion.div variants={itemSlideUp}>
+              <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+                style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
+              >
+                Visi
+              </h3>
+              <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
+                {profilData.about.vision}
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemSlideUp} className="mt-12">
+              <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+                style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
+              >
+                Misi
+              </h3>
+              <ul className="list-none p-0 text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
+                {profilData.about.mission.map((item, index) => (
+                  <li key={index} className="mb-2 before:content-['\2022\00a0'] before:text-accent before:font-bold">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
         </div>
 
+        {/* Filosofi Kami (di bawah 2 kolom) */}
         <motion.div variants={itemSlideUp} className="mt-16 max-w-4xl mx-auto text-center">
           <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
             style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
           >
             Filosofi Kami
           </h3>
-          <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-[#a7a7a7]">
+          <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
             {profilData.about.philosophy}
           </p>
         </motion.div>
