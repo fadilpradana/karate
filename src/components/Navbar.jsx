@@ -187,10 +187,19 @@ export default function Navbar() {
   return (
     // Mengembalikan nav ke w-full dan px-2 (mobile) / md:px-6 (desktop)
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
-      <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative px-4 md:px-0"> {/* px-4 untuk mobile, md:px-0 untuk desktop */}
-        {/* Logo dan Menu Desktop */}
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="Logo Karate" className="w-9 h-9 rounded-full" />
+      {/* === PERUBAHAN UTAMA DI SINI === */}
+      {/* Hapus `px-4` di sini. `nav` di atas sudah memiliki `px-2` untuk mobile. */}
+      {/* Kita akan menambahkan padding secara manual ke "blok" kiri dan kanan. */}
+      <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative md:px-0">
+        {/* Blok Kiri: Logo dan Menu Desktop */}
+        {/* Tambahkan `pl-4` untuk padding kiri di mobile */}
+        <div className="flex items-center pl-4 md:pl-0 md:space-x-2"> {/* Ditambahkan: pl-4, md:pl-0 */}
+          {/* Logo dengan `flex-none` untuk mencegah gepeng */}
+          <img
+            src={logo}
+            alt="Logo Karate"
+            className="w-9 h-9 rounded-full ml-[-0.5rem] md:ml-0 flex-none" /* pr-2 sudah tidak perlu karena padding di parent */
+          />
           <div className="hidden md:block overflow-hidden rounded-md">
             <motion.div
               ref={menuContainerRef}
@@ -255,7 +264,7 @@ export default function Navbar() {
 
         {/* Running Text - Tambahkan kelas 'hidden' untuk sembunyikan di mobile */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0 hidden md:block" // Ditambahkan: hidden md:block
+          className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0 hidden md:block"
           style={{
             left: `${runningTextBounds.left}px`,
             width: `${runningTextBounds.right - runningTextBounds.left}px`,
@@ -271,25 +280,29 @@ export default function Navbar() {
           </motion.div>
         </div>
 
-        {/* Link Pengurus (Desktop) */}
-        <motion.div
-          variants={pengurusVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Link to={pengurusLink.path} ref={pengurusRef} className={`${getPengurusClass()} mr-4`}>
-            {pengurusLink.name}
-          </Link>
-        </motion.div>
+        {/* Blok Kanan: Link Pengurus (Desktop) dan Tombol Hamburger (Mobile) */}
+        {/* Tambahkan `pr-4` untuk padding kanan di mobile */}
+        <div className="flex items-center pr-4 md:pr-0"> {/* Ditambahkan: pr-4, md:pr-0 */}
+          {/* Link Pengurus (Desktop) */}
+          <motion.div
+            variants={pengurusVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <Link to={pengurusLink.path} ref={pengurusRef} className={`${getPengurusClass()} mr-4`}>
+              {pengurusLink.name}
+            </Link>
+          </motion.div>
 
-        {/* Tombol Hamburger (Mobile) - Z-index ditingkatkan agar selalu terlihat */}
-        <button
-          className={`md:hidden transition-colors duration-300 text-white relative z-[60]`}
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+          {/* Tombol Hamburger (Mobile) - Z-index ditingkatkan agar selalu terlihat */}
+          <button
+            className={`md:hidden transition-colors duration-300 text-white relative z-[60]`}
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* --- Mobile Menu Overlay --- */}
