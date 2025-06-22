@@ -185,20 +185,17 @@ export default function Navbar() {
   };
 
   return (
-    // Mengembalikan nav ke w-full dan px-2 (mobile) / md:px-6 (desktop)
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
-      {/* === PERUBAHAN UTAMA DI SINI === */}
-      {/* Hapus `px-4` di sini. `nav` di atas sudah memiliki `px-2` untuk mobile. */}
-      {/* Kita akan menambahkan padding secara manual ke "blok" kiri dan kanan. */}
       <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative md:px-0">
         {/* Blok Kiri: Logo dan Menu Desktop */}
-        {/* Tambahkan `pl-4` untuk padding kiri di mobile */}
-        <div className="flex items-center pl-4 md:pl-0 md:space-x-2"> {/* Ditambahkan: pl-4, md:pl-0 */}
+        <div className="flex items-center pl-1 md:pl-0 md:space-x-2">
           {/* Logo dengan `flex-none` untuk mencegah gepeng */}
           <img
             src={logo}
             alt="Logo Karate"
-            className="w-9 h-9 rounded-full ml-[-0.5rem] md:ml-0 flex-none" /* pr-2 sudah tidak perlu karena padding di parent */
+            // Tambahkan `object-contain` dan hapus `ml-[-0.5rem]`
+            // Tambahkan `flex-shrink-0` untuk mencegah penyusutan
+            className="w-9 h-9 rounded-full md:ml-0 flex-none object-contain flex-shrink-0"
           />
           <div className="hidden md:block overflow-hidden rounded-md">
             <motion.div
@@ -281,8 +278,7 @@ export default function Navbar() {
         </div>
 
         {/* Blok Kanan: Link Pengurus (Desktop) dan Tombol Hamburger (Mobile) */}
-        {/* Tambahkan `pr-4` untuk padding kanan di mobile */}
-        <div className="flex items-center pr-4 md:pr-0"> {/* Ditambahkan: pr-4, md:pr-0 */}
+        <div className="flex items-center pr-4 md:pr-0">
           {/* Link Pengurus (Desktop) */}
           <motion.div
             variants={pengurusVariants}
