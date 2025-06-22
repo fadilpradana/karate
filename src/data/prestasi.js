@@ -4,7 +4,7 @@ const originalPrestasiList = [
     judul: "Perhubungan Open Karate Tournament 2001",
     deskripsi:
       "Meraih Juara I Kumite Senior Putra, Juara 1 Umum",
-    gambar: "/images/prestasi--1.jpg",
+    gambar: "",
     tahun: 2009,
     // --- Penambahan Medali ---
     medaliEmas: 1,
@@ -16,7 +16,7 @@ const originalPrestasiList = [
     judul: "- 2003",
     deskripsi:
       "Meraih Juara I Kumite Senior Putra",
-    gambar: "/images/prestasi-0.jpg",
+    gambar: "",
     tahun: 2009,
     // --- Penambahan Medali ---
     medaliEmas: 1,
@@ -28,7 +28,7 @@ const originalPrestasiList = [
     judul: "UNSADA Open Tournament Se-Jawa Bali 2009",
     deskripsi:
       "Meraih Juara II Umum Kata Beregu Putra, Juara II Kata Beregu Putra Senior, dan Juara III Kata Beregu Putri Senior",
-    gambar: "/images/prestasi-1.jpg",
+    gambar: "",
     tahun: 2009,
     // --- Penambahan Medali ---
     medaliEmas: 0,
@@ -40,7 +40,7 @@ const originalPrestasiList = [
     judul: "Sunan Kalijaga Open Tournament 2010",
     deskripsi:
       "Meraih Juara III Umum Kelas Berat 80 kg, Juara II Kumite Under 55 kg Senior Putri, dan Juara III Kumite Up To 68 kg Senior Putra",
-    gambar: "/images/prestasi-2.jpg",
+    gambar: "",
     tahun: 2010,
     // --- Penambahan Medali ---
     medaliEmas: 0,
@@ -52,7 +52,7 @@ const originalPrestasiList = [
     judul: "SBY Cup 2013",
     deskripsi:
       "Meraih Juara III",
-    gambar: "/images/prestasi--2.jpg",
+    gambar: "",
     tahun: 2010,
     // --- Penambahan Medali ---
     medaliEmas: 0,
@@ -64,7 +64,7 @@ const originalPrestasiList = [
     judul: "OPTK 2015",
     deskripsi:
       "Meraih Medali Perunggu Putri",
-    gambar: "/images/prestasi--3.jpg",
+    gambar: "",
     tahun: 2010,
     // --- Penambahan Medali ---
     medaliEmas: 0,
@@ -76,7 +76,7 @@ const originalPrestasiList = [
     judul: "Kejuaraan Karate UNJ 2016",
     deskripsi:
       "Meraih Juara I Kata Beregu Putra Kelas Junior-Senior, Juara III Kata Perorangan U-21, Juara III Kumite Putra U-21 Kelas -67 kg, Juara III Kumite Putri U-21 Kelas -55 kg, dan Juara III Kumite Putri U-21 Kelas -61 kg",
-    gambar: "/images/prestasi-3.jpg",
+    gambar: "",
     tahun: 2016,
     // --- Penambahan Medali ---
     medaliEmas: 1, // Juara I Kata Beregu Putra Kelas Junior-Senior
@@ -88,7 +88,7 @@ const originalPrestasiList = [
     judul: "OPTK 2016",
     deskripsi:
       "Meraih Medali Emas Kumite Putri -50 kg, Medali Perak Kumite Putra Kelas Bebas, Medali Perunggu Kata Perorangan, Medali Perunggu Kumite Putri -55 kg, Medali Perunggu Kumite Putri -68 kg, Medali Perunggu Kumite Putra -55 kg",
-    gambar: "/images/prestasi-4.jpg",
+    gambar: "",
     tahun: 2016,
     // --- Penambahan Medali ---
     medaliEmas: 1,
@@ -111,7 +111,7 @@ const originalPrestasiList = [
   {
     judul: "OPTK 2018",
     deskripsi: "Meraih Medali Perunggu Kumite Putri -55 kg",
-    gambar: "/images/prestasi-6.jpg",
+    gambar: "",
     tahun: 2018,
     // --- Penambahan Medali ---
     medaliEmas: 0,

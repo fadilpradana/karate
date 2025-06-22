@@ -59,9 +59,9 @@
 
 .glow-text-accent {
   text-shadow:
-    0 5px 10px rgba(255, 159, 28, 0.7), /* Reduced opacity: 70% */
-    0 8px 20px rgba(255, 159, 28, 0.5), /* Reduced opacity: 50% */
-    0 10px 35px rgba(255, 159, 28, 0.3); /* Reduced opacity: 30% */
+    0 5px 10px rgba(255, 159, 28, 0.5), /* Reduced opacity: 70% */
+    0 8px 20px rgba(255, 159, 28, 0.3), /* Reduced opacity: 50% */
+    0 10px 35px rgba(255, 159, 28, 0.2); /* Reduced opacity: 30% */
 }
 
 /* Define --color-accent if not already defined via Tailwind config */
