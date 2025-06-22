@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react"; // Tambahkan useCallback
 import { Menu, X } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // Tambahkan AnimatePresence
 import logo from "../assets/logo_bintangcompress.png";
 
 const navLinks = [
@@ -24,10 +24,29 @@ export default function Navbar() {
   const pengurusRef = useRef(null);
   const [runningTextBounds, setRunningTextBounds] = useState({ left: 0, right: 0 });
   const menuContainerRef = useRef(null);
-  const [initialMenuWidth, setInitialMenuWidth] = useState(0);
+  // const [initialMenuWidth, setInitialMenuWidth] = useState(0); // Ini tidak lagi diperlukan
 
   const isPengurusActive = location.pathname === pengurusLink.path;
 
+  // Handler untuk menutup menu saat link diklik
+  const handleNavLinkClick = useCallback(() => {
+    setMenuOpen(false);
+  }, []);
+
+  // Effect untuk mengunci/membuka scroll body
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden'; // Kunci scroll
+    } else {
+      document.body.style.overflow = 'unset'; // Buka scroll
+    }
+    // Cleanup function untuk memastikan scroll terbuka saat komponen unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [menuOpen]);
+
+  // Effect untuk mengupdate indikator aktif pada desktop
   useEffect(() => {
     const activeIndex = navLinks.findIndex((link) => link.path === location.pathname);
     if (!isPengurusActive && leftRefs.current?.[activeIndex]) {
@@ -37,12 +56,9 @@ export default function Navbar() {
     }
   }, [location.pathname, isPengurusActive]);
 
+  // Effect untuk menghitung batas running text
   useEffect(() => {
-    if (menuContainerRef.current) {
-      setInitialMenuWidth(menuContainerRef.current.offsetWidth);
-    }
-
-    const updateRunningTextBounds = () => {
+    // const updateRunningTextBounds = () => { // Ini sudah ada, tidak perlu didefinisikan ulang
       const daftarIndex = navLinks.findIndex((link) => link.name === "Daftar");
       const daftarEl = leftRefs.current?.[daftarIndex];
       const pengurusEl = pengurusRef.current;
@@ -57,9 +73,24 @@ export default function Navbar() {
 
         setRunningTextBounds({ left, right });
       }
-    };
+    // }; // Penutup yang tidak perlu
 
-    const timer = setTimeout(updateRunningTextBounds, 500);
+    const timer = setTimeout(() => { // Panggil fungsi update di dalam setTimeout
+        const daftarIndex = navLinks.findIndex((link) => link.name === "Daftar");
+        const daftarEl = leftRefs.current?.[daftarIndex];
+        const pengurusEl = pengurusRef.current;
+
+        if (daftarEl && pengurusEl && menuContainerRef.current) {
+          const daftarRight = daftarEl.getBoundingClientRect().right;
+          const pengurusLeft = pengurusEl.getBoundingClientRect().left;
+          const navRect = document.querySelector('nav').getBoundingClientRect();
+
+          const left = (daftarRight - navRect.left) + 5;
+          const right = (pengurusLeft - navRect.left) - 40;
+
+          setRunningTextBounds({ left, right });
+        }
+    }, 500);
     return () => clearTimeout(timer);
   }, [leftRefs.current, pengurusRef.current]);
 
@@ -133,9 +164,36 @@ export default function Navbar() {
     }
   };
 
+  // Varian untuk menu mobile
+  const mobileMenuVariants = {
+    hidden: { x: "100%" },
+    visible: {
+      x: "0%",
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        staggerChildren: 0.05,
+        delayChildren: 0.1,
+      },
+    },
+    exit: {
+      x: "100%",
+      transition: {
+        duration: 0.3,
+        ease: "easeIn",
+      },
+    },
+  };
+
+  const mobileMenuItemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
       <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative">
+        {/* Logo dan Menu Desktop */}
         <div className="flex items-center gap-2">
           <img src={logo} alt="Logo Karate" className="w-9 h-9 rounded-full" />
           <div className="hidden md:block overflow-hidden rounded-md">
@@ -200,6 +258,7 @@ export default function Navbar() {
           </div>
         </div>
 
+        {/* Running Text */}
         <div
           className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0"
           style={{
@@ -211,13 +270,13 @@ export default function Navbar() {
             className={`text-xs font-thin whitespace-nowrap text-white`}
             variants={runningTextVariants}
             initial="hidden"
-            // The problematic line:
             animate={["visible", "animate"]}
           >
             {"Selamatkan darah di dunia nyata dengan keringat di dalam Dojo! - Dōjō no ase ga, genjitsu no chi o sukū!"}
           </motion.div>
         </div>
 
+        {/* Link Pengurus (Desktop) */}
         <motion.div
           variants={pengurusVariants}
           initial="hidden"
@@ -228,14 +287,58 @@ export default function Navbar() {
           </Link>
         </motion.div>
 
+        {/* Tombol Hamburger (Mobile) */}
         <button
           className={`md:hidden transition-colors duration-300 text-white`}
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu"
+          aria-label="Toggle menu"
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
+
+      {/* --- Mobile Menu Overlay --- */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 md:hidden z-40"
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            {navLinks.map((link) => (
+              <motion.div
+                key={link.path}
+                variants={mobileMenuItemVariants}
+                onClick={handleNavLinkClick} // Tutup menu saat link diklik
+              >
+                <Link
+                  to={link.path}
+                  className={`text-2xl font-league uppercase transition-colors duration-200 ${
+                    location.pathname === link.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              </motion.div>
+            ))}
+            <motion.div
+              variants={mobileMenuItemVariants}
+              onClick={handleNavLinkClick} // Tutup menu saat link diklik
+            >
+              <Link
+                to={pengurusLink.path}
+                className={`text-2xl font-league uppercase transition-colors duration-200 ${
+                  location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"
+                }`}
+              >
+                {pengurusLink.name}
+              </Link>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

@@ -339,6 +339,7 @@ export default function Home() {
         </h2>
         <div className="relative z-10">
           {prestasiList.map((item, index) => {
+            // Gunakan custom hook untuk setiap item
             const isImageOnLeft = index % 2 === 0;
             const { ref: itemRef, isInView, variants } = useAnimateOnScroll(isImageOnLeft ? -100 : 100);
             const isLastItem = index === prestasiList.length - 1;
@@ -357,14 +358,15 @@ export default function Home() {
                              text-left`}
               >
                 {/* Bagian untuk Gambar (atau Placeholder Kosong) */}
-                {item.gambar && ( // Kondisi: hanya render div ini jika ada gambar
-                  <div
-                    className={`w-full md:w-1/2 flex items-center justify-center relative h-60`}
-                    style={photoFrameContainerBaseStyle}
-                    onMouseEnter={photoFrameContainerHoverStyle}
-                    onMouseLeave={photoFrameContainerLeaveStyle}
-                    onClick={() => openImageModal(item.gambar)}
-                  >
+                <div
+                    className={`w-full md:w-1/2 flex items-center justify-center relative
+                                 ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
+                    style={item.gambar ? photoFrameContainerBaseStyle : {}}
+                    onMouseEnter={item.gambar ? photoFrameContainerHoverStyle : null}
+                    onMouseLeave={item.gambar ? photoFrameContainerLeaveStyle : null}
+                    onClick={item.gambar ? () => openImageModal(item.gambar) : null}
+                >
+                  {item.gambar ? (
                     <img
                       src={item.gambar}
                       alt={item.judul}
@@ -372,14 +374,13 @@ export default function Home() {
                       style={innerImageStyle}
                       loading="lazy"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-[calc(100%-10px)] h-0"></div>
+                  )}
+                </div>
+
                 {/* Bagian untuk Deskripsi */}
-                {/* Gunakan w-full untuk mobile, dan md:w-1/2 atau w-full tergantung ada gambar atau tidak */}
-                <div
-                  className={`text-left relative
-                              ${item.gambar ? 'md:w-1/2' : 'w-full'}`}
-                >
+                <div className="text-left md:w-1/2 relative">
                   <h3 className="text-xl md:text-2xl font-[Montserrat] font-semibold uppercase glow-text-accent">
                     {item.judul}
                   </h3>
