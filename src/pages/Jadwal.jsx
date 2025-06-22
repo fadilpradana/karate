@@ -59,7 +59,7 @@ export default function Jadwal() {
       0px 4px 10px rgba(0, 0, 0, 0.3),
       inset 0 0 0 1px rgba(255, 255, 255, 0.2)
     `,
-    borderRadius: '1rem', // Untuk konsistensi dengan photoFrameContainerBaseStyle
+    borderRadius: '0.8rem', // Dikecilkan sedikit
     transition: 'all 0.3s ease-in-out',
   };
 
@@ -91,47 +91,15 @@ export default function Jadwal() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
+      className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden flex flex-col" 
     >
-      {/* Hero Section untuk Jadwal */}
-      <section
-        className="relative h-screen flex items-center justify-center text-center px-6"
-        style={{
-          // Menggunakan warna solid hitam #000000 sebagai background
-          backgroundColor: '#000000', 
-          backgroundSize: "cover", // Tetap pertahankan ini jika suatu saat mau ganti gambar
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10" />
-        <div className="relative z-20">
-          <motion.h1
-            className="text-5xl md:text-8xl font-league uppercase leading-tight tracking-widest glow-text-accent"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Jadwal Latihan
-          </motion.h1>
-          <motion.p
-            className="mt-4 text-lg md:text-xl font-[Montserrat] font-light text-[#E7E7E7]"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            Disiplin waktu, disiplin diri.
-          </motion.p>
-        </div>
-      </section>
-
       {/* Bagian Detail Jadwal */}
       <section
         ref={jadwalRef} // Pasang ref di sini
-        className="py-20 px-6 md:px-20 text-center"
+        className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center" // Padding atas ditambah
       >
         <motion.h2
-          className="text-3xl md:text-7xl font-league font-semibold uppercase tracking-wide mb-12 text-accent"
+          className="text-2xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent" 
           variants={sectionTitleVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
@@ -140,10 +108,10 @@ export default function Jadwal() {
           Waktu Latihan Reguler & Khusus
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto w-full"> 
           {/* Card Latihan Reguler */}
           <motion.div
-            className="p-8 rounded-2xl text-center flex flex-col items-center justify-between"
+            className="p-6 rounded-xl text-center flex flex-col items-center justify-between" 
             style={glassmorphismStyle}
             onMouseEnter={glassmorphismHoverStyle}
             onMouseLeave={glassmorphismLeaveStyle}
@@ -153,20 +121,20 @@ export default function Jadwal() {
             transition={{ ...cardVariants.visible.transition, delay: 0.3 }}
             viewport={{ once: true, amount: 0.5 }}
           >
-            <h3 className="text-4xl md:text-5xl font-league uppercase text-white mb-4">Latihan Rutin</h3>
-            <p className="text-base md:text-lg font-[Montserrat] text-[#a7a7a7] mb-6">
+            <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Rutin</h3> 
+            <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
               Latihan fisik dan teknik dasar untuk semua anggota.
             </p>
-            <div className="text-white text-3xl md:text-4xl font-bold font-[Montserrat] mb-4">
+            <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
               <p>Setiap Sabtu Pagi</p>
-              <p className="text-xl md:text-2xl font-[Montserrat] font-light">07.00 - 09.30 WIB</p>
+              <p className="text-lg md:text-xl font-[Montserrat] font-light">07.00 - 09.30 WIB</p> 
             </div>
             <Link
               to="/pendaftaran"
-              className="inline-block mt-4 px-6 py-2 font-semibold rounded-xl text-sm md:text-base"
+              className="inline-block mt-3 px-5 py-1.5 font-semibold rounded-lg text-xs md:text-sm" 
               style={{
                 ...glassmorphismStyle,
-                borderRadius: '0.75rem', // Lebih kecil untuk tombol
+                borderRadius: '0.6rem', 
                 boxShadow: `
                   0px 2px 5px rgba(0, 0, 0, 0.2),
                   inset 1px 1px 2px rgba(255, 255, 255, 0.13),
@@ -188,7 +156,7 @@ export default function Jadwal() {
 
           {/* Card Latihan Khusus BDT */}
           <motion.div
-            className="p-8 rounded-2xl text-center flex flex-col items-center justify-between"
+            className="p-6 rounded-xl text-center flex flex-col items-center justify-between" 
             style={glassmorphismStyle}
             onMouseEnter={glassmorphismHoverStyle}
             onMouseLeave={glassmorphismLeaveStyle}
@@ -198,20 +166,20 @@ export default function Jadwal() {
             transition={{ ...cardVariants.visible.transition, delay: 0.5 }}
             viewport={{ once: true, amount: 0.5 }}
           >
-            <h3 className="text-4xl md:text-5xl font-league uppercase text-white mb-4">Latihan Khusus BDT</h3>
-            <p className="text-base md:text-lg font-[Montserrat] text-[#a7a7a7] mb-6">
+            <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Khusus BDT</h3> 
+            <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
               Bela Diri Taruna (BDT) fokus pada aplikasi praktis dan kecepatan.
             </p>
-            <div className="text-white text-3xl md:text-4xl font-bold font-[Montserrat] mb-4">
+            <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
               <p>Setiap Senin Sore</p>
-              <p className="text-xl md:text-2xl font-[Montserrat] font-light">16.00 - 17.45 WIB</p>
+              <p className="text-lg md:text-xl font-[Montserrat] font-light">16.00 - 17.45 WIB</p> 
             </div>
             <Link
               to="/kontak"
-              className="inline-block mt-4 px-6 py-2 font-semibold rounded-xl text-sm md:text-base"
+              className="inline-block mt-3 px-5 py-1.5 font-semibold rounded-lg text-xs md:text-sm" 
               style={{
                 ...glassmorphismStyle,
-                borderRadius: '0.75rem', // Lebih kecil untuk tombol
+                borderRadius: '0.6rem', 
                 boxShadow: `
                   0px 2px 5px rgba(0, 0, 0, 0.2),
                   inset 1px 1px 2px rgba(255, 255, 255, 0.13),
@@ -233,7 +201,7 @@ export default function Jadwal() {
         </div>
 
         <motion.p
-          className="mt-16 text-sm text-gray-500 max-w-2xl mx-auto"
+          className="mt-12 text-xs text-gray-500 max-w-xl mx-auto" 
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.8 }}
@@ -244,13 +212,13 @@ export default function Jadwal() {
       </section>
 
       {/* Footer (Copy dari Home.jsx untuk konsistensi) */}
-      <footer className="relative z-[50] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="relative z-[50] bg-[#0E0004] text-[#E7E7E7] text-xs py-8 px-4 md:px-16 border-t border-[#333]"> 
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3"> 
           <div className="text-center md:text-left">&copy; With Love STMKG Karate Club Periode 2025</div>
           <div className="flex justify-center w-full">
-            <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
+            <img src={brevetLogo} alt="Logo Brevet" className="h-4" /> 
           </div>
-          <div className="flex gap-4 font-[Montserrat] font-light text-center md:text-right">
+          <div className="flex gap-3 font-[Montserrat] font-light text-center md:text-right"> 
             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
