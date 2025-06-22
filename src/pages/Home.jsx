@@ -55,6 +55,18 @@ const useCountingAnimation = (targetValue, delay = 0, duration = 2000) => {
   return [count, ref];
 };
 
+// Custom hook for animating elements on scroll in the Prestasi section
+const useAnimateOnScroll = (initialX) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, amount: 0.5 }); // Trigger when in view, can re-trigger
+
+  const variants = {
+    hidden: { opacity: 0, x: initialX },
+    visible: { opacity: 1, x: 0 },
+  };
+
+  return { ref, isInView, variants };
+};
 
 export default function Home() {
   const containerVariants = {
@@ -98,9 +110,6 @@ export default function Home() {
       }
     }
   };
-
-  const sectionPrestasiRef = useRef(null);
-  const itemRefs = useRef(prestasiList.map(() => useRef(null)));
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -322,7 +331,6 @@ export default function Home() {
 
       {/* Daftar Prestasi */}
       <section
-        ref={sectionPrestasiRef}
         className="relative overflow-hidden py-20 px-6 md:px-20 text-center shadow-inner"
         style={prestasiBackgroundStyle}
       >
@@ -331,9 +339,9 @@ export default function Home() {
         </h2>
         <div className="relative z-10">
           {prestasiList.map((item, index) => {
-            const itemRef = useRef(null);
-            const isInView = useInView(itemRef, { once: false, amount: 0.5 });
+            // Gunakan custom hook untuk setiap item
             const isImageOnLeft = index % 2 === 0;
+            const { ref: itemRef, isInView, variants } = useAnimateOnScroll(isImageOnLeft ? -100 : 100);
             const isLastItem = index === prestasiList.length - 1;
 
             return (
@@ -342,19 +350,17 @@ export default function Home() {
                 ref={itemRef}
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
-                variants={{
-                  hidden: { opacity: 0, x: isImageOnLeft ? -100 : 100 },
-                  visible: { opacity: 1, x: 0 },
-                }}
+                variants={variants}
                 transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
                 className={`flex flex-col md:flex-row items-center md:items-start gap-8 relative py-8
-                          ${isImageOnLeft ? '' : 'md:flex-row-reverse'}
-                          ${!isLastItem ? 'border-b border-gray-700/50' : ''}`}
+                             ${isImageOnLeft ? '' : 'md:flex-row-reverse'}
+                             ${!isLastItem ? 'border-b border-gray-700/50' : ''}
+                             text-left`}
               >
                 {/* Bagian untuk Gambar (atau Placeholder Kosong) */}
                 <div
-                    className={`w-full md:w-1/2 flex items-center justify-center relative 
-                                ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
+                    className={`w-full md:w-1/2 flex items-center justify-center relative
+                                 ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
                     style={item.gambar ? photoFrameContainerBaseStyle : {}}
                     onMouseEnter={item.gambar ? photoFrameContainerHoverStyle : null}
                     onMouseLeave={item.gambar ? photoFrameContainerLeaveStyle : null}
@@ -369,7 +375,7 @@ export default function Home() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-[calc(100%-10px)] h-0"></div> 
+                    <div className="w-[calc(100%-10px)] h-0"></div>
                   )}
                 </div>
 
