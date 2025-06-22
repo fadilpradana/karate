@@ -2,40 +2,36 @@
 
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Link } from 'react-router-dom'; // Pastikan Link diimpor untuk footer
+import { Link } from 'react-router-dom';
 
 // --- Import Aset untuk Footer ---
-import brevetLogo from "../assets/brevet.png"; // Pastikan path ini benar
+import brevetLogo from "../assets/brevet.png";
 // --------------------------------
 
 // --- Data Profil Terintegrasi ---
 const profilData = {
-  hero: {
-    headline: "Discipline. Honor. Power.",
-    image: "/images/hero-profile-karate.jpg", // Ganti dengan path gambar hero profil Anda
-    alt: "Taruna STMKG berlatih karate di dojo"
-  },
   about: {
     title: "Tentang Kami",
-    history: "Klub Karate STMKG didirikan pada tahun 2005, dengan semangat untuk mengembangkan potensi fisik dan mental taruna melalui disiplin bela diri. Sejak awal, kami berkomitmen untuk menanamkan nilai-nilai luhur karate, membentuk individu yang berintegritas, bermental kuat, dan siap menghadapi tantangan di lingkungan kedinasan maupun masyarakat.",
-    vision: "Mewujudkan taruna STMKG yang unggul dalam bela diri, berkarakter mulia, dan berprestasi di tingkat nasional maupun internasional, menjadi teladan bagi insan kampus dan bangsa.",
+    history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran taruna, **didirikan pada tahun 2005 oleh Dr. Suko Adi Prayitno**. Dengan visi untuk melahirkan pribadi yang tangguh, berdisiplin tinggi, dan menguasai seni bela diri yang autentik, klub ini hadir sebagai pilar penting dalam pengembangan potensi taruna. Sejak awal, kami berkomitmen untuk menanamkan nilai-nilai luhur karate, membentuk individu yang berintegritas, bermental kuat, dan siap menghadapi tantangan di lingkungan kedinasan maupun masyarakat.",
+    vision: "Menjadikan organisasi Karate yang unggul dalam membentuk Taruna berkarakter, berprestasi, dan berjiwa Bushido.",
     mission: [
-      "Mengembangkan keterampilan bela diri karate yang sesuai standar nasional dan internasional.",
-      "Menumbuhkan disiplin, etika, dan nilai-nilai luhur dalam setiap anggota melalui latihan dan kegiatan interaktif.",
-      "Membina fisik dan mental yang prima untuk mendukung tugas dan studi taruna.",
-      "Mencetak atlet karate berprestasi yang mampu mengharumkan nama STMKG di berbagai kompetisi."
+      "Mengusahakan menjalin kerja sama dengan perguruan/yayasan karate yang legal secara hukum.",
+      "Mengutamakan kejujuran dalam hak dan kewajiban baik itu pelatih, senpai, dan kohai.",
+      "Mengadakan ujian sabuk legal persemester.",
+      "Revolusi mental anggota organisasi.",
+      "Memfasilitasi Taruna/i untuk mempelajari bela diri praktis yang dapat diaplikasikan secara nyata."
     ],
     philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopanan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
   },
   highlights: {
     title: "Sekilas Klub",
     items: [
-      { id: 1, icon: "🥋", text: "Afiliasi Resmi INKAI" },
-      { id: 2, icon: "👨‍🏫", text: "Pelatih Nasional Berpengalaman" },
-      { id: 3, icon: "🗓️", text: "Latihan Rutin 3x Seminggu" },
-      { id: 4, icon: "🏆", text: "Fokus Pembinaan Prestasi" },
-      { id: 5, icon: "🤝", text: "Komunitas Solid & Suportif" },
-      { id: 6, icon: "🎓", text: "Pengembangan Karakter Taruna" },
+      { id: 1, icon: "🗓️", text: "Latihan Rutin (Sabtu Pagi)" }, // Dipersingkat
+      { id: 2, icon: "🥋", text: "Latihan Khusus BDT (Senin Sore)" }, // Dipersingkat
+      { id: 3, icon: "🎓", text: "Pengembangan Karakter Taruna" },
+      { id: 4, icon: "🤝", text: "Komunitas Solid & Suportif" },
+      { id: 5, icon: "🏆", text: "Fokus Pembinaan Bela Diri dan Prestasi" },
+      { id: 6, icon: "👨‍🏫", text: "Pembinaan oleh Senpai & Sensei Berpengalaman" }, // Teks diubah dan ikon disesuaikan
     ]
   },
   testimonials: {
@@ -45,21 +41,20 @@ const profilData = {
         id: 1,
         quote: "Bergabung dengan Karate STMKG bukan hanya melatih fisik, tapi juga membentuk mental saya menjadi lebih disiplin dan percaya diri. Sensei dan teman-teman sangat mendukung.",
         name: "Taruna R. Wibowo",
-        image: "/images/testi-1.jpg" // Ganti dengan path foto anggota
+        image: "/images/testi-1.jpg"
       },
       {
         id: 2,
         quote: "Saya merasakan peningkatan signifikan dalam fokus dan ketahanan diri sejak berlatih karate di sini. Lingkungan latihannya sangat kondusif untuk berkembang dan berprestasi.",
         name: "Taruni D. Lestari",
-        image: "/images/testi-2.jpg" // Ganti dengan path foto anggota
+        image: "/images/testi-2.jpg"
       },
       {
         id: 3,
         quote: "Karate mengajarkan saya tentang pentingnya ketekunan dan kerendahan hati. STMKG Karate Club adalah keluarga kedua yang selalu memotivasi.",
         name: "Taruna M. Arif",
-        image: "/images/testi-3.jpg" // Ganti dengan path foto anggota
+        image: "/images/testi-3.jpg"
       },
-      // Tambahkan testimoni lain sesuai kebutuhan
     ]
   }
 };
@@ -126,7 +121,7 @@ const photoFrameContainerHoverStyle = (e) => {
     0px 2px 5px rgba(0, 0, 0, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.4)
   `;
-  e.currentTarget.style.transform = 'scale(1.03)'; // Slightly less aggressive scale for general use
+  e.currentTarget.style.transform = 'scale(1.03)';
 };
 
 const photoFrameContainerLeaveStyle = (e) => {
@@ -135,7 +130,6 @@ const photoFrameContainerLeaveStyle = (e) => {
   e.currentTarget.style.boxShadow = photoFrameContainerBaseStyle.boxShadow;
   e.currentTarget.style.transform = 'scale(1)';
 };
-// --- End of Shared styles ---
 
 // Framer Motion Variants
 const fadeIn = {
@@ -153,7 +147,7 @@ const staggeredContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15 // Slightly faster stagger for more dynamic feel
+      staggerChildren: 0.15
     }
   }
 };
@@ -163,13 +157,11 @@ const itemSlideUp = {
   visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-export default function ProfilDojo() { // Pastikan nama fungsi sesuai dengan nama file: ProfilDojo
-  // Refs for triggering animations
+export default function ProfilDojo() {
   const aboutRef = useRef(null);
   const highlightsRef = useRef(null);
   const testimonialsRef = useRef(null);
 
-  // UseInView hooks
   const aboutInView = useInView(aboutRef, { once: true, amount: 0.3 });
   const highlightsInView = useInView(highlightsRef, { once: true, amount: 0.3 });
   const testimonialsInView = useInView(testimonialsRef, { once: true, amount: 0.3 });
@@ -182,43 +174,6 @@ export default function ProfilDojo() { // Pastikan nama fungsi sesuai dengan nam
       transition={{ duration: 0.5 }}
       className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
     >
-      {/* --- Hero Section Profil --- */}
-      <motion.section
-        className="relative h-[70vh] md:h-screen flex items-center justify-center overflow-hidden text-center"
-        initial="hidden"
-        animate="visible"
-        variants={fadeIn}
-        style={{
-          backgroundImage: `url(${profilData.hero.image})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          position: 'relative',
-        }}
-      >
-        {/* Overlay konsisten dengan Home.jsx */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10" />
-
-        <div className="relative z-20 max-w-4xl px-6 md:px-0">
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-            className="text-4xl md:text-7xl font-league uppercase leading-tight tracking-widest glow-text-accent"
-            style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-          >
-            {profilData.hero.headline}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
-            className="mt-4 text-lg md:text-xl font-[Montserrat] font-light text-[#E7E7E7]"
-          >
-            Membentuk Karakter, Mengukir Prestasi, Menjunjung Tinggi Bela Diri.
-          </motion.p>
-        </div>
-      </motion.section>
-
       {/* --- Section Tentang Kami --- */}
       <motion.section
         ref={aboutRef}
@@ -284,8 +239,6 @@ export default function ProfilDojo() { // Pastikan nama fungsi sesuai dengan nam
       <motion.section
         ref={highlightsRef}
         initial="hidden"
-        // Menggunakan properti `whileInView` sebagai fallback atau alternatif `animate` dengan `useInView`
-        // Ini memastikan animasi dipicu saat komponen masuk viewport
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={slideUp}
@@ -299,8 +252,6 @@ export default function ProfilDojo() { // Pastikan nama fungsi sesuai dengan nam
         </h2>
         <motion.div
           variants={staggeredContainer}
-          // Menggunakan `initial` dan `whileInView` di sini juga untuk memastikan stagger effect
-          // Jika `animate` di section utama sudah dipicu, ini bisa redundan tapi aman
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
@@ -328,7 +279,7 @@ export default function ProfilDojo() { // Pastikan nama fungsi sesuai dengan nam
       <motion.section
         ref={testimonialsRef}
         initial="hidden"
-        whileInView="visible" // Menggunakan whileInView untuk konsistensi
+        whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={slideUp}
         className="py-20 px-6 md:px-20 text-center"
