@@ -213,9 +213,12 @@ export default function Home() {
   };
 
   const photoFrameContainerLeaveStyle = (e) => {
-    e.currentTarget.style.backgroundColor = photoFrameContainerBaseStyle.backgroundColor;
-    e.currentTarget.style.borderColor = photoFrameContainerBaseStyle.border.split(' ')[2];
-    e.currentTarget.style.boxShadow = photoFrameContainerBaseStyle.boxShadow;
+    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; // Kembali ke nilai base
+    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'; // Kembali ke nilai base
+    e.currentTarget.style.boxShadow = `
+      0px 4px 10px rgba(0, 0, 0, 0.3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2)
+    `; // Kembali ke nilai base
     e.currentTarget.style.transform = 'scale(1)';
   };
 
@@ -331,15 +334,14 @@ export default function Home() {
 
       {/* Daftar Prestasi */}
       <section
-        className="relative overflow-hidden py-20 px-6 md:px-20 text-center shadow-inner"
+        className="relative overflow-hidden py-20 px-6 md:px-20 shadow-inner"
         style={prestasiBackgroundStyle}
       >
-        <h2 className="text-3xl md:text-7xl font-league font-semibold uppercase tracking-wide mb-12 relative z-10 text-accent">
+        <h2 className="text-3xl md:text-7xl font-league font-semibold uppercase tracking-wide mb-12 relative z-10 text-accent text-center">
           Daftar Prestasi
         </h2>
         <div className="relative z-10">
           {prestasiList.map((item, index) => {
-            // Gunakan custom hook untuk setiap item
             const isImageOnLeft = index % 2 === 0;
             const { ref: itemRef, isInView, variants } = useAnimateOnScroll(isImageOnLeft ? -100 : 100);
             const isLastItem = index === prestasiList.length - 1;
@@ -352,14 +354,16 @@ export default function Home() {
                 animate={isInView ? "visible" : "hidden"}
                 variants={variants}
                 transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
-                className={`flex flex-col md:flex-row items-center md:items-start gap-8 relative py-8
+                // --- PERBAIKAN UTAMA DI SINI: items-start untuk perataan kiri pada mobile (flex-col) ---
+                className={`flex flex-col md:flex-row items-start md:items-start gap-8 relative py-8
                              ${isImageOnLeft ? '' : 'md:flex-row-reverse'}
                              ${!isLastItem ? 'border-b border-gray-700/50' : ''}
                              text-left`}
               >
                 {/* Bagian untuk Gambar (atau Placeholder Kosong) */}
                 <div
-                    className={`w-full md:w-1/2 flex items-center justify-center relative
+                    // --- PERBAIKAN DI SINI: Hapus justify-center, gunakan w-full untuk placeholder ---
+                    className={`w-full md:w-1/2 flex items-center relative
                                  ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
                     style={item.gambar ? photoFrameContainerBaseStyle : {}}
                     onMouseEnter={item.gambar ? photoFrameContainerHoverStyle : null}
@@ -375,7 +379,8 @@ export default function Home() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-[calc(100%-10px)] h-0"></div>
+                    // --- PERBAIKAN DI SINI: Pastikan placeholder kosong memiliki w-full ---
+                    <div className="w-full h-0"></div>
                   )}
                 </div>
 
@@ -393,7 +398,7 @@ export default function Home() {
           })}
         </div>
         {/* Catatan di bagian paling bawah daftar prestasi */}
-        <p className="mt-16 text-xs text-gray-500 relative z-10">
+        <p className="mt-16 text-xs text-gray-500 relative z-10 text-center">
           *Mohon maaf atas keterbatasan dokumentasi gambar pada beberapa prestasi. Jika memiliki dokumentasi terkait prestasi ini, mohon kontak pengembang website.
         </p>
       </section>
@@ -417,57 +422,57 @@ export default function Home() {
         </h2>
         <div className="relative z-10 flex flex-col md:flex-row justify-center items-center gap-10">
           <motion.div
-            ref={goldRef} // Assign ref to trigger animation
+            ref={goldRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }} // This delay is for the overall card entry
-            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            viewport={{ once: true, amount: 0.5 }}
             className="flex flex-col items-center p-6 rounded-lg"
             style={glassButtonStyle}
           >
-            <span className="text-6xl md:text-8xl font-bold text-yellow-400" role="img" aria-label="Gold Medal">&#x1F3C5;</span> {/* Gold medal Unicode */}
+            <span className="text-6xl md:text-8xl font-bold text-yellow-400" role="img" aria-label="Gold Medal">&#x1F3C5;</span>
             <p className="mt-2 text-4xl md:text-6xl font-league">{animatedGold}</p>
             <p className="font-[Montserrat] font-semibold text-lg md:text-xl">Emas</p>
           </motion.div>
 
           <motion.div
-            ref={silverRef} // Assign ref to trigger animation
+            ref={silverRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }} // This delay is for the overall card entry
-            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true, amount: 0.5 }}
             className="flex flex-col items-center p-6 rounded-lg"
             style={glassButtonStyle}
           >
-            <span className="text-6xl md:text-8xl font-bold text-gray-400" role="img" aria-label="Silver Medal">&#x1F948;</span> {/* Silver medal Unicode */}
+            <span className="text-6xl md:text-8xl font-bold text-gray-400" role="img" aria-label="Silver Medal">&#x1F948;</span>
             <p className="mt-2 text-4xl md:text-6xl font-league">{animatedSilver}</p>
             <p className="font-[Montserrat] font-semibold text-lg md:text-xl">Perak</p>
           </motion.div>
 
           <motion.div
-            ref={bronzeRef} // Assign ref to trigger animation
+            ref={bronzeRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }} // This delay is for the overall card entry
-            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            viewport={{ once: true, amount: 0.5 }}
             className="flex flex-col items-center p-6 rounded-lg"
             style={glassButtonStyle}
           >
-            <span className="text-6xl md:text-8xl font-bold text-orange-700" role="img" aria-label="Bronze Medal">&#x1F949;</span> {/* Bronze medal Unicode */}
+            <span className="text-6xl md:text-8xl font-bold text-orange-700" role="img" aria-label="Bronze Medal">&#x1F949;</span>
             <p className="mt-2 text-4xl md:text-6xl font-league">{animatedBronze}</p>
             <p className="font-[Montserrat] font-semibold text-lg md:text-xl">Perunggu</p>
           </motion.div>
 
           <motion.div
-            ref={totalRef} // Assign ref to trigger animation
+            ref={totalRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }} // This delay is for the overall card entry
-            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            viewport={{ once: true, amount: 0.5 }}
             className="flex flex-col items-center p-6 rounded-lg"
             style={glassButtonStyle}
           >
-            <span className="text-6xl md:text-8xl font-bold text-white" role="img" aria-label="Trophy">&#x1F3C6;</span> {/* Trophy Unicode */}
+            <span className="text-6xl md:text-8xl font-bold text-white" role="img" aria-label="Trophy">&#x1F3C6;</span>
             <p className="mt-2 text-4xl md:text-6xl font-league">{animatedTotal}</p>
             <p className="font-[Montserrat] font-semibold text-lg md:text-xl">Total</p>
           </motion.div>
@@ -487,7 +492,6 @@ export default function Home() {
         <div className="absolute inset-0 bg-black opacity-50"></div>
 
         <div className="relative z-10 text-center">
-          {/* Menggunakan motion.h2 dan motion.p dengan varian animasi */}
           <motion.h2
             variants={ctaTextVariants}
             initial="hidden"
@@ -613,8 +617,8 @@ export default function Home() {
             >
               <div
                 style={photoFrameContainerBaseStyle}
-                onMouseEnter={() => {}}
-                onMouseLeave={() => {}}
+                onMouseEnter={() => {}} // Tidak perlu hover di sini, karena ini modal
+                onMouseLeave={() => {}} // Tidak perlu hover di sini, karena ini modal
                 className="p-4"
               >
                 <img

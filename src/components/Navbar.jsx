@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState, useCallback } from "react"; // Tambahkan useCallback
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // Tambahkan AnimatePresence
+import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo_bintangcompress.png";
 
 const navLinks = [
@@ -24,7 +24,6 @@ export default function Navbar() {
   const pengurusRef = useRef(null);
   const [runningTextBounds, setRunningTextBounds] = useState({ left: 0, right: 0 });
   const menuContainerRef = useRef(null);
-  // const [initialMenuWidth, setInitialMenuWidth] = useState(0); // Ini tidak lagi diperlukan
 
   const isPengurusActive = location.pathname === pengurusLink.path;
 
@@ -49,8 +48,9 @@ export default function Navbar() {
   // Effect untuk mengupdate indikator aktif pada desktop
   useEffect(() => {
     const activeIndex = navLinks.findIndex((link) => link.path === location.pathname);
-    if (!isPengurusActive && leftRefs.current?.[activeIndex]) {
-      const el = leftRefs.current?.[activeIndex];
+    // Pastikan ref yang sesuai ada sebelum mengakses propertinya
+    if (!isPengurusActive && leftRefs.current[activeIndex]) {
+      const el = leftRefs.current[activeIndex];
       const { offsetLeft, offsetWidth } = el;
       setIndicatorProps({ left: offsetLeft, width: offsetWidth });
     }
@@ -58,41 +58,35 @@ export default function Navbar() {
 
   // Effect untuk menghitung batas running text
   useEffect(() => {
-    // const updateRunningTextBounds = () => { // Ini sudah ada, tidak perlu didefinisikan ulang
+    const updateRunningTextBounds = () => {
       const daftarIndex = navLinks.findIndex((link) => link.name === "Daftar");
-      const daftarEl = leftRefs.current?.[daftarIndex];
+      const daftarEl = leftRefs.current[daftarIndex];
       const pengurusEl = pengurusRef.current;
+      const navElement = document.querySelector('nav'); // Ambil elemen nav
 
-      if (daftarEl && pengurusEl && menuContainerRef.current) {
-        const daftarRight = daftarEl.getBoundingClientRect().right;
-        const pengurusLeft = pengurusEl.getBoundingClientRect().left;
-        const navRect = document.querySelector('nav').getBoundingClientRect();
+      if (daftarEl && pengurusEl && navElement) { // Pastikan navElement ada
+        const daftarRect = daftarEl.getBoundingClientRect();
+        const pengurusRect = pengurusEl.getBoundingClientRect();
+        const navRect = navElement.getBoundingClientRect(); // Gunakan navRect dari elemen nav
 
-        const left = (daftarRight - navRect.left) + 5;
-        const right = (pengurusLeft - navRect.left) - 40;
+        // Menghitung posisi relatif terhadap container nav
+        const left = (daftarRect.right - navRect.left) + 5;
+        const right = (pengurusRect.left - navRect.left) - 40;
 
         setRunningTextBounds({ left, right });
       }
-    // }; // Penutup yang tidak perlu
+    };
 
-    const timer = setTimeout(() => { // Panggil fungsi update di dalam setTimeout
-        const daftarIndex = navLinks.findIndex((link) => link.name === "Daftar");
-        const daftarEl = leftRefs.current?.[daftarIndex];
-        const pengurusEl = pengurusRef.current;
+    // Panggil saat mount dan setelah render pertama (dengan sedikit delay untuk memastikan ref terisi)
+    const timer = setTimeout(updateRunningTextBounds, 100);
+    window.addEventListener('resize', updateRunningTextBounds); // Update on resize
 
-        if (daftarEl && pengurusEl && menuContainerRef.current) {
-          const daftarRight = daftarEl.getBoundingClientRect().right;
-          const pengurusLeft = pengurusEl.getBoundingClientRect().left;
-          const navRect = document.querySelector('nav').getBoundingClientRect();
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateRunningTextBounds);
+    };
+  }, [location.pathname]); // Tambahkan location.pathname sebagai dependency agar update saat navigasi
 
-          const left = (daftarRight - navRect.left) + 5;
-          const right = (pengurusLeft - navRect.left) - 40;
-
-          setRunningTextBounds({ left, right });
-        }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [leftRefs.current, pengurusRef.current]);
 
   const getPengurusClass = () => {
     const base = "hidden md:flex items-center px-3 py-1 text-xs font-medium rounded-md border transition-all duration-300";
@@ -191,8 +185,9 @@ export default function Navbar() {
   };
 
   return (
+    // Mengembalikan nav ke w-full dan px-2 (mobile) / md:px-6 (desktop)
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
-      <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative">
+      <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative px-4 md:px-0"> {/* px-4 untuk mobile, md:px-0 untuk desktop */}
         {/* Logo dan Menu Desktop */}
         <div className="flex items-center gap-2">
           <img src={logo} alt="Logo Karate" className="w-9 h-9 rounded-full" />
@@ -246,7 +241,7 @@ export default function Navbar() {
                   >
                     <Link
                       to={link.path}
-                      ref={(el) => (leftRefs.current ? (leftRefs.current[index] = el) : null)}
+                      ref={(el) => { if (el) leftRefs.current[index] = el; }}
                       className={`relative z-10 px-2 py-1 text-xs font-medium transition-all duration-200 hover:text-[#FF9F1C] ${linkClasses}`}
                     >
                       {link.name}
@@ -258,9 +253,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Running Text */}
+        {/* Running Text - Tambahkan kelas 'hidden' untuk sembunyikan di mobile */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0"
+          className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0 hidden md:block" // Ditambahkan: hidden md:block
           style={{
             left: `${runningTextBounds.left}px`,
             width: `${runningTextBounds.right - runningTextBounds.left}px`,
@@ -287,9 +282,9 @@ export default function Navbar() {
           </Link>
         </motion.div>
 
-        {/* Tombol Hamburger (Mobile) */}
+        {/* Tombol Hamburger (Mobile) - Z-index ditingkatkan agar selalu terlihat */}
         <button
-          className={`md:hidden transition-colors duration-300 text-white`}
+          className={`md:hidden transition-colors duration-300 text-white relative z-[60]`}
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >
@@ -311,7 +306,7 @@ export default function Navbar() {
               <motion.div
                 key={link.path}
                 variants={mobileMenuItemVariants}
-                onClick={handleNavLinkClick} // Tutup menu saat link diklik
+                onClick={handleNavLinkClick}
               >
                 <Link
                   to={link.path}
@@ -325,7 +320,7 @@ export default function Navbar() {
             ))}
             <motion.div
               variants={mobileMenuItemVariants}
-              onClick={handleNavLinkClick} // Tutup menu saat link diklik
+              onClick={handleNavLinkClick}
             >
               <Link
                 to={pengurusLink.path}
