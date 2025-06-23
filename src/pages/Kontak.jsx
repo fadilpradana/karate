@@ -132,8 +132,8 @@ export default function Kontak() {
             onMouseLeave={glassmorphismLeaveStyle}
             variants={cardVariants}
           >
-            <h2 className="text-2xl md:text-3xl font-league uppercase text-white mb-4 mt-2">Informasi Dojo</h2>
-            <motion.div variants={itemVariants} className="space-y-3 text-left font-[Montserrat] text-[#e7e7e7]">
+            <h2 className="text-2xl md:text-3xl font-league uppercase text-white mb-4 md:mt-2">Informasi Dojo</h2>
+            <motion.div variants={itemVariants} className="space-y-3 text-left font-[Montserrat] text-[#e7e7e7] flex flex-col justify-evenly h-full md:block">
               <div className="flex items-start gap-3 text-base md:text-lg">
                 <MapPin className="text-[#FF9F1C] w-6 h-6 flex-shrink-0 mt-1" />
                 <p>Jl. Meteorologi No. 5, Tanah Tinggi, Kec. Tangerang, Kota Tangerang, Banten</p>
@@ -208,27 +208,27 @@ export default function Kontak() {
                     inset 1px 1px 2px rgba(255, 255, 255, 0.13),
                     inset -1px -1px 2px rgba(0, 0, 0, 0.25)
                   `,
-                  backgroundColor: 'rgba(255, 159, 28, 0.8)',
-                  border: '1px solid rgba(255, 159, 28, 1)',
-                  color: '#0E0004'
+                  color: '#e7e7e7'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 159, 28, 1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                  // Perbaikan untuk efek glow
                   e.currentTarget.style.boxShadow = `
-                    0px 2px 8px rgba(255, 159, 28, 0.5),
-                    inset 1px 1px 3px rgba(255, 255, 255, 0.2),
-                    inset -1px -1px 3px rgba(0, 0, 0, 0.4)
+                    0 0 20px rgba(42, 20, 54, 0.8), /* Efek glow ungu */
+                    0px 2px 5px rgba(0, 0, 0, 0.15),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.4)
                   `;
+                  e.currentTarget.style.color = '#FF9F1C';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 159, 28, 0.8)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 159, 28, 1)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                   e.currentTarget.style.boxShadow = `
-                    0px 2px 5px rgba(0, 0, 0, 0.2),
-                    inset 1px 1px 2px rgba(255, 255, 255, 0.13),
-                    inset -1px -1px 2px rgba(0, 0, 0, 0.25)
+                    0px 4px 10px rgba(0, 0, 0, 0.3),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.2)
                   `;
+                  e.currentTarget.style.color = '#e7e7e7';
                 }}
               >
                 Kirim Pesan
@@ -271,20 +271,30 @@ export default function Kontak() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-[50] bg-[#0E0004] text-[#E7E7E7] text-xs py-8 px-4 md:px-16 border-t border-[#333]">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-3">
-          <div className="text-center md:text-left">© With Love STMKG Karate Club Periode 2025</div>
-          <div className="flex justify-center w-full">
-            <img src={brevetLogo} alt="Logo Brevet" className="h-4" />
+      <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          {/* Kiri: Teks */}
+          <div className="text-center md:text-left w-full md:w-1/3">
+            &copy; With Love STMKG Karate Club Periode 2025
           </div>
-          <div className="flex gap-3 font-[Montserrat] font-light text-center md:text-right">
+
+          {/* Tengah: Logo selalu di tengah */}
+          <div className="w-full md:w-1/3 flex justify-center">
+            <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
+          </div>
+
+          {/* Kanan: Link navigasi */}
+          <div className="flex flex-wrap justify-center md:justify-end gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
             <Link to="/berita" className="hover:text-[#FF9F1C]">Berita</Link>
           </div>
+
         </div>
       </footer>
+
     </motion.main>
   );
 }
