@@ -23,32 +23,32 @@ export default function Navbar() {
   const leftRefs = useRef([]);
   const pengurusRef = useRef(null);
   const [runningTextBounds, setRunningTextBounds] = useState({ left: 0, right: 0 });
-  const menuContainerRef = useRef(null);
+  const menuContainerRef = useRef(null); // Ref for the desktop menu container
 
   const isPengurusActive = location.pathname === pengurusLink.path;
 
-  // Handler untuk menutup menu saat link diklik
+  // Handler to close the menu when a link is clicked
   const handleNavLinkClick = useCallback(() => {
     setMenuOpen(false);
   }, []);
 
-  // Effect untuk mengunci/membuka scroll body
+  // Effect to lock/unlock body scroll
   useEffect(() => {
     if (menuOpen) {
-      document.body.style.overflow = 'hidden'; // Kunci scroll
+      document.body.style.overflow = 'hidden'; // Lock scroll
     } else {
-      document.body.style.overflow = 'unset'; // Buka scroll
+      document.body.style.overflow = 'unset'; // Unlock scroll
     }
-    // Cleanup function untuk memastikan scroll terbuka saat komponen unmount
+    // Cleanup function to ensure scroll is unlocked when component unmounts
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [menuOpen]);
 
-  // Effect untuk mengupdate indikator aktif pada desktop
+  // Effect to update the active indicator on desktop
   useEffect(() => {
     const activeIndex = navLinks.findIndex((link) => link.path === location.pathname);
-    // Pastikan ref yang sesuai ada sebelum mengakses propertinya
+    // Ensure the corresponding ref exists before accessing its properties
     if (!isPengurusActive && leftRefs.current[activeIndex]) {
       const el = leftRefs.current[activeIndex];
       const { offsetLeft, offsetWidth } = el;
@@ -56,20 +56,20 @@ export default function Navbar() {
     }
   }, [location.pathname, isPengurusActive]);
 
-  // Effect untuk menghitung batas running text
+  // Effect to calculate running text boundaries
   useEffect(() => {
     const updateRunningTextBounds = () => {
       const daftarIndex = navLinks.findIndex((link) => link.name === "Daftar");
       const daftarEl = leftRefs.current[daftarIndex];
       const pengurusEl = pengurusRef.current;
-      const navElement = document.querySelector('nav'); // Ambil elemen nav
+      const navElement = menuContainerRef.current; // Use menuContainerRef for nav boundaries
 
-      if (daftarEl && pengurusEl && navElement) { // Pastikan navElement ada
+      if (daftarEl && pengurusEl && navElement) {
         const daftarRect = daftarEl.getBoundingClientRect();
         const pengurusRect = pengurusEl.getBoundingClientRect();
-        const navRect = navElement.getBoundingClientRect(); // Gunakan navRect dari elemen nav
+        const navRect = navElement.getBoundingClientRect();
 
-        // Menghitung posisi relatif terhadap container nav
+        // Calculate position relative to the nav container
         const left = (daftarRect.right - navRect.left) + 5;
         const right = (pengurusRect.left - navRect.left) - 40;
 
@@ -77,7 +77,7 @@ export default function Navbar() {
       }
     };
 
-    // Panggil saat mount dan setelah render pertama (dengan sedikit delay untuk memastikan ref terisi)
+    // Call on mount and after the first render (with a slight delay to ensure refs are populated)
     const timer = setTimeout(updateRunningTextBounds, 100);
     window.addEventListener('resize', updateRunningTextBounds); // Update on resize
 
@@ -85,7 +85,7 @@ export default function Navbar() {
       clearTimeout(timer);
       window.removeEventListener('resize', updateRunningTextBounds);
     };
-  }, [location.pathname]); // Tambahkan location.pathname sebagai dependency agar update saat navigasi
+  }, [location.pathname]); // Add location.pathname as a dependency to update on navigation
 
 
   const getPengurusClass = () => {
@@ -158,7 +158,7 @@ export default function Navbar() {
     }
   };
 
-  // Varian untuk menu mobile
+  // Variants for mobile menu
   const mobileMenuVariants = {
     hidden: { x: "100%" },
     visible: {
@@ -187,16 +187,17 @@ export default function Navbar() {
   return (
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
       <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative md:px-0">
-        {/* Blok Kiri: Logo dan Menu Desktop */}
+        {/* Left Block: Logo and Desktop Menu */}
         <div className="flex items-center pl-1 md:pl-0 md:space-x-2">
-          {/* Logo dengan `flex-none` untuk mencegah gepeng */}
-          <img
-            src={logo}
-            alt="Logo Karate"
-            // Tambahkan `object-contain` dan hapus `ml-[-0.5rem]`
-            // Tambahkan `flex-shrink-0` untuk mencegah penyusutan
-            className="w-9 h-9 rounded-full md:ml-0 flex-none object-contain flex-shrink-0"
-          />
+          {/* Logo with `flex-none` to prevent squishing */}
+          <Link to="/">
+            <img
+              src={logo}
+              alt="Logo Karate"
+              className="w-9 h-9 rounded-full md:ml-0 flex-none object-contain flex-shrink-0 hover:opacity-90 transition duration-200"
+            />
+          </Link>
+          {/* Fix: Removed duplicate div here */}
           <div className="hidden md:block overflow-hidden rounded-md">
             <motion.div
               ref={menuContainerRef}
@@ -259,7 +260,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Running Text - Tambahkan kelas 'hidden' untuk sembunyikan di mobile */}
+        {/* Running Text - Add 'hidden' class to hide on mobile */}
         <div
           className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0 hidden md:block"
           style={{
@@ -277,9 +278,9 @@ export default function Navbar() {
           </motion.div>
         </div>
 
-        {/* Blok Kanan: Link Pengurus (Desktop) dan Tombol Hamburger (Mobile) */}
+        {/* Right Block: Pengurus Link (Desktop) and Hamburger Button (Mobile) */}
         <div className="flex items-center pr-4 md:pr-0">
-          {/* Link Pengurus (Desktop) */}
+          {/* Pengurus Link (Desktop) */}
           <motion.div
             variants={pengurusVariants}
             initial="hidden"
@@ -290,7 +291,7 @@ export default function Navbar() {
             </Link>
           </motion.div>
 
-          {/* Tombol Hamburger (Mobile) - Z-index ditingkatkan agar selalu terlihat */}
+          {/* Hamburger Button (Mobile) - Z-index increased to always be visible */}
           <button
             className={`md:hidden transition-colors duration-300 text-white relative z-[60]`}
             onClick={() => setMenuOpen(!menuOpen)}
