@@ -6,6 +6,9 @@ import { useInView } from "framer-motion";
 // Import brevetLogo untuk footer
 import brevetLogo from "../assets/brevet.png"; 
 
+// Pastikan ini mengimpor index.css Anda dengan benar
+import '../index.css'; 
+
 export default function Jadwal() {
   // Varian untuk animasi masuk elemen
   const containerVariants = {
@@ -96,10 +99,11 @@ export default function Jadwal() {
       {/* Bagian Detail Jadwal */}
       <section
         ref={jadwalRef} // Pasang ref di sini
-        className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center" // Padding atas ditambah
+        className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center" 
       >
         <motion.h2
-          className="text-2xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent" 
+          // PERUBAHAN DI SINI: Kelas jadwal-title-gradient dihapus
+          className="text-2xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent" // Kembali ke text-white
           variants={sectionTitleVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
@@ -126,7 +130,7 @@ export default function Jadwal() {
               Latihan fisik dan teknik dasar untuk semua anggota.
             </p>
             <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
-              <p>Setiap Sabtu Pagi</p>
+              <p className="battery-style-gradient">Setiap Sabtu Pagi</p> {/* Ini tetap gradien */}
               <p className="text-lg md:text-xl font-[Montserrat] font-light">07.00 - 09.30 WIB</p> 
             </div>
             <Link
@@ -166,12 +170,12 @@ export default function Jadwal() {
             transition={{ ...cardVariants.visible.transition, delay: 0.5 }}
             viewport={{ once: true, amount: 0.5 }}
           >
-            <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Khusus BDT</h3> 
+            <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Khusus</h3> 
             <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
               Bela Diri Taruna (BDT) fokus pada aplikasi praktis dan kecepatan.
             </p>
             <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
-              <p>Setiap Senin Sore</p>
+              <p className="battery-style-gradient">Setiap Senin Sore</p> {/* Ini tetap gradien */}
               <p className="text-lg md:text-xl font-[Montserrat] font-light">16.00 - 17.45 WIB</p> 
             </div>
             <Link

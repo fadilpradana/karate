@@ -178,49 +178,51 @@ export default function ProfilDojo() {
       <motion.section
         ref={aboutRef}
         initial="hidden"
-        animate={aboutInView ? "visible" : "hidden"}
+        // Gunakan aboutInView untuk mengaktifkan animasi saat section terlihat
+        animate={aboutInView ? "visible" : "hidden"} 
         variants={slideUp}
-        className="py-20 px-6 md:px-20 text-center"
+        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
         style={{ backgroundColor: '#0a0a0a', color: 'white' }}
       >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-12 text-accent"
+        <h2 className="text-3xl md:text-6xl font-league uppercase mb-8 md:mb-12 text-accent jadwal-title-gradient"
           style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
         >
           {profilData.about.title}
         </h2>
-        <div className="flex flex-col md:flex-row justify-center items-start gap-12 max-w-6xl mx-auto">
+        {/* Konten utama tentang kami, visi, misi, dan filosofi */}
+        <div className="flex flex-col md:flex-row justify-center items-start gap-8 md:gap-12 max-w-6xl mx-auto">
           {/* Kolom Kiri: Tentang Kami */}
-          <motion.div variants={itemSlideUp} className="flex-1 text-left">
-            <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+          <motion.div variants={itemSlideUp} className="flex-1 text-left w-full"> {/* Tambahkan w-full */}
+            <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
               style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
             >
               Sejarah Singkat
             </h3>
-            <p className="text-lg font-[Montserrat] font-light leading-relaxed text-justify text-[#a7a7a7]">
+            <p className="text-base md:text-lg font-[Montserrat] font-light leading-relaxed text-justify text-[#a7a7a7]">
               {profilData.about.history}
             </p>
           </motion.div>
 
           {/* Kolom Kanan: Visi & Misi */}
-          <div className="flex-1 text-left">
+          <div className="flex-1 text-left w-full"> {/* Tambahkan w-full */}
             <motion.div variants={itemSlideUp}>
-              <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+              <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
                 style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
               >
                 Visi
               </h3>
-              <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
+              <p className="text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
                 {profilData.about.vision}
               </p>
             </motion.div>
 
-            <motion.div variants={itemSlideUp} className="mt-12">
-              <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+            <motion.div variants={itemSlideUp} className="mt-8 md:mt-12">
+              <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
                 style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
               >
                 Misi
               </h3>
-              <ul className="list-none p-0 text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
+              <ul className="list-none p-0 text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
                 {profilData.about.mission.map((item, index) => (
                   <li key={index} className="mb-2 before:content-['\2022\00a0'] before:text-accent before:font-bold">
                     {item}
@@ -232,13 +234,13 @@ export default function ProfilDojo() {
         </div>
 
         {/* Filosofi Kami (di bawah 2 kolom) */}
-        <motion.div variants={itemSlideUp} className="mt-16 max-w-4xl mx-auto text-center">
-          <h3 className="text-2xl md:text-4xl font-league uppercase mb-6 text-accent"
+        <motion.div variants={itemSlideUp} className="mt-12 md:mt-16 max-w-4xl mx-auto text-center">
+          <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
             style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
           >
             Filosofi Kami
           </h3>
-          <p className="text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
+          <p className="text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
             {profilData.about.philosophy}
           </p>
         </motion.div>
@@ -251,10 +253,10 @@ export default function ProfilDojo() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={slideUp}
-        className="py-20 px-6 md:px-20 text-center"
+        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
         style={{ backgroundColor: '#0E0004' }}
       >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-16 text-accent"
+        <h2 className="text-3xl md:text-6xl font-league uppercase mb-12 md:mb-16 text-accent"
           style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
         >
           {profilData.highlights.title}
@@ -264,19 +266,19 @@ export default function ProfilDojo() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto"
         >
           {profilData.highlights.items.map(item => (
             <motion.div
               key={item.id}
               variants={itemSlideUp}
-              className="flex flex-col items-center p-8 rounded-2xl cursor-default"
+              className="flex flex-col items-center p-6 md:p-8 rounded-2xl cursor-default"
               style={photoFrameContainerBaseStyle}
               onMouseEnter={photoFrameContainerHoverStyle}
               onMouseLeave={photoFrameContainerLeaveStyle}
             >
-              <span className="text-5xl mb-4" role="img" aria-label={item.text}>{item.icon}</span>
-              <h3 className="text-xl md:text-2xl font-[Montserrat] font-semibold text-white">
+              <span className="text-4xl md:text-5xl mb-3 md:mb-4" role="img" aria-label={item.text}>{item.icon}</span>
+              <h3 className="text-lg md:text-2xl font-[Montserrat] font-semibold text-white text-center">
                 {item.text}
               </h3>
             </motion.div>
@@ -291,10 +293,10 @@ export default function ProfilDojo() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={slideUp}
-        className="py-20 px-6 md:px-20 text-center"
+        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
         style={{ backgroundColor: '#0a0a0a' }}
       >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-16 text-accent"
+        <h2 className="text-3xl md:text-6xl font-league uppercase mb-12 md:mb-16 text-accent"
           style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
         >
           {profilData.testimonials.title}
@@ -304,27 +306,27 @@ export default function ProfilDojo() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto"
         >
           {profilData.testimonials.items.map(testimonial => (
             <motion.div
               key={testimonial.id}
               variants={itemSlideUp}
-              className="flex flex-col items-center p-8 rounded-2xl"
+              className="flex flex-col items-center p-6 md:p-8 rounded-2xl"
               style={photoFrameContainerBaseStyle}
             >
               {testimonial.image && (
                 <img
                   src={testimonial.image}
                   alt={testimonial.name}
-                  className="w-24 h-24 rounded-full object-cover mb-6 border-2 border-white/30 shadow-lg"
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover mb-4 md:mb-6 border-2 border-white/30 shadow-lg"
                   loading="lazy"
                 />
               )}
-              <p className="text-lg font-[Montserrat] font-light italic leading-relaxed text-[#E7E7E7] mb-4">
+              <p className="text-base md:text-lg font-[Montserrat] font-light italic leading-relaxed text-[#E7E7E7] mb-3 md:mb-4">
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
-              <p className="font-[Montserrat] font-semibold text-base text-accent">
+              <p className="font-[Montserrat] font-semibold text-sm md:text-base text-accent">
                 - {testimonial.name}
               </p>
             </motion.div>
@@ -333,13 +335,13 @@ export default function ProfilDojo() {
       </motion.section>
 
       {/* --- Footer (disertakan langsung di sini) --- */}
-      <footer className="relative z-[50] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
+      <footer className="relative z-[50] bg-[#0E0004] text-[#E7E7E7] text-sm py-8 md:py-10 px-6 md:px-20 border-t border-[#333]">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">&copy; With Love STMKG Karate Club Periode 2025</div>
-          <div className="flex justify-center w-full">
+          <div className="flex justify-center w-full md:w-auto">
             <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
           </div>
-          <div className="flex gap-4 font-[Montserrat] font-light text-center md:text-right">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 font-[Montserrat] font-light text-center md:text-right">
             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>

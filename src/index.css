@@ -70,3 +70,82 @@
 :root {
   --color-accent: #FF9F1C; /* Example accent color, adjust to your Tailwind config */
 }
+
+.jadwal-title-gradient {
+  /* Definisi Gradasi */
+  /* Sesuaikan warna dan persentase stop sesuai preferensi Anda */
+  background: linear-gradient(
+    to right,
+    #5AC8FA 0%,    /* Biru cerah */
+    #AF52DE 25%,   /* Ungu */
+    #FF2D55 50%,   /* Merah muda gelap/Fuchsia */
+    #FF9500 75%,   /* Oranye terang */
+    #FF3B30 100%   /* Merah oranye/Oranye gelap */
+  );
+
+  /* Properti kunci untuk teks gradasi */
+  -webkit-background-clip: text; /* Wajib untuk browser berbasis WebKit (Chrome, Safari) */
+  background-clip: text;         /* Standar CSS */
+  -webkit-text-fill-color: transparent; /* Membuat teks transparan agar background terlihat */
+  color: transparent;            /* Fallback atau standar CSS */
+
+  /* Penting agar elemen mengambil lebar yang cukup untuk gradasi */
+  display: inline-block;
+}
+
+/* Anda juga bisa menambahkan media queries di sini jika ingin gradasi berbeda di ukuran layar yang berbeda,
+   tapi untuk gradasi teks ini biasanya sudah responsif secara alami karena tergantung font-size */
+
+   /* === Gradasi seperti ikon baterai (Hijau Kekuningan ke Hijau Gelap) === */
+/* Anda bisa menerapkan kelas ini ke elemen yang ingin Anda berikan gradasi ini */
+.battery-style-gradient {
+  background: linear-gradient(
+    to right,
+    #A8EB4B 0%,    /* Hijau kekuningan cerah */
+    #34AF52 100%   /* Hijau gelap */
+  );
+
+  /* Jika ini untuk teks, tambahkan properti text-gradient berikut: */
+  
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+  
+
+  /* Jika ini untuk latar belakang elemen (bukan teks), Anda tidak perlu properti di atas */
+  /* Misalnya, untuk background dari sebuah div atau span yang diberi warna ini */
+}
+
+/* Biarkan kelas jadwal-title-gradient dan jadwal-subtitle-gradient yang sudah ada */
+/* seperti yang Anda inginkan sebelumnya, jika masih digunakan */
+
+.border-gradient-bottom {
+  position: relative;
+  /*
+  Padding-bottom di sini mengatur ruang di bawah konten elemen parent
+  sebelum garis gradasi muncul. Sesuaikan jika Anda merasa jaraknya terlalu jauh
+  atau terlalu dekat dengan elemen berikutnya.
+  Nilai 32px ini sesuai dengan 'py-8' (padding-y: 2rem = 32px)
+  yang Anda miliki pada div prestasi Anda.
+  */
+  padding-bottom: 32px;
+}
+
+.border-gradient-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0; /* Memposisikan garis di bagian paling bawah elemen parent */
+  left: 0;
+  width: 100%;
+  height: 1px; /* Ketebalan garis diatur ke 1px agar terlihat namun tetap minimal */
+  background: linear-gradient(to right, transparent, rgba(168, 235, 75, 0.6) 20%, rgba(52, 175, 82, 0.6) 80%, transparent);
+  /*
+  Gradasi warna dari transparan ke hijau terang (#A8EB4B) lalu ke hijau gelap (#34AF52)
+  dan kembali ke transparan.
+  Nilai '0.6' pada RGBA adalah opasitas 60%, membuatnya lebih terlihat
+  daripada 40%, tapi masih cukup samar.
+  */
+  z-index: 20; /* Memastikan garis berada di lapisan atas */
+}

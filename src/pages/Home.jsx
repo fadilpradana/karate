@@ -14,7 +14,7 @@ import totalMedalsBackground from "../assets/bg-total-medali.jpg"; // Import gam
 const mainTitleWords = ["Karate", "Club", "2025"];
 const fullMainTitle = mainTitleWords.join(" ");
 
-const subHeadline = "Sekolah Tinggi Meteorologi Klimatologi dan Metrologi"; // Ubah menjadi "Metrologi"
+const subHeadline = "Sekolah Tinggi Meteorologi Klimatologi dan Geofisika"; // Ubah menjadi "Metrologi"
 const subHeadlineWords = subHeadline.split(" ");
 
 // Custom hook for counting animation with sequential delay
@@ -357,7 +357,7 @@ export default function Home() {
                 // --- PERBAIKAN UTAMA DI SINI: items-start untuk perataan kiri pada mobile (flex-col) ---
                 className={`flex flex-col md:flex-row items-start md:items-start gap-8 relative py-8
                              ${isImageOnLeft ? '' : 'md:flex-row-reverse'}
-                             ${!isLastItem ? 'border-b border-gray-700/50' : ''}
+                             ${!isLastItem ? 'border-gradient-bottom' : ''}
                              text-left`}
               >
                 {/* Bagian untuk Gambar (atau Placeholder Kosong) */}
