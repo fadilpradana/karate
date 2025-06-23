@@ -127,7 +127,7 @@ export default function Jadwal() {
           >
             <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Rutin</h3> 
             <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
-              Latihan fisik dan teknik dasar untuk semua anggota.
+              Latihan teknik dasar dan fisik untuk Taruna/i Tahun Pertama.
             </p>
             <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
               <p className="battery-style-gradient">Setiap Sabtu Pagi</p> {/* Ini tetap gradien */}
@@ -172,7 +172,7 @@ export default function Jadwal() {
           >
             <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Khusus</h3> 
             <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
-              Bela Diri Taruna (BDT) fokus pada aplikasi praktis dan kecepatan.
+              Bela Diri Taruna (BDT) fokus pada aplikasi praktis pertarungan.
             </p>
             <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
               <p className="battery-style-gradient">Setiap Senin Sore</p> {/* Ini tetap gradien */}
