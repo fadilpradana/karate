@@ -127,7 +127,7 @@ export default function Jadwal() {
           >
             <h3 className="text-3xl md:text-4xl font-league uppercase text-white mb-3">Latihan Rutin</h3> 
             <p className="text-sm md:text-base font-[Montserrat] text-[#a7a7a7] mb-5"> 
-              Latihan teknik dasar dan fisik untuk Taruna/i Tahun Pertama.
+              Latihan teknik dasar dan fisik untuk Taruna/i tahun pertama.
             </p>
             <div className="text-white text-2xl md:text-3xl font-bold font-[Montserrat] mb-3"> 
               <p className="battery-style-gradient">Setiap Sabtu Pagi</p> {/* Ini tetap gradien */}
