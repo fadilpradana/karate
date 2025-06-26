@@ -206,8 +206,8 @@ export default function Navbar() {
               KARATE
             </span>
             <span
-              className="leading-none font-[Montserrat] font-thin"
-              style={{ fontSize: '0.4rem', letterSpacing: '0.45em' }} // Atur ukuran dan jarak antar huruf STMKG
+              className="leading-none ml-[0.03rem] font-[Montserrat] font-thin"
+              style={{ fontSize: '0.35rem', letterSpacing: '0.6em' }} // Atur ukuran dan jarak antar huruf STMKG
             >
               STMKG
             </span>
