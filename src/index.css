@@ -194,7 +194,7 @@ html, body, #root {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4); /* Sesuaikan transparansi jika perlu */
+    background-color: rgba(0, 0, 0, 0.3); /* Sesuaikan transparansi jika perlu */
     z-index: 1;
   }
 }
@@ -218,7 +218,7 @@ html, body, #root {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* <-- SETTING OVERLAY DI SINI */
+  background-color: rgba(0, 0, 0, 0.3); /* <-- SETTING OVERLAY DI SINI */
   z-index: 1; /* Pastikan overlay di bawah konten utama */
 }
 
