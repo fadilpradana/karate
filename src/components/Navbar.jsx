@@ -190,7 +190,7 @@ export default function Navbar() {
         {/* Left Block: Logo and Desktop Menu */}
         <div className="flex items-center pl-1 md:pl-0 md:space-x-2">
           {/* Logo with `flex-none` to prevent squishing */}
-          <Link to="/">
+          <Link to="/" className="relative z-5">
             <img
               src={logo}
               alt="Logo Karate"
