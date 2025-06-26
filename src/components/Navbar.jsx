@@ -198,7 +198,7 @@ export default function Navbar() {
           </Link>
 
           {/* Mobile Title: Karate STMKG - hidden on desktop (md:hidden) */}
-          <div className="flex flex-col ml-2 md:hidden">
+          <div className="flex flex-col ml-1 md:hidden">
             <span
               className="leading-none font-[Montserrat] font-thin"
               style={{ fontSize: '0.5rem', letterSpacing: '0.05em' }} // Atur ukuran dan jarak antar huruf Karate
