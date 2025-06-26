@@ -262,7 +262,7 @@ export default function Kontak() {
         >
           <iframe
             title="Lokasi Dojo"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.721276063665!2d106.6669941749901!3d-6.166827893821008!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f8c6e2b10a2f%3A0xc47e30d67d71b3e!2sSTMKG!5e0!3m2!1sid!2sid!4v1719363065640!5m2!1sid!2sid"
+            src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1667.7895873579346!2d106.64505458838642!3d-6.17164533199761!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f05e4e6d1c27%3A0x8f19299fa86d971f!2sSekolah%20Tinggi%20Meteorologi%20Klimatologi%20dan%20Geofisika%20(STMKG)!5e0!3m2!1sid!2sid!4v1750902604886!5m2!1sid!2sid"
             width="100%"
             height="300"
             className="w-full border-none"
