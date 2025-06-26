@@ -264,7 +264,7 @@ export default function Navbar() {
         <div
           className="absolute top-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-0 hidden md:block"
           style={{
-            left: `${runningTextBounds.left}px`,
+            left: `${runningTextBounds.left + 60}px`,
             width: `${runningTextBounds.right - runningTextBounds.left}px`,
           }}
         >
