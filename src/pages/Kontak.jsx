@@ -108,18 +108,7 @@ export default function Kontak() {
       // Terapkan kelas CSS kustom di sini
       className="min-h-screen text-white overflow-x-hidden flex flex-col background-mobile md:background-desktop"
     >
-      {/* Konten utama perlu di atas overlay. Kita bisa menambahkan div pembungkus
-          atau memastikan elemen section dan footer memiliki z-index yang lebih tinggi.
-          Karena section dan footer adalah sibling dari ::before, secara default mereka akan di atasnya.
-          Namun, lebih aman jika konten yang harus selalu terlihat memiliki z-index.
-          Dalam kasus ini, section dan footer sudah berada di luar pseudo-element.
-          Pastikan elemen `section` dan `footer` memiliki `z-index` jika perlu,
-          atau atur `z-index` pada `::before` menjadi `1` dan elemen konten menjadi `2` atau lebih.
-          Di sini, saya menempatkan `z-index: 1` pada `::before` untuk jaga-jaga.
-          Konten lainnya secara default akan di atasnya karena sudah ada dalam aliran dokumen.
-          Jika ada masalah dengan klik atau interaksi, pertimbangkan untuk membungkus konten di div dengan z-index.
-      */}
-      <section className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center relative z-40"> {/* Tambahkan z-10 */}
+      <section className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center relative z-40">
         <motion.h1
           className="text-4xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent"
           variants={sectionTitleVariants}
@@ -177,7 +166,7 @@ export default function Kontak() {
             onMouseEnter={glassmorphismHoverStyle}
             onMouseLeave={glassmorphismLeaveStyle}
             variants={cardVariants}
-            transition={{ ...cardVariants.visible.transition, delay: 0.3 }}
+            transition={{ ...cardVariants.visible.transition, delay: 0.3 }} // Delay untuk card kedua
           >
             <h2 className="text-2xl md:text-3xl font-league uppercase text-white mb-3">Kirim Pesan</h2>
             <form
@@ -260,18 +249,20 @@ export default function Kontak() {
           </motion.div>
         </motion.div>
 
-        {/* Google Maps (pindah ke bawah) */}
+        {/* Google Maps (sekarang dengan animasi cardVariants) */}
         <motion.div
           className="rounded-xl overflow-hidden shadow-md max-w-4xl w-full p-4"
           style={glassmorphismStyle}
           onMouseEnter={glassmorphismHoverStyle}
           onMouseLeave={glassmorphismLeaveStyle}
           variants={cardVariants}
-          transition={{ ...cardVariants.visible.transition, delay: 0.6 }}
+          initial="hidden" // Pastikan ada initial state
+          animate="visible" // Pastikan ada animate state
+          transition={{ ...cardVariants.visible.transition, delay: 0.6 }} // Delay untuk card ketiga
         >
           <iframe
             title="Lokasi Dojo"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.691528323863!2d106.64426577363771!3d-6.172040560480045!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f05e4e6d1c27%3A0x8f19299fa86d971f!2sSekolah%20Tinggi%20Meteorologi%20Klimatologi%20dan%20Geofisika%20(STMKG)!5e0!3m2!1sid!2sid!4v1750653476285!5m2!1sid!2sid"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.721276063665!2d106.6669941749901!3d-6.166827893821008!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f8c6e2b10a2f%3A0xc47e30d67d71b3e!2sSTMKG!5e0!3m2!1sid!2sid!4v1719363065640!5m2!1sid!2sid"
             width="100%"
             height="300"
             className="w-full border-none"

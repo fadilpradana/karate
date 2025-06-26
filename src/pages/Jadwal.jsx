@@ -94,16 +94,16 @@ export default function Jadwal() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden flex flex-col" 
+      // Perubahan di sini: Menggunakan kelas background khusus untuk Jadwal
+      className="min-h-screen text-white overflow-x-hidden flex flex-col jadwal-background-mobile md:jadwal-background-desktop" 
     >
       {/* Bagian Detail Jadwal */}
       <section
         ref={jadwalRef} // Pasang ref di sini
-        className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center" 
+        className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center relative z-20" // Z-index 20 agar di atas overlay (z-index 1)
       >
         <motion.h2
-          // PERUBAHAN DI SINI: Kelas jadwal-title-gradient dihapus
-          className="text-2xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent" // Kembali ke text-white
+          className="text-2xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent" 
           variants={sectionTitleVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
