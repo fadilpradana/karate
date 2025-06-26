@@ -141,6 +141,7 @@
   width: 100%;
   height: 1px; /* Ketebalan garis diatur ke 1px agar terlihat namun tetap minimal */
   background: linear-gradient(to right, transparent, rgba(168, 235, 75, 0.6) 20%, rgba(52, 175, 82, 0.6) 80%, transparent);
+  opacity: 0.2;
   /*
   Gradasi warna dari transparan ke hijau terang (#A8EB4B) lalu ke hijau gelap (#34AF52)
   dan kembali ke transparan.
