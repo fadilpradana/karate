@@ -14,7 +14,7 @@ import totalMedalsBackground from "../assets/bg-total-medali.jpg"; // Import gam
 const mainTitleWords = ["Karate", "Club", "2025"];
 const fullMainTitle = mainTitleWords.join(" ");
 
-const subHeadline = "Sekolah Tinggi Meteorologi Klimatologi dan Geofisika"; // Ubah menjadi "Metrologi"
+const subHeadline = "Sekolah Tinggi Meteorologi Klimatologi dan Geofisika";
 const subHeadlineWords = subHeadline.split(" ");
 
 // Custom hook for counting animation with sequential delay
@@ -56,19 +56,31 @@ const useCountingAnimation = (targetValue, delay = 0, duration = 2000) => {
 };
 
 // Custom hook for animating elements on scroll in the Prestasi section
-const useAnimateOnScroll = (initialX) => {
+const useAnimateOnScroll = (initialX, isMobile) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.5 }); // Trigger when in view, can re-trigger
 
   const variants = {
-    hidden: { opacity: 0, x: initialX },
-    visible: { opacity: 1, x: 0 },
+    hidden: { opacity: 0, x: isMobile ? 0 : initialX, y: isMobile ? 20 : 0 }, // Hanya y: 20 untuk mobile
+    visible: { opacity: 1, x: 0, y: 0 },
   };
 
   return { ref, isInView, variants };
 };
 
 export default function Home() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's 'md' breakpoint is 768px
+    };
+
+    handleResize(); // Set initial value
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -213,12 +225,12 @@ export default function Home() {
   };
 
   const photoFrameContainerLeaveStyle = (e) => {
-    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; // Kembali ke nilai base
-    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'; // Kembali ke nilai base
+    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
     e.currentTarget.style.boxShadow = `
       0px 4px 10px rgba(0, 0, 0, 0.3),
       inset 0 0 0 1px rgba(255, 255, 255, 0.2)
-    `; // Kembali ke nilai base
+    `;
     e.currentTarget.style.transform = 'scale(1)';
   };
 
@@ -250,7 +262,6 @@ export default function Home() {
   const [animatedSilver, silverRef] = useCountingAnimation(rawTotalSilver, countDuration * 0.75, countDuration);
   const [animatedBronze, bronzeRef] = useCountingAnimation(rawTotalBronze, countDuration * 1.5, countDuration);
   const [animatedTotal, totalRef] = useCountingAnimation(rawFinalTotalMedals, countDuration * 2.25, countDuration);
-
 
   return (
     <motion.main
@@ -343,7 +354,7 @@ export default function Home() {
         <div className="relative z-10">
           {prestasiList.map((item, index) => {
             const isImageOnLeft = index % 2 === 0;
-            const { ref: itemRef, isInView, variants } = useAnimateOnScroll(isImageOnLeft ? -100 : 100);
+            const { ref: itemRef, isInView, variants } = useAnimateOnScroll(isImageOnLeft ? -100 : 100, isMobile);
             const isLastItem = index === prestasiList.length - 1;
 
             return (
@@ -353,22 +364,19 @@ export default function Home() {
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
                 variants={variants}
-                transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
-                // --- PERBAIKAN UTAMA DI SINI: items-start untuk perataan kiri pada mobile (flex-col) ---
-                className={`flex flex-col md:flex-row items-start md:items-start gap-8 relative py-8
-                             ${isImageOnLeft ? '' : 'md:flex-row-reverse'}
-                             ${!isLastItem ? 'border-gradient-bottom' : ''}
-                             text-left`}
+                transition={isMobile ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
+                className={`flex flex-col md:flex-row gap-8 relative py-8
+                                  ${isMobile ? 'items-center justify-center' : (isImageOnLeft ? 'md:items-start' : 'md:items-start md:flex-row-reverse')}
+                                  ${!isLastItem ? 'border-gradient-bottom' : ''} `}
               >
                 {/* Bagian untuk Gambar (atau Placeholder Kosong) */}
                 <div
-                    // --- PERBAIKAN DI SINI: Hapus justify-center, gunakan w-full untuk placeholder ---
-                    className={`w-full md:w-1/2 flex items-center relative
-                                 ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
-                    style={item.gambar ? photoFrameContainerBaseStyle : {}}
-                    onMouseEnter={item.gambar ? photoFrameContainerHoverStyle : null}
-                    onMouseLeave={item.gambar ? photoFrameContainerLeaveStyle : null}
-                    onClick={item.gambar ? () => openImageModal(item.gambar) : null}
+                  className={`w-full md:w-1/2 flex ${isMobile ? 'justify-center' : ''} items-center relative
+                                   ${item.gambar ? 'h-60' : 'h-auto md:h-0 md:opacity-0 md:pointer-events-none'}`}
+                  style={item.gambar ? photoFrameContainerBaseStyle : {}}
+                  onMouseEnter={item.gambar ? photoFrameContainerHoverStyle : null}
+                  onMouseLeave={item.gambar ? photoFrameContainerLeaveStyle : null}
+                  onClick={item.gambar ? () => openImageModal(item.gambar) : null}
                 >
                   {item.gambar ? (
                     <img
@@ -379,13 +387,13 @@ export default function Home() {
                       loading="lazy"
                     />
                   ) : (
-                    // --- PERBAIKAN DI SINI: Pastikan placeholder kosong memiliki w-full ---
                     <div className="w-full h-0"></div>
                   )}
                 </div>
 
                 {/* Bagian untuk Deskripsi */}
-                <div className="text-left md:w-1/2 relative">
+                {/* PERBAIKAN DI SINI: Pastikan text-left berlaku untuk mobile, dan sesuaikan width */}
+                <div className={`w-full md:w-1/2 relative ${isMobile ? 'text-left px-4' : 'text-left'}`}>
                   <h3 className="text-xl md:text-2xl font-[Montserrat] font-semibold uppercase glow-text-accent">
                     {item.judul}
                   </h3>
@@ -540,7 +548,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          
+
           {/* Kiri: Teks */}
           <div className="text-center md:text-left w-full md:w-1/3">
             &copy; With Love STMKG Karate Club Periode 2025
@@ -643,7 +651,7 @@ export default function Home() {
               >
                 <X size={24} />
               </button>
-            </motion.div> {/* This closing tag was the one missing or misplaced */}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
