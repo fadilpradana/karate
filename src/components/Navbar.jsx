@@ -9,7 +9,6 @@ const navLinks = [
   { name: "Profil", path: "/profil" },
   { name: "Jadwal", path: "/jadwal" },
   { name: "Berita", path: "/berita" },
-  { name: "Galeri", path: "/galeri" },
   { name: "Kontak", path: "/kontak" },
   { name: "Daftar", path: "/pendaftaran" },
 ];
@@ -187,17 +186,34 @@ export default function Navbar() {
   return (
     <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
       <div className="max-w-7xl mx-auto py-2 flex justify-between items-center relative md:px-0">
-        {/* Left Block: Logo and Desktop Menu */}
+        {/* Left Block: Logo and Mobile Title / Desktop Menu */}
         <div className="flex items-center pl-1 md:pl-0 md:space-x-2">
           {/* Logo with `flex-none` to prevent squishing */}
-          <Link to="/" className="relative z-5">
+          <Link to="/" className="relative z-5 flex-none">
             <img
               src={logo}
               alt="Logo Karate"
               className="w-9 h-9 rounded-full md:ml-0 flex-none object-contain flex-shrink-0 hover:opacity-90 transition duration-200"
             />
           </Link>
-          {/* Fix: Removed duplicate div here */}
+
+          {/* Mobile Title: Karate STMKG - hidden on desktop (md:hidden) */}
+          <div className="flex flex-col ml-2 md:hidden">
+            <span
+              className="leading-none font-[Montserrat] font-thin"
+              style={{ fontSize: '0.5rem', letterSpacing: '0.05em' }} // Atur ukuran dan jarak antar huruf Karate
+            >
+              KARATE
+            </span>
+            <span
+              className="leading-none font-[Montserrat] font-thin"
+              style={{ fontSize: '0.4rem', letterSpacing: '0.45em' }} // Atur ukuran dan jarak antar huruf STMKG
+            >
+              STMKG
+            </span>
+          </div>
+
+          {/* Desktop Menu - hidden on mobile (hidden md:block) */}
           <div className="hidden md:block overflow-hidden rounded-md">
             <motion.div
               ref={menuContainerRef}
