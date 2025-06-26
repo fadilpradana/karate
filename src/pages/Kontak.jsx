@@ -105,9 +105,21 @@ export default function Kontak() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden flex flex-col"
+      // Terapkan kelas CSS kustom di sini
+      className="min-h-screen text-white overflow-x-hidden flex flex-col background-mobile md:background-desktop"
     >
-      <section className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center">
+      {/* Konten utama perlu di atas overlay. Kita bisa menambahkan div pembungkus
+          atau memastikan elemen section dan footer memiliki z-index yang lebih tinggi.
+          Karena section dan footer adalah sibling dari ::before, secara default mereka akan di atasnya.
+          Namun, lebih aman jika konten yang harus selalu terlihat memiliki z-index.
+          Dalam kasus ini, section dan footer sudah berada di luar pseudo-element.
+          Pastikan elemen `section` dan `footer` memiliki `z-index` jika perlu,
+          atau atur `z-index` pada `::before` menjadi `1` dan elemen konten menjadi `2` atau lebih.
+          Di sini, saya menempatkan `z-index: 1` pada `::before` untuk jaga-jaga.
+          Konten lainnya secara default akan di atasnya karena sudah ada dalam aliran dokumen.
+          Jika ada masalah dengan klik atau interaksi, pertimbangkan untuk membungkus konten di div dengan z-index.
+      */}
+      <section className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center relative z-40"> {/* Tambahkan z-10 */}
         <motion.h1
           className="text-4xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent"
           variants={sectionTitleVariants}
@@ -273,10 +285,10 @@ export default function Kontak() {
       {/* Footer */}
       <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          
+
           {/* Kiri: Teks */}
           <div className="text-center md:text-left w-full md:w-1/3">
-            &copy; With Love STMKG Karate Club Periode 2025
+            © With Love STMKG Karate Club Periode 2025
           </div>
 
           {/* Tengah: Logo selalu di tengah */}

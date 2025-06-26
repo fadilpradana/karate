@@ -149,3 +149,51 @@
   */
   z-index: 20; /* Memastikan garis berada di lapisan atas */
 }
+
+/* Base styles untuk memastikan HTML dan body menutupi seluruh viewport */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Kelas background default untuk mobile */
+.background-mobile {
+  position: relative; /* Penting untuk positioning pseudo-element */
+  background-image: url('./assets/bg8.jpg'); /* Path ke gambar mobile */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Menjaga gambar tetap saat scroll */
+  overflow: hidden; /* Mengatasi potensi scrollbar ganda */
+}
+
+/* Pseudo-element untuk overlay hitam transparan di mobile */
+.background-mobile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* Hitam dengan transparansi 40% */
+  z-index: 1; /* Pastikan overlay di bawah konten, tapi di atas background */
+}
+
+/* Media query untuk breakpoint desktop (768px ke atas) */
+@media (min-width: 768px) { /* md breakpoint di Tailwind CSS */
+  .background-desktop {
+    background-image: url('./assets/bg8desktop.jpg'); /* Path ke gambar desktop */
+  }
+
+  /* Pseudo-element untuk overlay hitam transparan di desktop */
+  .background-desktop::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* Sesuaikan transparansi jika perlu */
+    z-index: 1;
+  }
+}
