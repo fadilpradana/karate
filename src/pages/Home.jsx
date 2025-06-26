@@ -364,7 +364,8 @@ export default function Home() {
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
                 variants={variants}
-                transition={isMobile ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
+                // PERUBAHAN DI SINI UNTUK MOBILE TRANSITION
+                transition={isMobile ? { duration: 0.3, ease: "easeOut" } : { type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}
                 className={`flex flex-col md:flex-row gap-8 relative py-8
                                   ${isMobile ? 'items-center justify-center' : (isImageOnLeft ? 'md:items-start' : 'md:items-start md:flex-row-reverse')}
                                   ${!isLastItem ? 'border-gradient-bottom' : ''} `}
@@ -392,7 +393,6 @@ export default function Home() {
                 </div>
 
                 {/* Bagian untuk Deskripsi */}
-                {/* PERBAIKAN DI SINI: Pastikan text-left berlaku untuk mobile, dan sesuaikan width */}
                 <div className={`w-full md:w-1/2 relative ${isMobile ? 'text-left px-4' : 'text-left'}`}>
                   <h3 className="text-xl md:text-2xl font-[Montserrat] font-semibold uppercase glow-text-accent">
                     {item.judul}
