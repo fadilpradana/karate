@@ -292,7 +292,7 @@ export default function Kontak() {
             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
-            <Link to="/berita" className="hover:text-[#FF9F1C]">Berita</Link>
+            <Link to="/artikel" className="hover:text-[#FF9F1C]">Artikel</Link>
           </div>
 
         </div>

@@ -10,7 +10,7 @@ const staticNavLinks = [
   { name: "Beranda", path: "/" },
   { name: "Profil", path: "/profil" },
   { name: "Jadwal", path: "/jadwal" },
-  { name: "Berita", path: "/berita" },
+  { name: "Artikel", path: "/artikel" },
   { name: "Kontak", path: "/kontak" },
   { name: "Daftar", path: "/pendaftaran" },
 ];

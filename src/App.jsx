@@ -7,7 +7,8 @@ import Home from './pages/Home';
 import ProfilDojo from './pages/ProfilDojo';
 import Pengurus from './pages/Pengurus';
 import Jadwal from './pages/Jadwal';
-import Berita from './pages/Berita';
+import Artikel from './pages/Artikel';
+import ArtikelDetail from './pages/ArtikelDetail';
 import Kontak from './pages/Kontak';
 import Pendaftaran from './pages/Pendaftaran';
 import Login from './pages/Login';
@@ -31,7 +32,8 @@ function App() {
           <Route path="/profil" element={<ProfilDojo />} />
           <Route path="/pengurus" element={<Pengurus />} />
           <Route path="/jadwal" element={<Jadwal />} />
-          <Route path="/berita" element={<Berita />} />
+          <Route path="/artikel" element={<Artikel />} />
+          <Route path="/artikel/:id" element={<ArtikelDetail />} />
           <Route path="/kontak" element={<Kontak />} />
           <Route path="/pendaftaran" element={<Pendaftaran />} />
           
