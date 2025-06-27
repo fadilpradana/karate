@@ -1,110 +1,80 @@
-// src/pages/Login.jsx
-import { useState } from "react";
-import { supabase } from "../supabaseClient";
-import { useNavigate, Link } from "react-router-dom"; // Import Link
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import brevetLogo from '../assets/brevet.png'; // <-- PASTIKAN PATH LOGO INI BENAR
 
-const Login = () => {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [message, setMessage] = useState(null); // Ubah dari error menjadi message untuk pesan sukses/gagal
-  const [loading, setLoading] = useState(false);
+function Login() {
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+    const { signIn } = useAuth();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const { error } = await signIn({ email, password });
+            if (error) throw error;
+            navigate('/dashboard');
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null); // Clear previous messages
+    const inputStyle = "w-full px-4 py-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200";
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
+    return (
+        // Wrapper utama untuk layout sticky footer
+        <div className="flex flex-col min-h-screen">
+            {/* Konten utama */}
+            <main className="flex-grow flex justify-center items-center pt-20 pb-12 px-4">
+                <div className="w-full max-w-md p-8 space-y-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
+                    <h1 className="text-3xl font-bold text-center text-white">Selamat Datang Kembali</h1>
+                    <p className="text-center text-gray-300 text-sm">Silakan masuk untuk melanjutkan.</p>
+                    <form onSubmit={handleLogin} className="space-y-6 pt-4">
+                        <div>
+                            <label className="block mb-1 text-sm text-gray-300">Email</label>
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputStyle} />
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm text-gray-300">Password</label>
+                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputStyle} />
+                        </div>
+                        <button type="submit" disabled={loading} className="w-full mt-6 px-4 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors duration-200">
+                            {loading ? 'Memproses...' : 'Masuk'}
+                        </button>
+                        <p className="text-center text-sm text-gray-400 pt-2">
+                            Belum punya akun?{' '}
+                            <Link to="/signup" className="font-medium text-[#FF9F1C] hover:underline">
+                                Daftar di sini
+                            </Link>
+                        </p>
+                    </form>
+                </div>
+            </main>
 
-    if (error) {
-      setMessage("Login gagal: " + error.message);
-    } else {
-      setMessage("Login berhasil! Mengarahkan ke dasbor...");
-      // Tambahkan timeout agar user bisa membaca pesan sukses sebelum redirect
-      setTimeout(() => {
-        navigate("/dashboard"); // Redirect ke halaman dashboard
-      }, 1500);
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 px-4 md:px-12 py-20 font-montserrat">
-      <div
-        className="w-full max-w-md p-8 rounded-lg shadow-xl relative overflow-hidden
-                   backdrop-blur-md bg-white/5 border border-white/20
-                   before:absolute before:inset-0 before:bg-gradient-to-br before:from-transparent before:via-white/5 before:to-transparent before:opacity-30 before:rounded-lg" // Efek glass tambahan
-      >
-        <h2 className="text-3xl font-bold mb-6 text-white text-center z-10 relative">Masuk Akun</h2>
-
-        <form onSubmit={handleLogin} className="space-y-4 z-10 relative">
-          <div>
-            <label className="block mb-2 text-white text-sm font-medium">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-white text-sm font-medium">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-              required
-            />
-          </div>
-
-          {message && (
-            <p className={`mt-4 text-center text-sm ${message.includes("berhasil") ? "text-green-400" : "text-red-400"}`}>
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full p-3 rounded-md text-white font-semibold transition-all duration-300
-                       bg-[#FF9F1C] hover:bg-opacity-90 active:scale-95
-                       flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              'Masuk'
-            )}
-          </button>
-        </form>
-
-        {/* Tombol Daftar */}
-        <div className="mt-6 text-center z-10 relative">
-          <p className="text-gray-300">Belum punya akun?{' '}
-            <Link to="/signup" className="text-[#FF9F1C] hover:underline font-semibold">
-              Daftar di sini
-            </Link>
-          </p>
+            {/* Footer */}
+            <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="text-center md:text-left w-full md:w-1/3">
+                        &copy; With Love STMKG Karate Club Periode 2025
+                    </div>
+                    <div className="w-full md:w-1/3 flex justify-center">
+                        <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
+                    </div>
+                    <div className="flex flex-wrap justify-center md:justify-end gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
+                        <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
+                        <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
+                        <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
+                        <Link to="/berita" className="hover:text-[#FF9F1C]">Berita</Link>
+                    </div>
+                </div>
+            </footer>
         </div>
-      </div>
-    </div>
-  );
-};
+    );
+}
 
 export default Login;

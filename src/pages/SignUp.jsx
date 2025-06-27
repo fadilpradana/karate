@@ -1,161 +1,92 @@
-import { useState } from "react";
-import { supabase } from "../supabaseClient";
-import { Link, useNavigate } from "react-router-dom"; // Import Link dan useNavigate
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import brevetLogo from '../assets/brevet.png'; // <-- PASTIKAN PATH LOGO INI BENAR
 
-export default function SignUp() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [namaLengkap, setNamaLengkap] = useState("");
-  const [phone, setPhone] = useState("");
-  const [npt, setNpt] = useState("");
-  const [kelas, setKelas] = useState("");
-  const [angkatan, setAngkatan] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false); // State untuk loading button
+function SignUp() {
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
+    const [namaLengkap, setNamaLengkap] = useState('');
+    const [nomorTelepon, setNomorTelepon] = useState('');
+    const [npt, setNpt] = useState('');
+    const [kelas, setKelas] = useState('');
+    const [angkatan, setAngkatan] = useState('');
+    const navigate = useNavigate();
+    const { signUp } = useAuth();
 
-  const navigate = useNavigate(); // Inisialisasi useNavigate
+    const handleSignUp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const { error } = await signUp({
+            email,
+            password,
+            options: {
+                data: { username, nama_lengkap: namaLengkap, nomor_telepon: nomorTelepon, npt, kelas, angkatan },
+            },
+        });
+        if (error) {
+            alert(error.message);
+        } else {
+            alert('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
+            navigate('/login');
+        }
+        setLoading(false);
+    };
 
-  const handleSignUp = async () => {
-    setMessage("");
-    setLoading(true); // Mulai loading
+    const inputStyle = "w-full px-4 py-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200";
 
-    // 1. Sign up ke auth Supabase
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: username, // ini masuk ke user_metadata
-        },
-      },
-    });
+    return (
+        // Wrapper utama untuk layout sticky footer
+        <div className="flex flex-col min-h-screen">
+            {/* Konten utama */}
+            <main className="flex-grow flex justify-center items-center pt-28 pb-12 px-4">
+                <div className="w-full max-w-lg p-8 space-y-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
+                    <h1 className="text-3xl font-bold text-center text-white">Daftar Akun Baru</h1>
+                    <p className="text-center text-gray-300 text-sm">Isi data di bawah ini untuk menjadi anggota.</p>
+                    <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                        {/* ... semua input field Anda ada di sini ... */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label className="block mb-1 text-sm text-gray-300">Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className={inputStyle}/></div>
+                            <div><label className="block mb-1 text-sm text-gray-300">Nama Lengkap</label><input type="text" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} required className={inputStyle}/></div>
+                        </div>
+                        <div><label className="block mb-1 text-sm text-gray-300">Nomor Telepon</label><input type="tel" value={nomorTelepon} onChange={(e) => setNomorTelepon(e.target.value)} required className={inputStyle}/></div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div><label className="block mb-1 text-sm text-gray-300">NPT</label><input type="text" value={npt} onChange={(e) => setNpt(e.target.value)} required className={inputStyle}/></div>
+                            <div><label className="block mb-1 text-sm text-gray-300">Kelas</label><input type="text" value={kelas} onChange={(e) => setKelas(e.target.value)} required className={inputStyle}/></div>
+                            <div><label className="block mb-1 text-sm text-gray-300">Angkatan</label><input type="text" value={angkatan} onChange={(e) => setAngkatan(e.target.value)} required className={inputStyle}/></div>
+                        </div>
+                        <hr className="border-white/20 my-6"/>
+                        <div className="space-y-4">
+                            <div><label className="block mb-1 text-sm text-gray-300">Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputStyle}/></div>
+                            <div><label className="block mb-1 text-sm text-gray-300">Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputStyle}/></div>
+                        </div>
+                        <button type="submit" disabled={loading} className="w-full mt-6 px-4 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors duration-200">{loading ? 'Mendaftar...' : 'Daftar'}</button>
+                        <p className="text-center text-sm text-gray-400 pt-2">Sudah punya akun?{' '}<Link to="/login" className="font-medium text-[#FF9F1C] hover:underline">Masuk di sini</Link></p>
+                    </form>
+                </div>
+            </main>
 
-    if (error) {
-      setMessage("Gagal daftar: " + error.message);
-      setLoading(false); // Hentikan loading
-      return;
-    }
-
-    const userId = data.user?.id;
-
-    if (userId) {
-      // 2. Simpan ke tabel profiles
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: userId,
-        display_name: username,
-        nama_lengkap: namaLengkap,
-        phone: phone,
-        npt: npt,
-        kelas: kelas,
-        angkatan: angkatan,
-      });
-
-      if (profileError) {
-        setMessage("Gagal simpan data profil: " + profileError.message);
-        // Pertimbangkan untuk menghapus user dari auth jika gagal simpan profil
-        // await supabase.auth.admin.deleteUser(userId); // Ini membutuhkan admin role keys, biasanya tidak dilakukan di frontend
-      } else {
-        setMessage("Pendaftaran berhasil! Silakan periksa email Anda untuk verifikasi dan login.");
-        // Opsional: Redirect ke halaman login setelah berhasil daftar
-        setTimeout(() => {
-          navigate('/login'); // Arahkan ke halaman login
-        }, 3000); // Redirect setelah 3 detik
-      }
-    }
-    setLoading(false); // Hentikan loading
-  };
-
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 px-4 md:px-12 py-20 font-montserrat">
-      <div
-        className="w-full max-w-md p-8 rounded-lg shadow-xl relative overflow-hidden
-                   backdrop-blur-md bg-white/5 border border-white/20
-                   before:absolute before:inset-0 before:bg-gradient-to-br before:from-transparent before:via-white/5 before:to-transparent before:opacity-30 before:rounded-lg" // Efek glass tambahan
-      >
-        <h1 className="text-3xl font-bold mb-6 text-white text-center z-10 relative">Daftar Akun Baru</h1>
-
-        <div className="space-y-4 z-10 relative"> {/* Tambahkan z-10 relative agar input di atas before element */}
-          <input
-            placeholder="Username"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setUsername(e.target.value)}
-            value={username}
-          />
-          <input
-            placeholder="Email"
-            type="email"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setEmail(e.target.value)}
-            value={email}
-          />
-          <input
-            placeholder="Password"
-            type="password"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setPassword(e.target.value)}
-            value={password}
-          />
-          <input
-            placeholder="Nama Lengkap"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setNamaLengkap(e.target.value)}
-            value={namaLengkap}
-          />
-          <input
-            placeholder="Nomor HP"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setPhone(e.target.value)}
-            value={phone}
-          />
-          <input
-            placeholder="NPT (Nomor Pokok Taruna)"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setNpt(e.target.value)}
-            value={npt}
-          />
-          <input
-            placeholder="Kelas"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setKelas(e.target.value)}
-            value={kelas}
-          />
-          <input
-            placeholder="Angkatan"
-            className="w-full p-3 rounded-md bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] border border-white/10"
-            onChange={(e) => setAngkatan(e.target.value)}
-            value={angkatan}
-          />
-          
-          <button
-            onClick={handleSignUp}
-            className="w-full p-3 rounded-md text-white font-semibold transition-all duration-300
-                       bg-[#FF9F1C] hover:bg-opacity-90 active:scale-95
-                       flex items-center justify-center gap-2"
-            disabled={loading} // Disable button saat loading
-          >
-            {loading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              'Daftar'
-            )}
-          </button>
-
-          {message && <p className={`mt-4 text-center text-sm ${message.includes("berhasil") ? "text-green-400" : "text-red-400"}`}>{message}</p>}
+            {/* Footer */}
+            <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="text-center md:text-left w-full md:w-1/3">
+                        &copy; With Love STMKG Karate Club Periode 2025
+                    </div>
+                    <div className="w-full md:w-1/3 flex justify-center">
+                        <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
+                    </div>
+                    <div className="flex flex-wrap justify-center md:justify-end gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
+                        <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
+                        <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
+                        <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
+                        <Link to="/berita" className="hover:text-[#FF9F1C]">Berita</Link>
+                    </div>
+                </div>
+            </footer>
         </div>
-        
-        {/* Tombol Login */}
-        <div className="mt-6 text-center z-10 relative">
-          <p className="text-gray-300">Sudah punya akun?{' '}
-            <Link to="/login" className="text-[#FF9F1C] hover:underline font-semibold">
-              Masuk di sini
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
+
+export default SignUp;
