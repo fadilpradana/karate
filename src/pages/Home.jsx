@@ -332,13 +332,13 @@ export default function Home() {
             Train the body. Sharpen the mind. Honor the way.
           </motion.p>
           <Link
-            to="/pendaftaran"
+            to="/jadwal"
             className="inline-block mt-8 px-8 py-3 font-semibold rounded-2xl shadow-xl transition-all duration-300 ease-in-out"
             style={glassButtonStyle}
             onMouseEnter={glassButtonHoverStyle}
             onMouseLeave={glassButtonLeaveStyle}
           >
-            Gabung Sekarang
+            Latihan Sekarang
           </Link>
         </div>
       </section>
