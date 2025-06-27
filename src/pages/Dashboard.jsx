@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
-import { CheckCircle, AlertTriangle, Edit } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Edit, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Komponen Reusable untuk Menampilkan & Mengedit Kartu Profil
@@ -162,19 +162,9 @@ function Dashboard() {
         navigate('/login');
     };
 
-    // Varian animasi dengan 'ease'
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } }
-    };
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1, transition: { ease: "easeOut", duration: 0.5 } }
-    };
-    const titleVariants = {
-        hidden: { opacity: 0, y: -30 },
-        visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.6 } }
-    };
+    const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } } };
+    const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { ease: "easeOut", duration: 0.5 } } };
+    const titleVariants = { hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.6 } } };
 
     if (loading && !myProfile) return <div className="flex justify-center items-center min-h-screen">Memuat data...</div>;
     if (error) return <div className="flex justify-center items-center min-h-screen">Error: {error}</div>;
@@ -189,10 +179,10 @@ function Dashboard() {
                 {myProfile?.role === 'admin' ? (
                     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-7xl">
                         <motion.div variants={titleVariants} className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-white">Selamat Datang,</h1>
-                            <div className="text-4xl mt-1 font-bold battery-style-gradient">{myProfile.nama_lengkap}</div>
+                            {/* PERUBAHAN 2 & 3: Ukuran font diubah dan 'uppercase' dihapus */}
+                            <h1 className="text-2xl font-bold text-white">Selamat Datang,</h1>
+                            <div className="text-4xl mt-1 font-bold battery-style-gradient">{myProfile.nama_lengkap}!</div>
                         </motion.div>
-                        {/* PERBAHAN: Menggunakan `containerVariants` di sini, bukan `contentVariants` */}
                         <motion.div variants={containerVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <motion.div variants={itemVariants} className="lg:col-span-1"><ProfileCard profileData={myProfile} session={session} onUpdate={handleUpdateMyProfile} isMyProfile={true} onLogout={handleLogout} /></motion.div>
                             <motion.div variants={itemVariants} className="lg:col-span-2">
@@ -202,7 +192,7 @@ function Dashboard() {
                                     {selectedProfile && (
                                         <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: 'auto'}} exit={{opacity: 0, height: 0}} transition={{ ease: "easeInOut", duration: 0.3 }} className="mb-6 overflow-hidden">
                                            <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
-                                                <h3 className="font-bold">Edit Profil: {selectedProfile.username}</h3>
+                                                <h3 className="font-regular">Edit Profil: {selectedProfile.username}</h3>
                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div><p className={labelStyle}>Username</p><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                     <div><p className={labelStyle}>Nama Lengkap</p><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
@@ -214,12 +204,19 @@ function Dashboard() {
                                                  </div>
                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div><p className={labelStyle}>Angkatan</p><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div><p className={labelStyle}>Role</p>
-                                                        <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={inputStyle}>
-                                                            <option value="anggota">Anggota</option>
-                                                            <option value="pengurus">Pengurus</option>
-                                                            <option value="admin">Admin</option>
-                                                        </select>
+                                                    <div>
+                                                        <p className={labelStyle}>Role</p>
+                                                        {/* PERUBAHAN 1: Warna dropdown diselaraskan */}
+                                                        <div className="relative">
+                                                            <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                                                <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
+                                                                <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
+                                                                <option value="admin" className="bg-gray-900 text-white">Admin</option>
+                                                            </select>
+                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                                                <ChevronDown size={16} />
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                  </div>
                                                 <div className="flex justify-end gap-3 pt-2">
@@ -256,14 +253,7 @@ function Dashboard() {
             </footer>
             
             <AnimatePresence>
-                {updateStatus.type && (
-                    <motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>
-                        {updateStatus.type === 'success' ? 
-                            <CheckCircle className="h-6 w-6 text-green-400" /> : 
-                            <AlertTriangle className="h-6 w-6 text-red-400" />}
-                        <p className="text-white">{updateStatus.message}</p>
-                    </motion.div>
-                )}
+                {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>
         </div>
     );
