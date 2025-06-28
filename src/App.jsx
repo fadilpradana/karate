@@ -1,6 +1,6 @@
 // src/App.jsx
-import { Routes, Route } from 'react-router-dom'; 
-import { AuthProvider } from './context/AuthContext';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext'; // Pastikan path ini benar
 
 // Impor Komponen Halaman
 import Home from './pages/Home';
@@ -13,12 +13,13 @@ import Kontak from './pages/Kontak';
 import Pendaftaran from './pages/Pendaftaran';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import SignUp from './pages/SignUp'; // Pastikan SignUp sudah diimpor
+import SignUp from './pages/SignUp';
+import TulisArtikelBaru from './pages/TulisArtikelBaru';
+import ModerasiArtikel from './pages/ModerasiArtikel';
 
 // Impor Komponen Umum
 import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-
+import ProtectedRoute from './components/ProtectedRoute'; // Tetap diimpor karena masih digunakan oleh rute lain
 
 function App() {
   return (
@@ -36,24 +37,29 @@ function App() {
           <Route path="/artikel/:id" element={<ArtikelDetail />} />
           <Route path="/kontak" element={<Kontak />} />
           <Route path="/pendaftaran" element={<Pendaftaran />} />
-          
-          {/* --- RUTE BARU UNTUK OTENTIKASI --- */}
 
-          {/* Rute untuk Login */}
+          {/* Rute untuk Login & Sign Up */}
           <Route path="/login" element={<Login />} />
-          
-          {/* PERUBAHAN: Rute untuk SignUp ditambahkan di sini */}
           <Route path="/signup" element={<SignUp />} />
 
+          {/* Rute yang Dilindungi */}
           {/* Rute untuk Dashboard, diproteksi oleh ProtectedRoute */}
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
+
+          {/* PERUBAHAN: Rute untuk Tulis Artikel Baru, TIDAK DILINDUNGI ProtectedRoute */}
+          {/* Sekarang dapat diakses langsung oleh siapa saja (termasuk dummy mode) */}
+          <Route path="/tulis-artikel-baru" element={<TulisArtikelBaru />} />
+
+
+          <Route path="/moderasi-artikel" element={<ModerasiArtikel />} />
+
 
           {/* 404 - Halaman tidak ditemukan */}
           <Route path="*" element={<div className="text-center text-2xl mt-20">404 - Halaman tidak ditemukan</div>} />

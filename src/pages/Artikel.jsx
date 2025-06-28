@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import brevetLogo from '../assets/brevet.png';
 import bg1 from '../assets/bg1.jpg'; // Import gambar background
-import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, FileText, Settings } from 'lucide-react';
 
 // Nama komponen diubah menjadi Artikel
 export default function Artikel() {
@@ -16,7 +16,66 @@ export default function Artikel() {
     const [currentPage, setCurrentPage] = useState(1);
     const articlesPerPage = 5;
     const location = useLocation();
+    const navigate = useNavigate();
 
+    // State untuk menyimpan role pengguna dan username
+    const [userRole, setUserRole] = useState(null);
+    const [loggedInUsername, setLoggedInUsername] = useState(null);
+
+    // --- LOGIKA PENGAMBILAN ROLE PENGGUNA DAN USERNAME (Tetap di sini) ---
+    useEffect(() => {
+        async function getUserAndRole() {
+            try {
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+                if (sessionError) {
+                    console.error('Error fetching session:', sessionError.message);
+                    setUserRole(null);
+                    setLoggedInUsername(null);
+                    return;
+                }
+
+                if (session) {
+                    const { user } = session;
+                    const { data: profileData, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('role, username')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profileError) {
+                        console.error('Error fetching user profile:', profileError.message);
+                        setUserRole(null);
+                        setLoggedInUsername(null);
+                        return;
+                    }
+
+                    if (profileData) {
+                        setUserRole(profileData.role);
+                        setLoggedInUsername(profileData.username);
+                    } else {
+                        // Default role jika profil tidak ditemukan (bisa disesuaikan)
+                        setUserRole('anggota');
+                        setLoggedInUsername(null);
+                    }
+                } else {
+                    // Jika tidak ada sesi (tidak login)
+                    setUserRole(null);
+                    setLoggedInUsername(null);
+                }
+            } catch (err) {
+                console.error('Unexpected error fetching user role/username:', err.message);
+                setUserRole(null);
+                setLoggedInUsername(null);
+            }
+        }
+
+        getUserAndRole();
+        // Tidak ada dependensi array di sini, akan jalan sekali saat mount
+        // Jika perlu update saat login/logout, bisa tambahkan supabase.auth.onAuthStateChange
+    }, []);
+
+    // --- LOGIKA PENGAMBILAN ARTIKEL (EXISTING) ---
     useEffect(() => {
         const fetchArtikelWithAuthor = async () => {
             setLoading(true);
@@ -28,37 +87,36 @@ export default function Artikel() {
                         username
                     )
                 `)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false }); // Mengambil semua artikel, nanti difilter oleh RLS
 
             if (error) {
                 console.error("Error fetching artikel:", error);
                 setError(`Gagal memuat artikel: ${error.message || 'Terjadi kesalahan tidak diketahui.'}`);
             } else {
                 setArtikelList(data);
-                
-                // Cek query parameter 'author' saat pertama kali dimuat
+
                 const queryParams = new URLSearchParams(location.search);
                 const authorFromUrl = queryParams.get('author');
-                
+
                 if (authorFromUrl) {
-                    setSearchTerm(authorFromUrl); // Set searchTerm dari URL
-                    // Filter langsung jika ada author dari URL
+                    setSearchTerm(authorFromUrl);
                     const results = data.filter(artikel =>
                         artikel.profiles?.username && artikel.profiles.username.toLowerCase() === authorFromUrl.toLowerCase()
                     );
                     setFilteredArtikel(results);
                 } else {
-                    setFilteredArtikel(data); // Inisialisasi filteredArtikel dengan semua data
+                    setFilteredArtikel(data);
                 }
-                
-                setCurrentPage(1); // Reset halaman ke 1 setiap kali data baru diambil
+
+                setCurrentPage(1);
             }
             setLoading(false);
         };
 
         fetchArtikelWithAuthor();
-    }, [location.search]); // location.search sebagai dependency untuk re-fetch/filter saat URL berubah
+    }, [location.search]);
 
+    // --- LOGIKA FILTER ARTIKEL (EXISTING) ---
     useEffect(() => {
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
         const results = artikelList.filter(artikel =>
@@ -66,20 +124,26 @@ export default function Artikel() {
             (artikel.profiles?.username && artikel.profiles.username.toLowerCase().includes(lowerCaseSearchTerm))
         );
         setFilteredArtikel(results);
-        setCurrentPage(1); // Reset halaman ke 1 setiap kali pencarian berubah
+        setCurrentPage(1);
     }, [searchTerm, artikelList]);
 
     const handleResetSearch = () => {
         setSearchTerm('');
         setFilteredArtikel(artikelList);
-        setCurrentPage(1); // Reset halaman ke 1 setelah reset pencarian
-        // Hapus query parameter dari URL
+        setCurrentPage(1);
         const url = new URL(window.location.href);
         url.searchParams.delete('author');
         window.history.replaceState({}, '', url.toString());
     };
 
-    // Logika paginasi
+    const handleMyArticlesClick = () => {
+        if (loggedInUsername) {
+            navigate(`/artikel?author=${loggedInUsername}`);
+        } else {
+            alert('Anda harus login untuk melihat artikel Anda.');
+        }
+    };
+
     const highlightArtikel = filteredArtikel.length > 0 ? filteredArtikel[0] : null;
     const articlesForPagination = highlightArtikel ? filteredArtikel.slice(1) : filteredArtikel;
 
@@ -125,6 +189,80 @@ export default function Artikel() {
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
+                    {/* Mobile Menu Manajemen Artikel - di atas search bar */}
+                    {(userRole === 'pengurus' || userRole === 'admin') && (
+                        <motion.div
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }}
+                            className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit"
+                        >
+                            <nav className="flex space-x-4 justify-center">
+                                <Link
+                                    to="/tulis-artikel-baru"
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                    title="Tulis Artikel Baru"
+                                >
+                                    <Edit size={20} />
+                                </Link>
+                                <button
+                                    onClick={handleMyArticlesClick}
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                    title="Artikel Saya"
+                                >
+                                    <FileText size={20} />
+                                </button>
+                                {userRole === 'admin' && (
+                                    <Link
+                                        to="/moderasi-artikel"
+                                        className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                        title="Moderasi Artikel"
+                                    >
+                                        <Settings size={20} />
+                                    </Link>
+                                )}
+                            </nav>
+                        </motion.div>
+                    )}
+
+                    {/* Desktop Menu Manajemen Artikel - fixed di kiri */}
+                    {(userRole === 'pengurus' || userRole === 'admin') && (
+                        <motion.div
+                            initial={{ x: -100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }}
+                            className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex"
+                        >
+                            <nav className="space-y-3">
+                                <Link
+                                    to="/tulis-artikel-baru"
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                                    title="Tulis Artikel Baru"
+                                >
+                                    <Edit size={20} />
+                                </Link>
+                                <button
+                                    onClick={handleMyArticlesClick}
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                                    title="Artikel Saya"
+                                >
+                                    <FileText size={20} />
+                                </button>
+                                {userRole === 'admin' && (
+                                    <Link
+                                        to="/moderasi-artikel"
+                                        className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                                        title="Moderasi Artikel"
+                                    >
+                                        <Settings size={20} />
+                                    </Link>
+                                )}
+                            </nav>
+                        </motion.div>
+                    )}
+                    {/* End Sidebar Menu */}
+
+                    {/* Konten Utama (Search Bar + Articles) */}
                     <div className="max-w-5xl mx-auto">
                         {/* Search Bar */}
                         <motion.div
@@ -294,11 +432,21 @@ export default function Artikel() {
                     </div>
                 </main>
 
+                {/* Footer yang Diperbarui */}
                 <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-xs sm:text-sm py-6 sm:py-10 px-4 sm:px-6 md:px-20 border-t border-[#333]">
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-                        <div className="text-center md:text-left w-full md:w-1/3 order-3 md:order-1">&copy; With Love STMKG Karate Club Periode 2025</div>
-                        <div className="w-full md:w-1/3 flex justify-center order-1 md:order-2"><img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" /></div>
-                        <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3 order-2 md:order-3">
+                        {/* Kiri: Teks */}
+                        <div className="text-center md:text-left w-full md:w-1/3">
+                            &copy; With Love STMKG Karate Club Periode 2025
+                        </div>
+
+                        {/* Tengah: Logo selalu di tengah */}
+                        <div className="w-full md:w-1/3 flex justify-center">
+                            <img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" />
+                        </div>
+
+                        {/* Kanan: Link navigasi */}
+                        <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
                             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
                             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
                             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
