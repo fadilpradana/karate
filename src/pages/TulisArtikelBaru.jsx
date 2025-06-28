@@ -66,8 +66,6 @@ export default function TulisArtikelBaru() {
         return <AuthStatusDisplay authLoading={authLoading} isAuthorized={isAuthorized} />;
     }
 
-    // Base classes for glassmorphism buttons (consistent with ModerasiArtikel.jsx)
-    // Menambahkan w-full di sini untuk membuat tombol selalu lebar penuh
     const glassButtonClasses = "w-full flex items-center justify-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-lg font-semibold shadow-lg transition-all duration-200";
 
     return (
@@ -84,7 +82,7 @@ export default function TulisArtikelBaru() {
                     <nav className="space-y-3">
                         <button
                             onClick={() => navigate('/artikel')}
-                            className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                            className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text{current_date} transition-colors duration-200 block"
                             title="Kembali ke Artikel"
                         >
                             <ChevronLeft size={20} />
@@ -109,50 +107,52 @@ export default function TulisArtikelBaru() {
                 </motion.div>
             )}
 
+            {/* Mobile Menu Manajemen Artikel - DIPINDAH DAN DIPERBAIKI */}
+            {(userRole === 'pengurus' || userRole === 'admin') && (
+                <motion.div
+                    variants={menuVariants}
+                    initial="hidden"
+                    animate="visible"
+                    // Mengembalikan ke mx-auto dan mt-20 untuk posisi tengah horizontal dan jarak atas
+                    className="block md:hidden mx-auto mt-20 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg z-10 w-fit"
+                >
+                    <nav className="flex space-x-4 justify-center">
+                        <button
+                            onClick={() => navigate('/artikel')}
+                            className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                            title="Kembali ke Artikel"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button
+                            onClick={handleMyArticlesClick}
+                            className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                            title="Artikel Saya"
+                        >
+                            <FileText size={20} />
+                        </button>
+                        {userRole === 'admin' && (
+                            <Link
+                                to="/moderasi-artikel"
+                                className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                title="Moderasi Artikel"
+                            >
+                                <Settings size={20} />
+                            </Link>
+                        )}
+                    </nav>
+                </motion.div>
+            )}
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex-grow flex items-center justify-center p-4 pt-20"
+                // Mengembalikan pt-0 md:pt-20 dan mt-8 untuk jarak antara menu mobile dan form
+                className="flex-grow flex items-center justify-center p-4 pt-0 md:pt-20 mt-8"
             >
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 max-w-xl w-full">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</h1>
-
-                    {/* Mobile Menu Manajemen Artikel */}
-                    {(userRole === 'pengurus' || userRole === 'admin') && (
-                        <motion.div
-                            variants={menuVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit"
-                        >
-                            <nav className="flex space-x-4 justify-center">
-                                <button
-                                    onClick={() => navigate('/artikel')}
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
-                                    title="Kembali ke Artikel"
-                                >
-                                    <ChevronLeft size={20} />
-                                </button>
-                                <button
-                                    onClick={handleMyArticlesClick}
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
-                                    title="Artikel Saya"
-                                >
-                                    <FileText size={20} />
-                                </button>
-                                {userRole === 'admin' && (
-                                    <Link
-                                        to="/moderasi-artikel"
-                                        className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
-                                        title="Moderasi Artikel"
-                                    >
-                                        <Settings size={20} />
-                                    </Link>
-                                )}
-                            </nav>
-                        </motion.div>
-                    )}
+                    <h1 className="text-2xl sm:text-4xl font-league font-bold uppercase text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</h1>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>

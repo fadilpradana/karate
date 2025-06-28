@@ -40,7 +40,7 @@ export default function ModerasiArtikel() {
 
     // State untuk konfirmasi unpublish
     const [showConfirmUnpublishModal, setShowConfirmUnpublishModal] = useState(false);
-    const [articleToUnpublish, setArticleToUnpublish] = useState(null);
+    const [articleToUnpublish, setArticleToUnpublish] = useState(null); // Perbaikan: menggunakan useState dengan nilai awal null
     const [isUnpublishing, setIsUnpublishing] = useState(false);
     const [unpublishStatus, setUnpublishStatus] = useState({ success: null, error: null });
 
@@ -305,8 +305,6 @@ export default function ModerasiArtikel() {
         exit: { opacity: 0, y: -20 }
     };
 
-    // Base classes for glassmorphism buttons with fixed text color
-    // Disesuaikan untuk teks yang aktif terus-menerus dan tidak berubah warna saat hover background
     const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
     return (
@@ -344,15 +342,16 @@ export default function ModerasiArtikel() {
                 </nav>
             </motion.div>
 
-            <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
-                <h1 className="text-3xl sm:text-4xl font-bold text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
-
-                {/* Mobile Menu Manajemen Artikel */}
+            <main className="flex-grow px-4 md:px-12 pt-28 pb-16"> {/* Ini pt-28 untuk main di mobile */}
+                {/* Mobile Menu Manajemen Artikel - DIPINDAH DI SINI (di atas judul utama) */}
                 <motion.div
                     variants={menuVariants}
                     initial="hidden"
                     animate="visible"
-                    className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit"
+                    // mx-auto untuk tengah horizontal
+                    // mb-8 untuk jarak ke judul (sama seperti mb-8 searchbar di Artikel.jsx)
+                    // block md:hidden untuk hanya tampil di mobile
+                    className="block md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg z-10 w-fit"
                 >
                     <nav className="flex space-x-4 justify-center">
                         <Link
@@ -378,6 +377,9 @@ export default function ModerasiArtikel() {
                         </Link>
                     </nav>
                 </motion.div>
+                {/* Akhir Mobile Menu Manajemen Artikel */}
+
+                <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
 
                 <div className="max-w-6xl mx-auto space-y-10">
                     {/* Panel Artikel Draft */}
@@ -751,9 +753,11 @@ export default function ModerasiArtikel() {
                     <div className="text-center md:text-left w-full md:w-1/3">
                         &copy; With Love STMKG Karate Club Periode 2025
                     </div>
+
                     <div className="w-full md:w-1/3 flex justify-center">
                         <img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" />
                     </div>
+
                     <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
                         <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
                         <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
