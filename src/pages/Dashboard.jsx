@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Impor modal yang sudah ada
 import SuccessModal from '../components/SuccessModal';
 import ErrorModal from '../components/ErrorModal';
+import Modal from '../components/Modal'; // Import the reusable Modal component
 
 
 // Komponen Reusable untuk Menampilkan & Mengedit Kartu Profil
@@ -240,42 +241,42 @@ function Dashboard() {
                                     <h2 className="text-xl font-bold text-white mb-4">Manajemen Pengguna ({allProfiles.length})</h2>
                                     <AnimatePresence>
                                     {selectedProfile && (
-                                        <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: 'auto'}} exit={{opacity: 0, height: 0}} transition={{ ease: "easeInOut", duration: 0.3 }} className="mb-6 overflow-hidden">
-                                           <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
-                                                <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div><p className={labelStyle}>Username</p><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div><p className={labelStyle}>Nama Lengkap</p><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                </div>
-                                                <div><p className={labelStyle}>Email</p><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
-                                                <div><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div><p className={labelStyle}>NPT</p><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div><p className={labelStyle}>Kelas</p><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div><p className={labelStyle}>Angkatan</p><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div>
-                                                        <p className={labelStyle}>Role</p>
-                                                        <div className="relative">
-                                                            <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
-                                                                <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
-                                                                <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
-                                                                <option value="admin" className="bg-gray-900 text-white">Admin</option>
-                                                            </select>
-                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                                                                <ChevronDown size={16} />
+                                            <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: 'auto'}} exit={{opacity: 0, height: 0}} transition={{ ease: "easeInOut", duration: 0.3 }} className="mb-6 overflow-hidden">
+                                               <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
+                                                    <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div><p className={labelStyle}>Username</p><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                        <div><p className={labelStyle}>Nama Lengkap</p><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                    </div>
+                                                    <div><p className={labelStyle}>Email</p><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
+                                                    <div><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div><p className={labelStyle}>NPT</p><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                        <div><p className={labelStyle}>Kelas</p><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div><p className={labelStyle}>Angkatan</p><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                        <div>
+                                                            <p className={labelStyle}>Role</p>
+                                                            <div className="relative">
+                                                                <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                                                    <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
+                                                                    <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
+                                                                    <option value="admin" className="bg-gray-900 text-white">Admin</option>
+                                                                </select>
+                                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                                                    <ChevronDown size={16} />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex justify-end gap-3 pt-2">
-                                                    <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
-                                                    <button type="submit" disabled={loading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
-                                                </div>
-                                           </form>
-                                        </motion.div>
-                                    )}
+                                                    <div className="flex justify-end gap-3 pt-2">
+                                                        <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
+                                                        <button type="submit" disabled={loading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
+                                                    </div>
+                                               </form>
+                                            </motion.div>
+                                        )}
                                     </AnimatePresence>
                                     <div className="space-y-2">
                                         {allProfiles.map(p => (
@@ -323,50 +324,39 @@ function Dashboard() {
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>
 
-            {/* Konfirmasi Modal Hapus */}
-            <AnimatePresence>
-                {showDeleteConfirmModal && profileToDelete && (
-                    <motion.div
-                        className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowDeleteConfirmModal(false)}
-                    >
-                        <motion.div
-                            className="bg-[#1D232A] rounded-xl p-8 flex flex-col items-center text-center space-y-4 w-full max-w-sm text-white"
-                            initial={{ scale: 0.7, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.7, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                            onClick={(e) => e.stopPropagation()}
+            {/* Konfirmasi Modal Hapus menggunakan komponen Modal yang direusable */}
+            <Modal
+                isOpen={showDeleteConfirmModal}
+                onClose={() => setShowDeleteConfirmModal(false)}
+                title="Konfirmasi Hapus Akun"
+                statusMessage={null} // Tidak perlu status message di sini karena feedback ditangani oleh showUpdateFeedback
+                actions={
+                    <>
+                        <button
+                            onClick={() => setShowDeleteConfirmModal(false)}
+                            className="px-6 py-2 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 transition-colors text-white"
                         >
-                            <AlertTriangle className="h-12 w-12 text-red-500" />
-                            <h2 className="text-2xl font-bold text-red-500">Konfirmasi Hapus Akun</h2>
-                            <p className="text-gray-300">
-                                Anda yakin ingin menghapus akun <span className="font-semibold">{profileToDelete.username}</span>?
-                                Tindakan ini akan menghapus data profil dari database dan juga akun autentikasi pengguna.
-                                Tindakan ini tidak dapat dibatalkan.
-                            </p>
-                            <div className="flex justify-center gap-4 w-full pt-4">
-                                <button
-                                    onClick={() => setShowDeleteConfirmModal(false)}
-                                    className="px-6 py-2 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 transition-colors"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={handleDeleteProfile}
-                                    className="px-6 py-2 rounded-md bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Menghapus...' : 'Hapus'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleDeleteProfile}
+                            className="px-6 py-2 rounded-md bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 text-white"
+                            disabled={loading}
+                        >
+                            {loading ? 'Menghapus...' : 'Hapus'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                    <AlertTriangle className="h-12 w-12 text-red-500" />
+                    <p className="text-gray-300">
+                        Anda yakin ingin menghapus akun <span className="font-semibold">{profileToDelete?.username}</span>?
+                        Tindakan ini akan menghapus data profil dari database.
+                        Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </Modal>
         </div>
     );
 }
