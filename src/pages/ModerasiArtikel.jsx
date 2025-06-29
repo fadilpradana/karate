@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
-import { Edit, Trash2, Send, FileText, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw } from 'lucide-react';
+import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw } from 'lucide-react';
+
+import Modal from '../components/Modal'; // Sesuaikan path jika berbeda
 
 export default function ModerasiArtikel() {
     const navigate = useNavigate();
@@ -15,42 +17,33 @@ export default function ModerasiArtikel() {
     const [errorDrafts, setErrorDrafts] = useState(null);
     const [errorPublished, setErrorPublished] = useState(null);
 
-    // Search terms for each panel
     const [draftSearchTerm, setDraftSearchTerm] = useState('');
     const [publishedSearchTerm, setPublishedSearchTerm] = useState('');
 
-    // State untuk modal edit
+    // State untuk Modal Edit
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingArticle, setEditingArticle] = useState(null);
-    const [editingArticleType, setEditingArticleType] = useState(''); // 'draft' atau 'published'
+    const [editingArticleType, setEditingArticleType] = useState('');
     const [editForm, setEditForm] = useState({
         judul: '',
         deskripsi: '',
         gambar_url: ''
     });
-    const [editError, setEditError] = useState(null);
-    const [editSuccess, setEditSuccess] = useState(false);
+    const [editStatus, setEditStatus] = useState({ success: null, error: null, message: '' });
     const [isSaving, setIsSaving] = useState(false);
 
-    // State untuk konfirmasi publish
-    const [showConfirmPublishModal, setShowConfirmPublishModal] = useState(false);
-    const [articleToPublish, setArticleToPublish] = useState(null);
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [publishStatus, setPublishStatus] = useState({ success: null, error: null });
-
-    // State untuk konfirmasi unpublish
-    const [showConfirmUnpublishModal, setShowConfirmUnpublishModal] = useState(false);
-    const [articleToUnpublish, setArticleToUnpublish] = useState(null); // Perbaikan: menggunakan useState dengan nilai awal null
-    const [isUnpublishing, setIsUnpublishing] = useState(false);
-    const [unpublishStatus, setUnpublishStatus] = useState({ success: null, error: null });
-
+    // State untuk Modal Konfirmasi (digunakan untuk publish, unpublish, delete)
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // 'publish', 'unpublish', 'delete'
+    const [articleForAction, setArticleForAction] = useState(null);
+    const [actionStatus, setActionStatus] = useState({ success: null, error: null, message: '' });
+    const [isProcessingAction, setIsProcessingAction] = useState(false);
 
     useEffect(() => {
         fetchDraftArticles();
         fetchPublishedArticles();
     }, []);
 
-    // Fungsi untuk mengambil artikel draft
     const fetchDraftArticles = async () => {
         setLoadingDrafts(true);
         setErrorDrafts(null);
@@ -71,7 +64,6 @@ export default function ModerasiArtikel() {
         setLoadingDrafts(false);
     };
 
-    // Fungsi untuk mengambil artikel yang sudah dipublikasi
     const fetchPublishedArticles = async () => {
         setLoadingPublished(true);
         setErrorPublished(null);
@@ -92,7 +84,6 @@ export default function ModerasiArtikel() {
         setLoadingPublished(false);
     };
 
-    // Handler untuk membuka modal edit
     const handleEditClick = (article, type) => {
         setEditingArticle(article);
         setEditingArticleType(type);
@@ -101,17 +92,14 @@ export default function ModerasiArtikel() {
             deskripsi: article.deskripsi,
             gambar_url: article.gambar_url || ''
         });
-        setEditError(null);
-        setEditSuccess(false);
+        setEditStatus({ success: null, error: null, message: '' });
         setShowEditModal(true);
     };
 
-    // Handler untuk menyimpan perubahan artikel
     const handleSaveEdit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
-        setEditError(null);
-        setEditSuccess(false);
+        setEditStatus({ success: null, error: null, message: '' });
 
         let tableName = editingArticleType === 'draft' ? 'draft_artikel' : 'artikel';
 
@@ -126,158 +114,119 @@ export default function ModerasiArtikel() {
 
         if (error) {
             console.error("Error saving article:", error);
-            setEditError(`Gagal menyimpan perubahan: ${error.message}`);
+            setEditStatus({ success: false, error: true, message: `Gagal menyimpan perubahan: ${error.message}` });
         } else {
-            setEditSuccess(true);
+            setEditStatus({ success: true, error: false, message: "Perubahan berhasil disimpan!" });
             setTimeout(() => {
-                setShowEditModal(false);
-                if (editingArticleType === 'draft') {
-                    fetchDraftArticles();
-                } else {
-                    fetchPublishedArticles();
-                }
+                setShowEditModal(false); // Ini memicu animasi keluar
+                fetchDraftArticles();
+                fetchPublishedArticles();
             }, 1000);
         }
         setIsSaving(false);
     };
 
-    // Handler untuk membuka konfirmasi publish
-    const handlePublishClick = (article) => {
-        setArticleToPublish(article);
-        setShowConfirmPublishModal(true);
-        setPublishStatus({ success: null, error: null });
+    const handleConfirmActionClick = (action, article, type = null) => {
+        setConfirmAction(action);
+        setArticleForAction({ ...article, type });
+        setActionStatus({ success: null, error: null, message: '' });
+        setShowConfirmModal(true);
     };
 
-    // Handler untuk memproses publikasi artikel
-    const confirmPublish = async () => {
-        setIsPublishing(true);
-        setPublishStatus({ success: null, error: null });
+    const handleConfirmAction = async () => {
+        setIsProcessingAction(true);
+        setActionStatus({ success: null, error: null, message: '' });
 
-        if (!articleToPublish) return;
+        if (!articleForAction) return;
 
         try {
-            // 1. Insert ke tabel 'artikel'
-            const { error: insertError } = await supabase
-                .from('artikel')
-                .insert({
-                    judul: articleToPublish.judul,
-                    deskripsi: articleToPublish.deskripsi,
-                    gambar_url: articleToPublish.gambar_url,
-                    penulis_id: articleToPublish.penulis_id,
-                    published: true,
-                    created_at: articleToPublish.created_at
-                });
+            switch (confirmAction) {
+                case 'publish':
+                    const { error: insertError } = await supabase
+                        .from('artikel')
+                        .insert({
+                            judul: articleForAction.judul,
+                            deskripsi: articleForAction.deskripsi,
+                            gambar_url: articleForAction.gambar_url,
+                            penulis_id: articleForAction.penulis_id,
+                            published: true,
+                            created_at: articleForAction.created_at
+                        });
 
-            if (insertError) {
-                throw new Error(`Gagal mempublikasikan: ${insertError.message}`);
+                    if (insertError) {
+                        throw new Error(`Gagal mempublikasikan: ${insertError.message}`);
+                    }
+
+                    const { error: deleteDraftError } = await supabase
+                        .from('draft_artikel')
+                        .delete()
+                        .eq('id', articleForAction.id);
+
+                    if (deleteDraftError) {
+                        console.error("Gagal menghapus artikel draft setelah publikasi:", deleteDraftError.message);
+                    }
+                    setActionStatus({ success: true, error: false, message: "Artikel berhasil dipublikasi!" });
+                    break;
+
+                case 'unpublish':
+                    const { error: insertDraftError } = await supabase
+                        .from('draft_artikel')
+                        .insert({
+                            judul: articleForAction.judul,
+                            deskripsi: articleForAction.deskripsi,
+                            gambar_url: articleForAction.gambar_url,
+                            penulis_id: articleForAction.penulis_id,
+                            created_at: articleForAction.created_at
+                        });
+
+                    if (insertDraftError) {
+                        throw new Error(`Gagal memindahkan ke draft: ${insertDraftError.message}`);
+                    }
+
+                    const { error: deletePublishedError } = await supabase
+                        .from('artikel')
+                        .delete()
+                        .eq('id', articleForAction.id);
+
+                    if (deletePublishedError) {
+                        console.error("Gagal menghapus artikel publikasi setelah dipindahkan ke draft:", deletePublishedError.message);
+                    }
+                    setActionStatus({ success: true, error: false, message: "Artikel berhasil dipindahkan ke draft!" });
+                    break;
+
+                case 'delete':
+                    let tableName = articleForAction.type === 'draft' ? 'draft_artikel' : 'artikel';
+                    const { error: deleteError } = await supabase
+                        .from(tableName)
+                        .delete()
+                        .eq('id', articleForAction.id);
+
+                    if (deleteError) {
+                        throw new Error(`Gagal menghapus artikel: ${deleteError.message}`);
+                    }
+                    setActionStatus({ success: true, error: false, message: "Artikel berhasil dihapus!" });
+                    break;
+
+                default:
+                    throw new Error("Aksi tidak dikenal.");
             }
 
-            // 2. Hapus dari tabel 'draft_artikel'
-            const { error: deleteError } = await supabase
-                .from('draft_artikel')
-                .delete()
-                .eq('id', articleToPublish.id);
-
-            if (deleteError) {
-                console.error("Gagal menghapus artikel draft setelah publikasi:", deleteError.message);
-            }
-
-            setPublishStatus({ success: true, error: null });
+            // Setelah sukses, tutup modal dan refresh data
             setTimeout(() => {
-                setShowConfirmPublishModal(false);
+                setShowConfirmModal(false); // Ini memicu animasi keluar
                 fetchDraftArticles();
                 fetchPublishedArticles();
             }, 1000);
 
         } catch (err) {
-            setPublishStatus({ success: false, error: err.message });
-            console.error("Kesalahan saat publish artikel:", err);
+            setActionStatus({ success: false, error: true, message: err.message });
+            fetchDraftArticles();
+            fetchPublishedArticles();
         } finally {
-            setIsPublishing(false);
+            setIsProcessingAction(false);
         }
     };
 
-    // Handler untuk membuka konfirmasi unpublish
-    const handleUnpublishClick = (article) => {
-        setArticleToUnpublish(article);
-        setShowConfirmUnpublishModal(true);
-        setUnpublishStatus({ success: null, error: null });
-    };
-
-    // Handler untuk memproses unpublish artikel (memindahkan ke draft)
-    const confirmUnpublish = async () => {
-        setIsUnpublishing(true);
-        setUnpublishStatus({ success: null, error: null });
-
-        if (!articleToUnpublish) return;
-
-        try {
-            // 1. Insert ke tabel 'draft_artikel'
-            const { error: insertError } = await supabase
-                .from('draft_artikel')
-                .insert({
-                    judul: articleToUnpublish.judul,
-                    deskripsi: articleToUnpublish.deskripsi,
-                    gambar_url: articleToUnpublish.gambar_url,
-                    penulis_id: articleToUnpublish.penulis_id,
-                    created_at: articleToUnpublish.created_at
-                });
-
-            if (insertError) {
-                throw new Error(`Gagal memindahkan ke draft: ${insertError.message}`);
-            }
-
-            // 2. Hapus dari tabel 'artikel'
-            const { error: deleteError } = await supabase
-                .from('artikel')
-                .delete()
-                .eq('id', articleToUnpublish.id);
-
-            if (deleteError) {
-                console.error("Gagal menghapus artikel publikasi setelah dipindahkan ke draft:", deleteError.message);
-            }
-
-            setUnpublishStatus({ success: true, error: null });
-            setTimeout(() => {
-                setShowConfirmUnpublishModal(false);
-                fetchDraftArticles();
-                fetchPublishedArticles();
-            }, 1000);
-
-        } catch (err) {
-            setUnpublishStatus({ success: false, error: err.message });
-            console.error("Kesalahan saat unpublish artikel:", err);
-        } finally {
-            setIsUnpublishing(false);
-        }
-    };
-
-
-    // Handler untuk menghapus artikel
-    const handleDelete = async (articleId, type) => {
-        const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus artikel ini dari ${type === 'draft' ? 'draft' : 'publikasi'}?`);
-        if (!confirmDelete) return;
-
-        let tableName = type === 'draft' ? 'draft_artikel' : 'artikel';
-
-        const { error } = await supabase
-            .from(tableName)
-            .delete()
-            .eq('id', articleId);
-
-        if (error) {
-            alert(`Gagal menghapus artikel: ${error.message}`);
-            console.error("Error deleting article:", error);
-        } else {
-            if (type === 'draft') {
-                fetchDraftArticles();
-            } else {
-                fetchPublishedArticles();
-            }
-        }
-    };
-
-    // Filtered articles for display based on search terms
     const filteredDraftArticles = draftArticles.filter(artikel =>
         artikel.judul.toLowerCase().includes(draftSearchTerm.toLowerCase()) ||
         artikel.deskripsi.toLowerCase().includes(draftSearchTerm.toLowerCase()) ||
@@ -306,6 +255,62 @@ export default function ModerasiArtikel() {
     };
 
     const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
+
+    const getConfirmModalContent = () => {
+        if (!articleForAction) return { title: '', message: '' };
+
+        switch (confirmAction) {
+            case 'publish':
+                return {
+                    title: 'Konfirmasi Publikasi',
+                    message: (
+                        <>
+                            Apakah Anda yakin ingin mempublikasikan artikel "<span className="font-semibold">{articleForAction.judul}</span>"?
+                            Artikel ini akan dipindahkan ke daftar artikel publikasi.
+                        </>
+                    ),
+                    buttonText: 'Ya, Publikasikan',
+                    buttonIcon: <Send size={16} />,
+                    buttonClass: 'text-green-400 hover:text-green-400',
+                    isProcessing: isProcessingAction,
+                    processingText: 'Mempublikasikan...'
+                };
+            case 'unpublish':
+                return {
+                    title: 'Konfirmasi Unpublish',
+                    message: (
+                        <>
+                            Apakah Anda yakin ingin memindahkan artikel "<span className="font-semibold">{articleForAction.judul}</span>" kembali ke daftar draft?
+                        </>
+                    ),
+                    buttonText: 'Ya, Pindahkan ke Draft',
+                    buttonIcon: <ChevronLeft size={16} />,
+                    buttonClass: 'text-purple-400 hover:text-purple-400',
+                    isProcessing: isProcessingAction,
+                    processingText: 'Memindahkan...'
+                };
+            case 'delete':
+                return {
+                    title: 'Konfirmasi Hapus Artikel',
+                    message: (
+                        <>
+                            Apakah Anda yakin ingin menghapus artikel "<span className="font-semibold">{articleForAction.judul}</span>"
+                            dari {articleForAction.type === 'draft' ? 'draft' : 'publikasi'}?
+                            Tindakan ini tidak dapat dibatalkan.
+                        </>
+                    ),
+                    buttonText: 'Ya, Hapus',
+                    buttonIcon: <Trash2 size={16} />,
+                    buttonClass: 'text-red-400 hover:text-red-400',
+                    isProcessing: isProcessingAction,
+                    processingText: 'Menghapus...'
+                };
+            default:
+                return { title: '', message: '' };
+        }
+    };
+
+    const confirmModalProps = getConfirmModalContent();
 
     return (
         <div className="relative min-h-screen flex flex-col justify-between bg-gray-900 text-white">
@@ -342,15 +347,12 @@ export default function ModerasiArtikel() {
                 </nav>
             </motion.div>
 
-            <main className="flex-grow px-4 md:px-12 pt-28 pb-16"> {/* Ini pt-28 untuk main di mobile */}
-                {/* Mobile Menu Manajemen Artikel - DIPINDAH DI SINI (di atas judul utama) */}
+            <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
+                {/* Mobile Menu Manajemen Artikel */}
                 <motion.div
                     variants={menuVariants}
                     initial="hidden"
                     animate="visible"
-                    // mx-auto untuk tengah horizontal
-                    // mb-8 untuk jarak ke judul (sama seperti mb-8 searchbar di Artikel.jsx)
-                    // block md:hidden untuk hanya tampil di mobile
                     className="block md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg z-10 w-fit"
                 >
                     <nav className="flex space-x-4 justify-center">
@@ -377,7 +379,6 @@ export default function ModerasiArtikel() {
                         </Link>
                     </nav>
                 </motion.div>
-                {/* Akhir Mobile Menu Manajemen Artikel */}
 
                 <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
 
@@ -389,7 +390,6 @@ export default function ModerasiArtikel() {
                         variants={itemVariants}
                         className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8"
                     >
-                        {/* Judul dan Search Bar Draft */}
                         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                             <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Draft</h2>
                             <div className="relative flex-grow max-w-sm sm:max-w-xs">
@@ -435,7 +435,6 @@ export default function ModerasiArtikel() {
                                             {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{artikel.deskripsi}</p>}
                                         </div>
                                         <div className="flex flex-wrap gap-2 md:ml-4">
-                                            {/* Tombol Edit - Teks Kuning */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -444,20 +443,18 @@ export default function ModerasiArtikel() {
                                             >
                                                 <Edit size={16} /> Edit
                                             </motion.button>
-                                            {/* Tombol Publikasi - Teks Hijau */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => handlePublishClick(artikel)}
+                                                onClick={() => handleConfirmActionClick('publish', artikel)}
                                                 className={`${glassButtonClasses} text-green-400 hover:text-green-400`}
                                             >
                                                 <Send size={16} /> Publikasi
                                             </motion.button>
-                                            {/* Tombol Hapus - Teks Merah */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => handleDelete(artikel.id, 'draft')}
+                                                onClick={() => handleConfirmActionClick('delete', artikel, 'draft')}
                                                 className={`${glassButtonClasses} text-red-400 hover:text-red-400`}
                                             >
                                                 <Trash2 size={16} /> Hapus
@@ -476,7 +473,6 @@ export default function ModerasiArtikel() {
                         variants={itemVariants}
                         className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8"
                     >
-                        {/* Judul dan Search Bar Publikasi */}
                         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                             <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Publikasi</h2>
                             <div className="relative flex-grow max-w-sm sm:max-w-xs">
@@ -525,7 +521,6 @@ export default function ModerasiArtikel() {
                                             </p>
                                         </div>
                                         <div className="flex flex-wrap gap-2 md:ml-4">
-                                            {/* Tombol Edit - Teks Kuning */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -534,20 +529,18 @@ export default function ModerasiArtikel() {
                                             >
                                                 <Edit size={16} /> Edit
                                             </motion.button>
-                                            {/* Tombol Unpublish - Teks Ungu */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => handleUnpublishClick(artikel)}
+                                                onClick={() => handleConfirmActionClick('unpublish', artikel)}
                                                 className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}
                                             >
                                                 <ChevronLeft size={16} /> Unpublish
                                             </motion.button>
-                                            {/* Tombol Hapus - Teks Merah */}
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                onClick={() => handleDelete(artikel.id, 'published')}
+                                                onClick={() => handleConfirmActionClick('delete', artikel, 'published')}
                                                 className={`${glassButtonClasses} text-red-400 hover:text-red-400`}
                                             >
                                                 <Trash2 size={16} /> Hapus
@@ -562,190 +555,106 @@ export default function ModerasiArtikel() {
             </main>
 
             {/* Modal Edit Artikel */}
-            <AnimatePresence>
-                {showEditModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
+            <Modal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)} // Ini akan memicu animasi keluar saat X ditekan
+                title="Edit Artikel"
+            >
+                <form onSubmit={handleSaveEdit} className="space-y-4 text-left">
+                    <div>
+                        <label htmlFor="editJudul" className="block text-gray-300 text-sm font-medium mb-2">Judul</label>
+                        <input
+                            type="text"
+                            id="editJudul"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
+                            value={editForm.judul}
+                            onChange={(e) => setEditForm({ ...editForm, judul: e.target.value })}
+                            placeholder="Masukkan judul artikel"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="editDeskripsi" className="block text-gray-300 text-sm font-medium mb-2">Deskripsi</label>
+                        <textarea
+                            id="editDeskripsi"
+                            rows="6"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
+                            value={editForm.deskripsi}
+                            onChange={(e) => setEditForm({ ...editForm, deskripsi: e.target.value })}
+                            placeholder="Tulis deskripsi singkat artikel di sini"
+                            required
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label htmlFor="editGambarUrl" className="block text-gray-300 text-sm font-medium mb-2">URL Gambar</label>
+                        <input
+                            type="url"
+                            id="editGambarUrl"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
+                            value={editForm.gambar_url}
+                            onChange={(e) => setEditForm({ ...editForm, gambar_url: e.target.value })}
+                            placeholder="Contoh: https://contoh.com/gambar.jpg"
+                        />
+                    </div>
+                    {/* Notifikasi sukses/error untuk form edit */}
+                    {editStatus.error && <p className="text-red-400 text-sm">{editStatus.message}</p>}
+                    {editStatus.success && <p className="text-green-400 text-sm">{editStatus.message}</p>}
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="submit"
+                        className="w-full bg-white/5 border border-white/10 rounded-md text-blue-400 py-2 font-semibold hover:text-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isSaving}
                     >
-                        <motion.div
-                            initial={{ y: -50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -50, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 100, damping: 10 }}
-                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6 w-full max-w-md relative"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="absolute top-3 right-3 text-gray-400 hover:text-white"
-                            >
-                                <X size={24} />
-                            </button>
-                            <h2 className="text-xl font-bold mb-4 text-[#FF9F1C]">Edit Artikel</h2>
-                            <form onSubmit={handleSaveEdit} className="space-y-4">
-                                <div>
-                                    <label htmlFor="editJudul" className="block text-gray-300 text-sm font-medium mb-2">Judul</label>
-                                    <input
-                                        type="text"
-                                        id="editJudul"
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
-                                        value={editForm.judul}
-                                        onChange={(e) => setEditForm({ ...editForm, judul: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="editDeskripsi" className="block text-gray-300 text-sm font-medium mb-2">Deskripsi</label>
-                                    <textarea
-                                        id="editDeskripsi"
-                                        rows="6"
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
-                                        value={editForm.deskripsi}
-                                        onChange={(e) => setEditForm({ ...editForm, deskripsi: e.target.value })}
-                                        required
-                                    ></textarea>
-                                </div>
-                                <div>
-                                    <label htmlFor="editGambarUrl" className="block text-gray-300 text-sm font-medium mb-2">URL Gambar</label>
-                                    <input
-                                        type="url"
-                                        id="editGambarUrl"
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
-                                        value={editForm.gambar_url}
-                                        onChange={(e) => setEditForm({ ...editForm, gambar_url: e.target.value })}
-                                    />
-                                </div>
-                                {editError && <p className="text-red-400 text-sm">{editError}</p>}
-                                {editSuccess && <p className="text-green-400 text-sm">Perubahan berhasil disimpan!</p>}
-                                {/* Tombol Simpan Perubahan - Teks Biru */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    type="submit"
-                                    className="w-full bg-white/5 border border-white/10 rounded-md text-blue-400 py-2 font-semibold hover:text-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={isSaving}
-                                >
-                                    {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
-                                </motion.button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </motion.button>
+                </form>
+            </Modal>
 
-            {/* Modal Konfirmasi Publikasi */}
-            <AnimatePresence>
-                {showConfirmPublishModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
-                    >
-                        <motion.div
-                            initial={{ y: -50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -50, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 100, damping: 10 }}
-                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6 w-full max-w-sm relative text-center"
-                            onClick={(e) => e.stopPropagation()}
+            {/* Modal Konfirmasi Umum (untuk Publikasi, Unpublish, Hapus) */}
+            <Modal
+                isOpen={showConfirmModal}
+                onClose={() => {
+                    // Logic untuk tombol X di modal konfirmasi: hanya menutup modal, tanpa refresh halaman
+                    if (!isProcessingAction) { // Pastikan tidak sedang dalam proses
+                        setShowConfirmModal(false); // Ini akan memicu animasi keluar saat X ditekan
+                        setActionStatus({ success: null, error: null, message: '' }); // Reset status
+                    }
+                }}
+                title={confirmModalProps.title}
+                statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null}
+                actions={
+                    <>
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleConfirmAction}
+                            className={`${glassButtonClasses} ${confirmModalProps.buttonClass}`}
+                            disabled={isProcessingAction}
                         >
-                            <button
-                                onClick={() => setShowConfirmPublishModal(false)}
-                                className="absolute top-3 right-3 text-gray-400 hover:text-white"
-                            >
-                                <X size={24} />
-                            </button>
-                            <h2 className="text-xl font-bold mb-4 text-[#FF9F1C]">Konfirmasi Publikasi</h2>
-                            <p className="mb-6 text-gray-300">
-                                Apakah Anda yakin ingin mempublikasikan artikel "<span className="font-semibold">{articleToPublish?.judul}</span>"?
-                                Artikel ini akan dipindahkan ke daftar artikel publikasi.
-                            </p>
-                            {publishStatus.error && <p className="text-red-400 text-sm mb-4">{publishStatus.error}</p>}
-                            {publishStatus.success && <p className="text-green-400 text-sm mb-4">Artikel berhasil dipublikasi!</p>}
-                            <div className="flex justify-center gap-4">
-                                {/* Tombol Ya, Publikasikan - Teks Hijau */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={confirmPublish}
-                                    className={`${glassButtonClasses} text-green-400 hover:text-green-400`}
-                                    disabled={isPublishing}
-                                >
-                                    {isPublishing ? 'Mempublikasikan...' : <><Send size={16} /> Ya, Publikasikan</>}
-                                </motion.button>
-                                {/* Tombol Batal - Teks Abu */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => setShowConfirmPublishModal(false)}
-                                    className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`}
-                                >
-                                    <X size={16} /> Batal
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            {confirmModalProps.isProcessing ? confirmModalProps.processingText : <>{confirmModalProps.buttonIcon} {confirmModalProps.buttonText}</>}
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                                // Tombol Batal: hanya menutup modal, tanpa refresh halaman
+                                if (!isProcessingAction) {
+                                    setShowConfirmModal(false); // Ini akan memicu animasi keluar saat Batal ditekan
+                                    setActionStatus({ success: null, error: null, message: '' }); // Reset status
+                                }
+                            }}
+                            className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`}
+                            disabled={isProcessingAction}
+                        >
+                            <X size={16} /> Batal
+                        </motion.button>
+                    </>
+                }
+            >
+                {confirmModalProps.message}
+            </Modal>
 
-            {/* Modal Konfirmasi Unpublish */}
-            <AnimatePresence>
-                {showConfirmUnpublishModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
-                    >
-                        <motion.div
-                            initial={{ y: -50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -50, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 100, damping: 10 }}
-                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6 w-full max-w-sm relative text-center"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={() => setShowConfirmUnpublishModal(false)}
-                                className="absolute top-3 right-3 text-gray-400 hover:text-white"
-                            >
-                                <X size={24} />
-                            </button>
-                            <h2 className="text-xl font-bold mb-4 text-[#FF9F1C]">Konfirmasi Unpublish</h2>
-                            <p className="mb-6 text-gray-300">
-                                Apakah Anda yakin ingin memindahkan artikel "<span className="font-semibold">{articleToUnpublish?.judul}</span>" kembali ke daftar draft?
-                            </p>
-                            {unpublishStatus.error && <p className="text-red-400 text-sm mb-4">{unpublishStatus.error}</p>}
-                            {unpublishStatus.success && <p className="text-green-400 text-sm mb-4">Artikel berhasil dipindahkan ke draft!</p>}
-                            <div className="flex justify-center gap-4">
-                                {/* Tombol Ya, Pindahkan ke Draft - Teks Ungu */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={confirmUnpublish}
-                                    className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}
-                                    disabled={isUnpublishing}
-                                >
-                                    {isUnpublishing ? 'Memindahkan...' : <><ChevronLeft size={16} /> Ya, Pindahkan ke Draft</>}
-                                </motion.button>
-                                {/* Tombol Batal - Teks Abu */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => setShowConfirmUnpublishModal(false)}
-                                    className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`}
-                                >
-                                    <X size={16} /> Batal
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Footer yang Diperbarui */}
             <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-xs sm:text-sm py-6 sm:py-10 px-4 sm:px-6 md:px-20 border-t border-[#333]">
