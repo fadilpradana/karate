@@ -1,11 +1,10 @@
+import { motion, AnimatePresence } from "framer-motion"; // PERBAIKAN: AnimatePresence ditambahkan
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Menu, X, CheckCircle, AlertTriangle, LoaderCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo_bintangcompress.png";
 import { useAuth } from '../context/AuthContext';
 
-// --- Tidak ada perubahan di blok ini ---
 const staticNavLinks = [
     { name: "Beranda", path: "/" },
     { name: "Profil", path: "/profil" },
@@ -47,6 +46,7 @@ export default function Navbar() {
         try {
             await signOut();
             setLogoutFeedback({ message: 'Logout berhasil!', type: 'success' });
+            setMenuOpen(false); // Menutup menu mobile setelah logout berhasil
             navigate('/login');
         } catch (error) {
             setLogoutFeedback({ message: 'Logout gagal, coba lagi.', type: 'error' });
@@ -143,7 +143,6 @@ export default function Navbar() {
                         <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
                         {session && ( <> 
                             <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
-                                {/* PERUBAHAN: Warna teks Dashboard di mobile menjadi putih */}
                                 <Link to={dashboardLink.path} className="text-2xl font-league uppercase text-white hover:text-[#FF9F1C] transition-colors">
                                     {dashboardLink.name}
                                 </Link>
