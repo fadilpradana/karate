@@ -22,7 +22,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
-  
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [indicatorProps, setIndicatorProps] = useState({ left: 0, width: 0 });
   const navLinksRefs = useRef([]);
@@ -33,7 +33,7 @@ export default function Navbar() {
   const [logoutFeedback, setLogoutFeedback] = useState({ message: '', type: null });
 
   const allMainLinks = useMemo(() => (
-    session 
+    session
       ? staticNavLinks
       : [...staticNavLinks, loginLink]
   ), [session]);
@@ -59,7 +59,7 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    if (menuOpen) { document.body.style.overflow = 'hidden'; } 
+    if (menuOpen) { document.body.style.overflow = 'hidden'; }
     else { document.body.style.overflow = 'unset'; }
     return () => { document.body.style.overflow = 'unset'; };
   }, [menuOpen]);
@@ -110,8 +110,8 @@ export default function Navbar() {
                     <button onClick={handleLogout} className={`relative z-10 px-4 py-1.5 text-xs rounded-md border border-white/60 bg-black/20 text-white/90 hover:bg-red-500/30 hover:border-red-500/70 transition-all duration-300`}>
                         Logout
                     </button>
-                </motion.div>) 
-                : 
+                </motion.div>)
+                :
                 (<motion.div variants={itemVariants}>
                     <Link to={loginLink.path} ref={(el) => (navLinksRefs.current[staticNavLinks.length] = el)} className={`relative z-10 px-4 py-1.5 text-xs rounded-md border border-white/60 hover:bg-white/10 hover:border-white transition-all duration-300 ${(location.pathname === loginLink.path || location.pathname === '/login') ? 'bg-white/10 text-[#FF9F1C]' : 'text-white/90'}`}>
                         {loginLink.name}
@@ -140,11 +140,14 @@ export default function Navbar() {
             <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 md:hidden z-50" variants={mobileMenuVariants} initial="hidden" animate="visible" exit="exit">
               {allMainLinks.map((link) => (<motion.div key={`mobile-${link.path}`} variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={link.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === link.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{link.name}</Link></motion.div>))}
               <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
-              {session && ( <> <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={dashboardLink.path} className="text-2xl font-league uppercase text-green-400">{dashboardLink.name}</Link></motion.div> 
+              {session && ( <> <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                {/* PERUBAHAN: Warna Dashboard di mobile menu */}
+                <Link to={dashboardLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === dashboardLink.path ? "text-green-400" : "text-white hover:text-[#FF9F1C]"}`}>{dashboardLink.name}</Link>
+              </motion.div>
               <motion.div variants={mobileMenuItemVariants}>
                   {/* PERUBAHAN: Hover state diubah ke warna merah */}
                   <button onClick={handleLogout} className="text-2xl font-league uppercase text-white hover:text-red-400 transition-colors">Logout</button>
-              </motion.div> 
+              </motion.div>
               </> )}
             </motion.div>
           )}
@@ -158,7 +161,7 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <AnimatePresence>
         {logoutFeedback.type && (
           <motion.div
