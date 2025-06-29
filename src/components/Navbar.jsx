@@ -46,6 +46,8 @@ export default function Navbar() {
     setIsLoggingOut(true);
     try {
       await signOut();
+      // PERUBAHAN: Tutup menu hamburger setelah berhasil logout
+      setMenuOpen(false);
       setLogoutFeedback({ message: 'Logout berhasil!', type: 'success' });
       navigate('/login');
     } catch (error) {
