@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import brevetLogo from '../assets/brevet.png'; // <-- PASTIKAN PATH LOGO INI BENAR
+import brevetLogo from '../assets/brevet.png';
+import { AnimatePresence } from 'framer-motion';
+import SuccessModal from '../components/SuccessModal';
+import ErrorModal from '../components/ErrorModal';
 
 function SignUp() {
     const [loading, setLoading] = useState(false);
@@ -13,26 +16,47 @@ function SignUp() {
     const [npt, setNpt] = useState('');
     const [kelas, setKelas] = useState('');
     const [angkatan, setAngkatan] = useState('');
+
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
     const navigate = useNavigate();
     const { signUp } = useAuth();
 
     const handleSignUp = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const { error } = await signUp({
+        setSuccessMessage('');
+        setErrorMessage('');
+
+        const { data, error } = await signUp({
             email,
             password,
             options: {
                 data: { username, nama_lengkap: namaLengkap, nomor_telepon: nomorTelepon, npt, kelas, angkatan },
             },
         });
+
         if (error) {
-            alert(error.message);
+            setErrorMessage(error.message);
         } else {
-            alert('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
-            navigate('/login');
+            // Karena verifikasi email dimatikan, Supabase langsung mengembalikan sesi.
+            // Kita akan menampilkan modal sukses dan menunggu user mengklik OK untuk navigasi.
+            setSuccessMessage('Pendaftaran berhasil!');
+            // TIDAK ADA setTimeout di sini untuk navigasi otomatis
         }
         setLoading(false);
+    };
+
+    // Fungsi untuk menutup modal sukses DAN melakukan navigasi ke dashboard
+    const handleSuccessModalClose = () => {
+        setSuccessMessage(''); // Tutup modal
+        navigate('/dashboard'); // Navigasi ke dashboard saat OK diklik
+    };
+
+    // Fungsi untuk menutup modal error
+    const handleErrorModalClose = () => {
+        setErrorMessage('');
     };
 
     const inputStyle = "w-full px-4 py-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200";
@@ -41,6 +65,26 @@ function SignUp() {
     return (
         // Wrapper utama untuk layout sticky footer
         <div className="flex flex-col min-h-screen">
+            {/* Success Modal */}
+            <AnimatePresence>
+                {successMessage && (
+                    <SuccessModal
+                        message={successMessage}
+                        onClose={handleSuccessModalClose} // Panggil fungsi yang juga menavigasi
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Error Modal */}
+            <AnimatePresence>
+                {errorMessage && (
+                    <ErrorModal
+                        message={errorMessage}
+                        onClose={handleErrorModalClose}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Konten utama */}
             <main className="flex-grow flex justify-center items-center pt-28 pb-12 px-4">
                 <div className="w-full max-w-lg p-8 space-y-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
@@ -73,7 +117,7 @@ function SignUp() {
                     </form>
                 </div>
             </main>
-            
+
             {/* Footer */}
             <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -88,6 +132,7 @@ function SignUp() {
                         <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
                         <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
                         <Link to="/artikel" className="hover:text-[#FF9F1C]">Artikel</Link>
+                        <Link to="/kontak" className="hover:text-[#FF9F1C]">Kontak</Link>
                     </div>
                 </div>
             </footer>

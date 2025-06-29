@@ -3,8 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
-import { CheckCircle, AlertTriangle, Edit, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Edit, ChevronDown, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Impor modal yang sudah ada
+import SuccessModal from '../components/SuccessModal';
+import ErrorModal from '../components/ErrorModal';
+
 
 // Komponen Reusable untuk Menampilkan & Mengedit Kartu Profil
 function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLogout }) {
@@ -24,7 +29,7 @@ function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLo
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        await onUpdate(formData);
+        await onUpdate(formData); // onUpdate akan menampilkan feedback
         setLoading(false);
         setIsEditing(false);
     };
@@ -91,6 +96,10 @@ function Dashboard() {
     const [error, setError] = useState(null);
     const [editFormData, setEditFormData] = useState({});
     const [updateStatus, setUpdateStatus] = useState({ message: '', type: null });
+    
+    // State untuk modal konfirmasi hapus
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [profileToDelete, setProfileToDelete] = useState(null);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -139,7 +148,8 @@ function Dashboard() {
             const { username, nama_lengkap, nomor_telepon, npt, kelas, angkatan, role } = editFormData;
             const { error } = await supabase.from('profiles').update({ username, nama_lengkap, nomor_telepon, npt, kelas, angkatan, role }).eq('id', selectedProfile.id);
             if (error) throw error;
-            setAllProfiles(prev => prev.map(p => p.id === selectedProfile.id ? editFormData : p));
+            // Perbarui juga data di allProfiles dengan data yang sudah diupdate
+            setAllProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...editFormData } : p));
             showUpdateFeedback(`Profil ${selectedProfile.username} berhasil diperbarui!`, 'success');
             setSelectedProfile(null);
         } catch (err) {
@@ -157,6 +167,47 @@ function Dashboard() {
         setEditFormData(profile);
     };
 
+    // Fungsi untuk menampilkan modal konfirmasi hapus
+    const confirmDeleteProfile = (profile) => {
+        setProfileToDelete(profile);
+        setShowDeleteConfirmModal(true);
+    };
+
+    // Fungsi untuk menghapus profil setelah konfirmasi (panggilan ke Edge Function)
+    const handleDeleteProfile = async () => {
+        if (!profileToDelete) return;
+
+        setLoading(true);
+        setShowDeleteConfirmModal(false); // Tutup modal konfirmasi
+        
+        try {
+            // Panggil Edge Function untuk menghapus pengguna dari auth.users dan profiles
+            const response = await fetch('https://unkauvoourtaoxdpdlst.supabase.co/functions/v1/delete-user', { // Sesuaikan dengan path Edge Function Anda
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}` // Mengirim token sesi admin untuk otentikasi
+                },
+                body: JSON.stringify({ userId: profileToDelete.id }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Gagal menghapus pengguna.');
+            }
+
+            // Jika berhasil, update state frontend
+            setAllProfiles(prev => prev.filter(p => p.id !== profileToDelete.id));
+            showUpdateFeedback(`Profil ${profileToDelete.username} berhasil dihapus!`, 'success');
+            setProfileToDelete(null); // Reset profil yang akan dihapus
+        } catch (err) {
+            showUpdateFeedback(`Gagal menghapus akun: ${err.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleLogout = async () => {
         await signOut();
         navigate('/login');
@@ -166,10 +217,10 @@ function Dashboard() {
     const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { ease: "easeOut", duration: 0.5 } } };
     const titleVariants = { hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.6 } } };
 
-    if (loading && !myProfile) return <div className="flex justify-center items-center min-h-screen">Memuat data...</div>;
-    if (error) return <div className="flex justify-center items-center min-h-screen">Error: {error}</div>;
+    if (loading && !myProfile) return <div className="flex justify-center items-center min-h-screen text-white text-lg">Memuat data...</div>;
+    if (error) return <div className="flex justify-center items-center min-h-screen text-red-500 text-lg">Error: {error}</div>;
     
-    const inputStyle = "w-full px-3 py-2 text-sm bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200";
+    const inputStyle = "w-full px-3 py-2 text-sm bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white";
     const labelStyle = "text-[10px] text-gray-400 uppercase";
     const glassButtonStyle = "flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors";
     
@@ -179,7 +230,6 @@ function Dashboard() {
                 {myProfile?.role === 'admin' ? (
                     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-7xl">
                         <motion.div variants={titleVariants} className="text-center mb-8">
-                            {/* PERUBAHAN 2 & 3: Ukuran font diubah dan 'uppercase' dihapus */}
                             <h1 className="text-2xl font-bold text-white">Selamat Datang,</h1>
                             <div className="text-4xl mt-1 font-bold battery-style-gradient">{myProfile.nama_lengkap}!</div>
                         </motion.div>
@@ -192,21 +242,21 @@ function Dashboard() {
                                     {selectedProfile && (
                                         <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: 'auto'}} exit={{opacity: 0, height: 0}} transition={{ ease: "easeInOut", duration: 0.3 }} className="mb-6 overflow-hidden">
                                            <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
-                                                <h3 className="font-regular">Edit Profil: {selectedProfile.username}</h3>
-                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div><p className={labelStyle}>Username</p><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                     <div><p className={labelStyle}>Nama Lengkap</p><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                 </div>
-                                                 <div><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                </div>
+                                                <div><p className={labelStyle}>Email</p><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
+                                                <div><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div><p className={labelStyle}>NPT</p><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                     <div><p className={labelStyle}>Kelas</p><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                 </div>
-                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div><p className={labelStyle}>Angkatan</p><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                     <div>
                                                         <p className={labelStyle}>Role</p>
-                                                        {/* PERUBAHAN 1: Warna dropdown diselaraskan */}
                                                         <div className="relative">
                                                             <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
                                                                 <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
@@ -218,7 +268,7 @@ function Dashboard() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                 </div>
+                                                </div>
                                                 <div className="flex justify-end gap-3 pt-2">
                                                     <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
                                                     <button type="submit" disabled={loading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
@@ -228,7 +278,23 @@ function Dashboard() {
                                     )}
                                     </AnimatePresence>
                                     <div className="space-y-2">
-                                        {allProfiles.map(p => (<div key={p.id} className="flex justify-between items-center p-3 bg-black/20 rounded-md"><div><p className="font-bold text-white break-words">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400 break-words">({p.username})</span></p><p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p></div><button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20 flex-shrink-0 ml-2"><Edit size={16} className="text-white"/></button></div>))}
+                                        {allProfiles.map(p => (
+                                            <div key={p.id} className="flex justify-between items-center p-3 bg-black/20 rounded-md">
+                                                <div>
+                                                    <p className="font-bold text-white break-words">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400 break-words">({p.username})</span></p>
+                                                    <p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20 flex-shrink-0 ml-2">
+                                                        <Edit size={16} className="text-white"/>
+                                                    </button>
+                                                    {/* Tombol Hapus */}
+                                                    <button onClick={() => confirmDeleteProfile(p)} className="p-2 rounded-md hover:bg-red-500/20 flex-shrink-0">
+                                                        <Trash2 size={16} className="text-red-400"/>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </motion.div>
@@ -247,13 +313,59 @@ function Dashboard() {
                         <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
                         <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
                         <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
-                        <Link to="/berita" className="hover:text-[#FF9F1C]">Berita</Link>
+                        <Link to="/artikel" className="hover:text-[#FF9F1C]">Artikel</Link>
+                        <Link to="/kontak" className="hover:text-[#FF9F1C]">Kontak</Link>
                     </div>
                 </div>
             </footer>
             
             <AnimatePresence>
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
+            </AnimatePresence>
+
+            {/* Konfirmasi Modal Hapus */}
+            <AnimatePresence>
+                {showDeleteConfirmModal && profileToDelete && (
+                    <motion.div
+                        className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowDeleteConfirmModal(false)}
+                    >
+                        <motion.div
+                            className="bg-[#1D232A] rounded-xl p-8 flex flex-col items-center text-center space-y-4 w-full max-w-sm text-white"
+                            initial={{ scale: 0.7, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.7, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <AlertTriangle className="h-12 w-12 text-red-500" />
+                            <h2 className="text-2xl font-bold text-red-500">Konfirmasi Hapus Akun</h2>
+                            <p className="text-gray-300">
+                                Anda yakin ingin menghapus akun <span className="font-semibold">{profileToDelete.username}</span>?
+                                Tindakan ini akan menghapus data profil dari database dan juga akun autentikasi pengguna.
+                                Tindakan ini tidak dapat dibatalkan.
+                            </p>
+                            <div className="flex justify-center gap-4 w-full pt-4">
+                                <button
+                                    onClick={() => setShowDeleteConfirmModal(false)}
+                                    className="px-6 py-2 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleDeleteProfile}
+                                    className="px-6 py-2 rounded-md bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Menghapus...' : 'Hapus'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </div>
     );
