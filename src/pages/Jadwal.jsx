@@ -134,7 +134,7 @@ export default function Jadwal() {
               <p className="text-lg md:text-xl font-[Montserrat] font-light">07.00 - 09.30 WIB</p> 
             </div>
             <Link
-              to="/pendaftaran"
+              to="/kontak" // PERUBAHAN: Mengarahkan ke halaman kontak
               className="inline-block mt-3 px-5 py-1.5 font-semibold rounded-lg text-xs md:text-sm" 
               style={{
                 ...glassmorphismStyle,
@@ -154,7 +154,7 @@ export default function Jadwal() {
                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
               }}
             >
-              Daftar Sekarang
+              Hubungi Pengurus {/* PERUBAHAN: Teks tombol */}
             </Link>
           </motion.div>
 
