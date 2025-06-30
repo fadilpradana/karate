@@ -1,0 +1,28 @@
+/* Styling untuk Tiptap Editor */
+.tiptap {
+    @apply p-4 min-h-[200px] bg-transparent text-white rounded-b-lg border border-t-0 border-white/10 focus:outline-none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: rgba(156, 163, 175, 0.8);
+    pointer-events: none;
+    height: 0;
+}
+
+.tiptap h1, .tiptap h2, .tiptap h3 {
+    @apply text-white;
+}
+
+.tiptap ul, .tiptap ol {
+    @apply pl-4 my-2;
+}
+
+.tiptap img {
+    @apply max-w-full h-auto my-4 rounded-lg;
+}
+
+.tiptap img.ProseMirror-selectednode {
+    @apply outline-2 outline-dashed outline-[#FF9F1C];
+}

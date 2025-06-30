@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // Pastikan path ini benar
 
+/**
+ * Hook untuk menangani logika submit artikel ke Supabase.
+ * @param {object} user - Objek user dari useAuth.
+ */
 export function useArticleForm(user) {
-    const [judul, setJudul] = useState('');
-    const [konten, setKonten] = useState('');
-    const [gambarUrl, setGambarUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
-    const [submitSuccess, setSubmitSuccess] = useState(null); // Ini akan berisi pesan sukses
-    const navigate = useNavigate();
+    const [submitSuccess, setSubmitSuccess] = useState('');
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        
+    /**
+     * Fungsi yang menangani seluruh proses submit.
+     * @param {object} formData - Data dari form yang dikirim dari komponen.
+     */
+    const handleSubmit = async (formData) => {
+        const { judul, konten, gambarUrl, coverImageFile } = formData;
+
         if (!user) {
             setSubmitError('Anda harus login untuk membuat artikel.');
             return;
@@ -21,47 +24,59 @@ export function useArticleForm(user) {
 
         setIsSubmitting(true);
         setSubmitError(null);
-        setSubmitSuccess(null);
+        setSubmitSuccess('');
+        let finalImageUrl = gambarUrl; 
 
         try {
-            const { data, error } = await supabase
-                .from('draft_artikel')
-                .insert([
-                    {
-                        judul: judul,
-                        deskripsi: konten,
-                        gambar_url: gambarUrl,
-                        penulis_id: user.id,
-                    },
-                ])
-                .select();
+            // Langkah 1: Unggah Gambar Sampul jika ada file yang dipilih
+            if (coverImageFile) {
+                const fileExt = coverImageFile.name.split('.').pop();
+                const fileName = `cover-${user.id}-${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
 
-            if (error) {
-                throw error;
-            }
+                // --- DIUBAH: Menggunakan nama bucket 'gambarartikel' ---
+                const { error: uploadError } = await supabase.storage
+                    .from('gambarartikel') 
+                    .upload(filePath, coverImageFile);
 
-            if (data) {
-                // DIUBAH DI SINI:
-                // Hook ini sekarang hanya bertanggung jawab untuk memberikan pesan,
-                // bukan menampilkan alert. Tampilan ditangani oleh komponen.
-                setSubmitSuccess('Artikel berhasil disimpan sebagai draft dan menunggu moderasi!');
+                if (uploadError) {
+                    throw new Error(`Gagal mengunggah gambar sampul: ${uploadError.message}`);
+                }
+
+                // --- DIUBAH: Mengambil URL dari bucket 'gambarartikel' ---
+                const { data } = supabase.storage
+                    .from('gambarartikel')
+                    .getPublicUrl(filePath);
                 
-                // Hapus navigasi otomatis dari sini. Biarkan komponen yang mengaturnya
-                // setelah modal ditutup.
+                finalImageUrl = data.publicUrl;
             }
+
+            // Langkah 2: Siapkan data artikel untuk dimasukkan ke tabel
+            const articleData = {
+                judul: judul,
+                deskripsi: konten, // Menyimpan konten HTML ke kolom 'deskripsi'
+                gambar_url: finalImageUrl,
+                penulis_id: user.id,
+            };
+
+            // Langkah 3: Masukkan data ke tabel 'draft_artikel'
+            const { error: insertError } = await supabase.from('draft_artikel').insert([articleData]);
+
+            if (insertError) {
+                throw new Error(`Gagal menyimpan artikel: ${insertError.message}`);
+            }
+
+            setSubmitSuccess('Artikel berhasil disimpan sebagai draf dan menunggu moderasi!');
 
         } catch (error) {
-            console.error('Error submitting article:', error.message);
-            setSubmitError(`Gagal menyimpan artikel: ${error.message}`);
+            console.error('Submit Error:', error);
+            setSubmitError(error.message);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return {
-        judul, setJudul,
-        konten, setKonten,
-        gambarUrl, setGambarUrl,
         isSubmitting,
         submitError,
         submitSuccess,

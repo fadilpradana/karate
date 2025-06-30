@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.2",
+    "@tiptap/extension-image": "^2.23.0",
+    "@tiptap/extension-placeholder": "^2.23.0",
+    "@tiptap/react": "^2.23.0",
+    "@tiptap/starter-kit": "^2.23.0",
+    "browser-image-compression": "^2.0.2",
     "framer-motion": "^12.18.1",
     "lucide-react": "^0.516.0",
     "react": "^19.1.0",
