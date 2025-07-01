@@ -1,11 +1,11 @@
 // src/pages/ModerasiArtikel.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
-import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace, Loader2, ArrowLeft } from 'lucide-react'; // Ditambahkan Loader2 dan ArrowLeft
+import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace, Loader2, ArrowLeft } from 'lucide-react';
 
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import Modal from '../components/Modal';
@@ -29,13 +29,16 @@ const stripHtml = (html) => {
 const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
 // --- Komponen Form Inline untuk Artikel ---
-const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressingImage }) => {
+const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressingImage, setIsFormDirty, setIsCompressingImageParent }) => {
     const [formData, setFormData] = useState(currentArticle);
     const [coverImagePreview, setCoverImagePreview] = useState(currentArticle.gambar_url || null);
     const [newCoverImageFile, setNewCoverImageFile] = useState(null);
     const [isCoverRemoved, setIsCoverRemoved] = useState(false);
     const fileInputRef = useRef(null);
 
+    const initialFormState = useRef(null);
+
+    // DEKLARASIKAN useEditor DI SINI, SEBELUM updateIsDirty
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -45,14 +48,57 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                 types: ['heading', 'paragraph'],
             }),
         ],
-        editorProps: { attributes: { class: 'tiptap max-h-[250px] overflow-y-auto' } }, // Increased max-height
+        editorProps: { attributes: { class: 'tiptap max-h-[250px] overflow-y-auto' } },
+        onUpdate: ({ editor }) => { // Pastikan editor diakses dari parameter callback
+            if (!initialFormState.current) return; // Tambahkan pengaman
+
+            const titleChanged = formData.judul !== initialFormState.current.judul;
+            const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
+            const coverChanged = coverImagePreview !== initialFormState.current.gambar_url || newCoverImageFile !== null || isCoverRemoved;
+
+            setIsFormDirty(titleChanged || contentChanged || coverChanged);
+        },
     });
 
+    // Callback untuk memperbarui isFormDirty di parent
+    // Perhatikan: updateIsDirty ini sekarang tidak perlu mengakses 'editor' secara langsung
+    // karena onUpdate Tiptap sudah memberi parameter 'editor' pada callback-nya.
+    // Namun, kita tetap butuh ini untuk perubahan judul dan gambar.
+    const updateIsDirty = useCallback(() => {
+        if (!initialFormState.current || !editor) return; // Pastikan editor sudah ada
+
+        const titleChanged = formData.judul !== initialFormState.current.judul;
+        const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
+        const coverChanged = coverImagePreview !== initialFormState.current.gambar_url || newCoverImageFile !== null || isCoverRemoved;
+
+        setIsFormDirty(titleChanged || contentChanged || coverChanged);
+    }, [formData.judul, editor, coverImagePreview, newCoverImageFile, isCoverRemoved, setIsFormDirty]);
+
+
+    // Inisialisasi initialFormState saat currentArticle berubah
     useEffect(() => {
-        if (editor && formData.deskripsi !== editor.getHTML()) {
-            editor.commands.setContent(formData.deskripsi || '');
+        if (currentArticle) {
+            initialFormState.current = {
+                judul: currentArticle.judul,
+                deskripsi: currentArticle.deskripsi || '',
+                gambar_url: currentArticle.gambar_url || null
+            };
+            setFormData(currentArticle); // Pastikan formData sinkron dengan currentArticle
+            setCoverImagePreview(currentArticle.gambar_url || null);
+            setNewCoverImageFile(null);
+            setIsCoverRemoved(false);
+            if (editor) { // Pastikan editor sudah diinisialisasi sebelum mencoba menggunakannya
+                editor.commands.setContent(currentArticle.deskripsi || '');
+            }
+            setIsFormDirty(false); // Reset dirty state saat artikel baru dibuka untuk diedit
         }
-    }, [formData.deskripsi, editor]);
+    }, [currentArticle, editor, setIsFormDirty]);
+
+    // Panggil updateIsDirty saat formData (judul) atau state gambar berubah
+    useEffect(() => {
+        updateIsDirty();
+    }, [formData.judul, coverImagePreview, newCoverImageFile, isCoverRemoved, updateIsDirty]);
+
 
     // Cleanup Tiptap editor on unmount
     useEffect(() => {
@@ -71,6 +117,7 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
     const handleCoverFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
+            setIsCompressingImageParent(true);
             try {
                 const compressedFile = await compressAndConvertToWebP(file);
                 setNewCoverImageFile(compressedFile);
@@ -79,6 +126,8 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
             } catch (error) {
                 console.error("Gagal memproses gambar:", error);
                 alert("Terjadi kesalahan saat memproses gambar.");
+            } finally {
+                setIsCompressingImageParent(false);
             }
         }
     };
@@ -93,16 +142,18 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
         setCoverImagePreview(imageUrl);
         setNewCoverImageFile(null);
         setIsCoverRemoved(false);
+        setShowImageBrowser(false);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setIsFormDirty(false);
         onSave({
             ...formData,
             deskripsi: editor.getHTML(),
             newCoverImageFile,
             isCoverRemoved,
-            coverImagePreview, // Pass preview for immediate UI update
+            coverImagePreview,
         });
     };
 
@@ -150,8 +201,6 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
     ];
 
     const glassFormStyle = { backgroundColor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)'};
-    const glassInputStyle = { backgroundColor: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white', borderRadius: '0.5rem', outline: 'none', width: '100%', transition: 'all 0.2s ease' };
-
 
     return (
         <motion.div
@@ -263,9 +312,12 @@ export default function ModerasiArtikel() {
     const [draftSearchTerm, setDraftSearchTerm] = useState('');
     const [publishedSearchTerm, setPublishedSearchTerm] = useState('');
 
-    const [currentArticle, setCurrentArticle] = useState(null); // State baru untuk mode inline edit
+    const [currentArticle, setCurrentArticle] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isCompressingImage, setIsCompressingImage] = useState(false);
+
+    const [isFormDirty, setIsFormDirty] = useState(false);
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
@@ -310,33 +362,36 @@ export default function ModerasiArtikel() {
         setLoadingPublished(false);
     };
 
-    const handleEditClick = (article, type) => {
+    const handleEditClick = useCallback((article, type) => {
         setCurrentArticle({
             ...article,
             deskripsi: article.deskripsi || '',
-            type, // Keep track of the article type (draft/published)
+            type,
         });
-    };
+        // isFormDirty akan di-reset di dalam ArticleForm melalui useEffect
+    }, []);
+
 
     const handleSaveArticle = async ({ id, judul, deskripsi, newCoverImageFile, isCoverRemoved, coverImagePreview, type }) => {
         setIsSaving(true);
-        setIsCompressingImage(false); // Reset this flag for the main component
-        let finalImageUrl = coverImagePreview; // Start with current preview URL
+        // isCompressingImage dikelola oleh ArticleForm melalui setIsCompressingImageParent
 
         const oldImageUrl = type === 'draft'
             ? draftArticles.find(a => a.id === id)?.gambar_url
             : publishedArticles.find(a => a.id === id)?.gambar_url;
 
+        let finalImageUrl = coverImagePreview;
+
         try {
             if (newCoverImageFile) {
-                setIsCompressingImage(true);
+                // isCompressingImage sudah diatur true oleh ArticleForm
                 const file = newCoverImageFile;
                 const fileName = `${Date.now()}_${file.name}`;
-                const { error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, file);
+                const { data: uploadData, error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, file);
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
                 finalImageUrl = urlData.publicUrl;
-                setIsCompressingImage(false);
+                // isCompressingImage akan diatur false oleh ArticleForm setelah proses selesai
             }
 
             if (oldImageUrl && (finalImageUrl !== oldImageUrl || isCoverRemoved)) {
@@ -357,29 +412,42 @@ export default function ModerasiArtikel() {
             if (updateError) throw updateError;
 
             // Update successful
-            setCurrentArticle(null); // Exit edit mode
+            setCurrentArticle(null);
+            setIsFormDirty(false); // Reset dirty state setelah berhasil menyimpan
             fetchDraftArticles();
             fetchPublishedArticles();
 
         } catch (error) {
             console.error("Error saving article:", error);
-            // You might want to display an error message in the form
+            // Anda bisa menambahkan state error lokal di ModerasiArtikel untuk menampilkan pesan ke user
         } finally {
             setIsSaving(false);
-            setIsCompressingImage(false);
+            setIsCompressingImage(false); // Pastikan ini selalu direset pada akhirnya
         }
     };
 
-    const handleCancelEdit = () => {
-        setCurrentArticle(null); // Exit edit mode
-    };
+    const handleCancelEdit = useCallback(() => {
+        if (isFormDirty && !isSaving && !isCompressingImage) { // Tambahkan isCompressingImage ke kondisi
+            setShowUnsavedChangesModal(true);
+        } else {
+            setCurrentArticle(null);
+            setIsFormDirty(false);
+        }
+    }, [isFormDirty, isSaving, isCompressingImage]);
 
-    const handleConfirmActionClick = (action, article, type = null) => {
+    const discardChangesAndClose = useCallback(() => {
+        setShowUnsavedChangesModal(false);
+        setCurrentArticle(null);
+        setIsFormDirty(false);
+    }, []);
+
+
+    const handleConfirmActionClick = useCallback((action, article, type = null) => {
         setConfirmAction(action);
         setArticleForAction({ ...article, type });
         setActionStatus({ success: null, error: null, message: '' });
         setShowConfirmModal(true);
-    };
+    }, []);
 
     const handleConfirmAction = async () => {
         setIsProcessingAction(true);
@@ -411,7 +479,6 @@ export default function ModerasiArtikel() {
                     let tableName = articleForAction.type === 'draft' ? 'draft_artikel' : 'artikel';
                     const { error: deleteError } = await supabase.from(tableName).delete().eq('id', articleForAction.id);
                     if (deleteError) throw new Error(`Gagal menghapus artikel: ${deleteError.message}`);
-                    // If there was an image, delete it from storage as well
                     if (articleForAction.gambar_url) {
                         const imagePath = articleForAction.gambar_url.split('/gambarartikel/')[1];
                         if (imagePath) {
@@ -433,7 +500,6 @@ export default function ModerasiArtikel() {
             setActionStatus({ success: false, error: true, message: err.message });
         } finally {
             setIsProcessingAction(false);
-            // Always refetch after an action to ensure UI is up-to-date, even on error
             fetchDraftArticles();
             fetchPublishedArticles();
         }
@@ -494,6 +560,8 @@ export default function ModerasiArtikel() {
                                 onCancel={handleCancelEdit}
                                 isSaving={isSaving}
                                 isCompressingImage={isCompressingImage}
+                                setIsFormDirty={setIsFormDirty}
+                                setIsCompressingImageParent={setIsCompressingImage}
                             />
                         ) : (
                             <>
@@ -561,6 +629,16 @@ export default function ModerasiArtikel() {
                     </AnimatePresence>
                 </div>
             </main>
+
+            <Modal isOpen={showUnsavedChangesModal} onClose={() => setShowUnsavedChangesModal(false)} title="Perubahan Belum Disimpan" contentClassName="pt-6 pb-8" className="w-full max-w-sm mx-auto">
+                <div className="flex flex-col justify-center">
+                    <p className="text-gray-300 text-sm text-center mt-2">Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin menutup editor?</p>
+                    <div className="flex justify-center gap-4 mt-6">
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowUnsavedChangesModal(false)} className={`${glassButtonClasses} text-gray-300 hover:text-white`}>Lanjutkan Mengedit</motion.button>
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={discardChangesAndClose} className={`${glassButtonClasses} text-red-400 hover:text-red-300`}>Tutup & Buang</motion.button>
+                    </div>
+                </div>
+            </Modal>
 
             <Modal isOpen={showConfirmModal} onClose={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} title={confirmModalProps.title} statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null} actions={
                 <>
