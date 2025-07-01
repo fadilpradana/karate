@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
-import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace } from 'lucide-react';
+import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace, Loader2, ArrowLeft } from 'lucide-react'; // Ditambahkan Loader2 dan ArrowLeft
 
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import Modal from '../components/Modal';
@@ -16,7 +16,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
-import TextAlign from '@tiptap/extension-text-align'; // ⬇️ DITAMBAHKAN: Impor ekstensi perataan teks
+import TextAlign from '@tiptap/extension-text-align';
 import { TiptapToolbar } from '../components/TiptapToolbar';
 import '../TiptapStyles.css';
 
@@ -24,6 +24,231 @@ const stripHtml = (html) => {
     if (!html) return '';
     const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.textContent || "";
+};
+
+const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
+
+// --- Komponen Form Inline untuk Artikel ---
+const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressingImage }) => {
+    const [formData, setFormData] = useState(currentArticle);
+    const [coverImagePreview, setCoverImagePreview] = useState(currentArticle.gambar_url || null);
+    const [newCoverImageFile, setNewCoverImageFile] = useState(null);
+    const [isCoverRemoved, setIsCoverRemoved] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Image,
+            Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }),
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+            }),
+        ],
+        editorProps: { attributes: { class: 'tiptap max-h-[250px] overflow-y-auto' } }, // Increased max-height
+    });
+
+    useEffect(() => {
+        if (editor && formData.deskripsi !== editor.getHTML()) {
+            editor.commands.setContent(formData.deskripsi || '');
+        }
+    }, [formData.deskripsi, editor]);
+
+    // Cleanup Tiptap editor on unmount
+    useEffect(() => {
+        return () => {
+            if (editor && editor.destroy) {
+                editor.destroy();
+            }
+        };
+    }, [editor]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCoverFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const compressedFile = await compressAndConvertToWebP(file);
+                setNewCoverImageFile(compressedFile);
+                setCoverImagePreview(URL.createObjectURL(compressedFile));
+                setIsCoverRemoved(false);
+            } catch (error) {
+                console.error("Gagal memproses gambar:", error);
+                alert("Terjadi kesalahan saat memproses gambar.");
+            }
+        }
+    };
+
+    const handleRemoveCover = () => {
+        setNewCoverImageFile(null);
+        setCoverImagePreview(null);
+        setIsCoverRemoved(true);
+    };
+
+    const handleSelectFromBrowser = (imageUrl) => {
+        setCoverImagePreview(imageUrl);
+        setNewCoverImageFile(null);
+        setIsCoverRemoved(false);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave({
+            ...formData,
+            deskripsi: editor.getHTML(),
+            newCoverImageFile,
+            isCoverRemoved,
+            coverImagePreview, // Pass preview for immediate UI update
+        });
+    };
+
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
+
+    const [showImageBrowser, setShowImageBrowser] = useState(false);
+    const [showCoverActionSheet, setShowCoverActionSheet] = useState(false);
+
+    const coverActions = [
+        {
+            label: 'Ganti dari File',
+            icon: <Replace size={20} />,
+            onClick: () => {
+                fileInputRef.current.click();
+                setShowCoverActionSheet(false);
+            },
+            isPrimary: true
+        },
+        {
+            label: 'Pilih dari Galeri',
+            icon: <ImageIcon size={20} />,
+            onClick: () => {
+                setShowImageBrowser(true);
+                setShowCoverActionSheet(false);
+            },
+            isSecondary: true
+        },
+        {
+            label: 'Hapus Gambar',
+            icon: <Trash2 size={20} />,
+            onClick: () => {
+                handleRemoveCover();
+                setShowCoverActionSheet(false);
+            },
+            isDestructive: true
+        }
+    ];
+
+    const glassFormStyle = { backgroundColor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)'};
+    const glassInputStyle = { backgroundColor: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white', borderRadius: '0.5rem', outline: 'none', width: '100%', transition: 'all 0.2s ease' };
+
+
+    return (
+        <motion.div
+            key="article-form-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full max-w-4xl mx-auto p-6 rounded-2xl"
+            style={glassFormStyle}
+        >
+            <div className="flex justify-between items-center mb-5">
+                <h2 className="text-xl md:text-4xl font-league uppercase text-[#FF9F1C]">{formData.id ? "Edit Artikel" : "Tambah Artikel Baru"}</h2>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onCancel} className={`${glassButtonClasses} px-3 py-1.5 text-xs text-gray-300 hover:text-white`}>
+                    <ArrowLeft size={14} /> Batal
+                </motion.button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                    <div className="flex-grow w-full">
+                        <label htmlFor="judul" className="block text-gray-300 text-xs font-medium mb-1">Judul</label>
+                        <textarea id="judul" name="judul" rows="3" className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-sm text-white resize-none" value={formData.judul} onChange={handleInputChange} required />
+                    </div>
+
+                    <div className="w-full sm:w-auto sm:flex-shrink-0">
+                        <label className="block text-gray-300 text-xs font-medium mb-1 text-center sm:text-left">Cover</label>
+                        <div
+                            className="group w-full sm:w-32 h-32 sm:h-20 bg-white/5 rounded-lg border-2 border-white/10 border-dashed flex justify-center items-center relative cursor-pointer"
+                            onClick={() => {
+                                if (isMobile) {
+                                    setShowCoverActionSheet(true);
+                                }
+                            }}
+                        >
+                            {isCompressingImage ? (
+                                <div className="text-center"><p className="text-xs text-gray-400">Memproses...</p></div>
+                            ) : coverImagePreview ? (
+                                <>
+                                    <img src={coverImagePreview} alt="Pratinjau Cover" className="h-full w-full object-cover rounded-md" />
+                                    <div className="absolute inset-0 bg-black/60 justify-center items-center gap-2 opacity-0 transition-opacity duration-300 hidden sm:flex sm:group-hover:opacity-100">
+                                        <div
+                                            onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}
+                                            title="Ganti dari file"
+                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                        >
+                                            <Replace size={18} />
+                                        </div>
+                                        <div
+                                            onClick={(e) => { e.stopPropagation(); setShowImageBrowser(true); }}
+                                            title="Pilih dari galeri"
+                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                        >
+                                            <ImageIcon size={18} />
+                                        </div>
+                                        <div
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveCover(); }}
+                                            title="Hapus gambar"
+                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                        >
+                                            <Trash2 size={18} />
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center p-2">
+                                    <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
+                                    <p className="mt-1 text-xs font-medium text-[#FF9F1C]">Pilih Gambar</p>
+                                </div>
+                            )}
+                            <input type="file" ref={fileInputRef} onChange={handleCoverFileChange} className="hidden" accept="image/*" />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-gray-300 text-xs font-medium mb-1">Deskripsi / Konten</label>
+                    <div className="bg-white/5 rounded-lg border border-white/10">
+                        <TiptapToolbar editor={editor} />
+                        <EditorContent editor={editor} />
+                    </div>
+                </div>
+
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="w-full mt-2 bg-white/5 border border-white/10 rounded-md text-blue-400 py-2 text-sm font-semibold hover:text-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSaving || isCompressingImage}>
+                    {isSaving ? 'Menyimpan...' : (isCompressingImage ? 'Gambar diproses...' : 'Simpan Perubahan')}
+                </motion.button>
+            </form>
+
+            <ActionSheetModal
+                isOpen={showCoverActionSheet}
+                onClose={() => setShowCoverActionSheet(false)}
+                title="Opsi Gambar Sampul"
+                actions={coverActions}
+            />
+
+            <ImageBrowserModal isOpen={showImageBrowser} onClose={() => setShowImageBrowser(false)} onImageSelect={handleSelectFromBrowser} />
+        </motion.div>
+    );
 };
 
 export default function ModerasiArtikel() {
@@ -38,24 +263,9 @@ export default function ModerasiArtikel() {
     const [draftSearchTerm, setDraftSearchTerm] = useState('');
     const [publishedSearchTerm, setPublishedSearchTerm] = useState('');
 
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingArticle, setEditingArticle] = useState(null);
-    const [editingArticleType, setEditingArticleType] = useState('');
-    const [editForm, setEditForm] = useState({ judul: '' });
-    const [editStatus, setEditStatus] = useState({ success: null, error: null, message: '' });
+    const [currentArticle, setCurrentArticle] = useState(null); // State baru untuk mode inline edit
     const [isSaving, setIsSaving] = useState(false);
-
-    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
-    const [isDirty, setIsDirty] = useState(false);
-    const initialFormState = useRef(null);
-
-    const [newCoverImageFile, setNewCoverImageFile] = useState(null);
-    const [coverImagePreview, setCoverImagePreview] = useState(null);
-    const [isCoverRemoved, setIsCoverRemoved] = useState(false);
-    const fileInputRef = useRef(null);
     const [isCompressingImage, setIsCompressingImage] = useState(false);
-    const [showImageBrowser, setShowImageBrowser] = useState(false);
-    const [showCoverActionSheet, setShowCoverActionSheet] = useState(false);
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
@@ -63,54 +273,10 @@ export default function ModerasiArtikel() {
     const [actionStatus, setActionStatus] = useState({ success: null, error: null, message: '' });
     const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-    const [isMobile, setIsMobile] = useState(false);
-
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Image,
-            Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }),
-            // ⬇️ DITAMBAHKAN: Konfigurasi untuk perataan teks
-            TextAlign.configure({
-                types: ['heading', 'paragraph'],
-            }),
-        ],
-        editorProps: { attributes: { class: 'tiptap max-h-[150px] overflow-y-auto' } },
-        onUpdate: () => setIsDirty(true),
-    });
-
-    useEffect(() => {
-        const checkIsMobile = () => {
-            setIsMobile(window.innerWidth < 640); // Tailwind's 'sm' breakpoint
-        };
-        checkIsMobile();
-        window.addEventListener('resize', checkIsMobile);
-        return () => window.removeEventListener('resize', checkIsMobile);
-    }, []);
-
-    useEffect(() => {
-        if (showEditModal && initialFormState.current) {
-            const titleChanged = editForm.judul !== initialFormState.current.judul;
-            const contentChanged = editor && editor.getHTML() !== initialFormState.current.konten;
-            const coverChanged = coverImagePreview !== initialFormState.current.gambar_url;
-            if (titleChanged || contentChanged || coverChanged) {
-                setIsDirty(true);
-            } else {
-                setIsDirty(false);
-            }
-        }
-    }, [editForm.judul, showEditModal, editor, coverImagePreview]);
-
     useEffect(() => {
         fetchDraftArticles();
         fetchPublishedArticles();
     }, []);
-
-    useEffect(() => {
-        return () => {
-            if (editor) editor.destroy();
-        };
-    }, [editor]);
 
     const fetchDraftArticles = async () => {
         setLoadingDrafts(true);
@@ -145,41 +311,34 @@ export default function ModerasiArtikel() {
     };
 
     const handleEditClick = (article, type) => {
-        const initialState = {
-            judul: article.judul,
-            konten: article.deskripsi || '',
-            gambar_url: article.gambar_url || null
-        };
-        initialFormState.current = initialState;
-        setEditingArticle(article);
-        setEditingArticleType(type);
-        setEditForm({ judul: article.judul });
-        setIsDirty(false);
-        setNewCoverImageFile(null);
-        setCoverImagePreview(article.gambar_url || null);
-        setIsCoverRemoved(false);
-        if (editor) {
-            editor.commands.setContent(initialState.konten);
-        }
-        setShowEditModal(true);
+        setCurrentArticle({
+            ...article,
+            deskripsi: article.deskripsi || '',
+            type, // Keep track of the article type (draft/published)
+        });
     };
 
-    const handleSaveEdit = async (e) => {
-        e.preventDefault();
-        if (!editor || isCompressingImage) return;
+    const handleSaveArticle = async ({ id, judul, deskripsi, newCoverImageFile, isCoverRemoved, coverImagePreview, type }) => {
         setIsSaving(true);
-        setEditStatus({ success: null, error: null, message: '' });
-        const oldImageUrl = editingArticle.gambar_url;
-        let finalImageUrl = coverImagePreview;
+        setIsCompressingImage(false); // Reset this flag for the main component
+        let finalImageUrl = coverImagePreview; // Start with current preview URL
+
+        const oldImageUrl = type === 'draft'
+            ? draftArticles.find(a => a.id === id)?.gambar_url
+            : publishedArticles.find(a => a.id === id)?.gambar_url;
+
         try {
             if (newCoverImageFile) {
+                setIsCompressingImage(true);
                 const file = newCoverImageFile;
                 const fileName = `${Date.now()}_${file.name}`;
                 const { error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, file);
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
                 finalImageUrl = urlData.publicUrl;
+                setIsCompressingImage(false);
             }
+
             if (oldImageUrl && (finalImageUrl !== oldImageUrl || isCoverRemoved)) {
                 const oldImagePath = oldImageUrl.split('/gambarartikel/')[1];
                 if (oldImagePath) {
@@ -187,27 +346,32 @@ export default function ModerasiArtikel() {
                     if (deleteError) console.error("Gagal menghapus gambar lama di storage:", deleteError.message);
                 }
             }
-            const kontenHtml = editor.getHTML();
-            let tableName = editingArticleType === 'draft' ? 'draft_artikel' : 'artikel';
+
+            let tableName = type === 'draft' ? 'draft_artikel' : 'artikel';
             const { error: updateError } = await supabase.from(tableName).update({
-                judul: editForm.judul,
-                deskripsi: kontenHtml,
+                judul: judul,
+                deskripsi: deskripsi,
                 gambar_url: isCoverRemoved ? null : finalImageUrl
-            }).eq('id', editingArticle.id);
+            }).eq('id', id);
+
             if (updateError) throw updateError;
-            setEditStatus({ success: true, error: false, message: "Perubahan berhasil disimpan!" });
-            setIsDirty(false);
-            setTimeout(() => {
-                setShowEditModal(false);
-                fetchDraftArticles();
-                fetchPublishedArticles();
-            }, 1000);
+
+            // Update successful
+            setCurrentArticle(null); // Exit edit mode
+            fetchDraftArticles();
+            fetchPublishedArticles();
+
         } catch (error) {
             console.error("Error saving article:", error);
-            setEditStatus({ success: false, error: true, message: `Gagal menyimpan: ${error.message}` });
+            // You might want to display an error message in the form
         } finally {
             setIsSaving(false);
+            setIsCompressingImage(false);
         }
+    };
+
+    const handleCancelEdit = () => {
+        setCurrentArticle(null); // Exit edit mode
     };
 
     const handleConfirmActionClick = (action, article, type = null) => {
@@ -247,6 +411,14 @@ export default function ModerasiArtikel() {
                     let tableName = articleForAction.type === 'draft' ? 'draft_artikel' : 'artikel';
                     const { error: deleteError } = await supabase.from(tableName).delete().eq('id', articleForAction.id);
                     if (deleteError) throw new Error(`Gagal menghapus artikel: ${deleteError.message}`);
+                    // If there was an image, delete it from storage as well
+                    if (articleForAction.gambar_url) {
+                        const imagePath = articleForAction.gambar_url.split('/gambarartikel/')[1];
+                        if (imagePath) {
+                            const { error: storageError } = await supabase.storage.from('gambarartikel').remove([imagePath]);
+                            if (storageError) console.error("Gagal menghapus file dari storage:", storageError);
+                        }
+                    }
                     setActionStatus({ success: true, error: false, message: "Artikel berhasil dihapus!" });
                     break;
                 default:
@@ -259,57 +431,12 @@ export default function ModerasiArtikel() {
             }, 1000);
         } catch (err) {
             setActionStatus({ success: false, error: true, message: err.message });
-            fetchDraftArticles();
-            fetchPublishedArticles();
         } finally {
             setIsProcessingAction(false);
+            // Always refetch after an action to ensure UI is up-to-date, even on error
+            fetchDraftArticles();
+            fetchPublishedArticles();
         }
-    };
-
-    const handleCoverFileChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsCompressingImage(true);
-            try {
-                const compressedFile = await compressAndConvertToWebP(file);
-                setNewCoverImageFile(compressedFile);
-                setCoverImagePreview(URL.createObjectURL(compressedFile));
-                setIsCoverRemoved(false);
-            } catch (error) {
-                console.error("Gagal memproses gambar:", error);
-                alert("Terjadi kesalahan saat memproses gambar.");
-            } finally {
-                setIsCompressingImage(false);
-            }
-        }
-    };
-
-    const handleRemoveCover = () => {
-        setNewCoverImageFile(null);
-        setCoverImagePreview(null);
-        setIsCoverRemoved(true);
-    };
-
-    const handleSelectFromBrowser = (imageUrl) => {
-        if (imageUrl !== coverImagePreview) {
-            setCoverImagePreview(imageUrl);
-            setNewCoverImageFile(null);
-            setIsCoverRemoved(false);
-        }
-        setShowImageBrowser(false);
-    };
-
-    const handleCloseEditModal = () => {
-        if (isDirty && !isSaving) {
-            setShowUnsavedChangesModal(true);
-        } else {
-            setShowEditModal(false);
-        }
-    };
-
-    const discardChangesAndClose = () => {
-        setShowUnsavedChangesModal(false);
-        setShowEditModal(false);
     };
 
     const filteredDraftArticles = draftArticles.filter(artikel =>
@@ -326,7 +453,6 @@ export default function ModerasiArtikel() {
     const menuVariants = { hidden: { y: -50, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 120, damping: 14, delay: 0.3 } } };
     const sidebarVariants = { hidden: { x: -100, opacity: 0 }, visible: { x: 0, opacity: 1, transition: { type: "spring", stiffness: 120, damping: 14, delay: 0.3 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { ease: 'easeOut', duration: 0.5 } }, exit: { opacity: 0, y: -20 } };
-    const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
     const getConfirmModalContent = () => {
         if (!articleForAction) return { title: '', message: '' };
@@ -339,27 +465,6 @@ export default function ModerasiArtikel() {
     };
 
     const confirmModalProps = getConfirmModalContent();
-
-    const coverActions = [
-        {
-            label: 'Ganti dari File',
-            icon: <Replace size={20} />,
-            onClick: () => fileInputRef.current.click(),
-            isPrimary: true
-        },
-        {
-            label: 'Pilih dari Galeri',
-            icon: <ImageIcon size={20} />,
-            onClick: () => setShowImageBrowser(true),
-            isSecondary: true
-        },
-        {
-            label: 'Hapus Gambar',
-            icon: <Trash2 size={20} />,
-            onClick: handleRemoveCover,
-            isDestructive: true
-        }
-    ];
 
     return (
         <div className="relative min-h-screen flex flex-col justify-between bg-gray-900 text-white">
@@ -380,164 +485,83 @@ export default function ModerasiArtikel() {
                 </motion.div>
                 <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
                 <div className="max-w-6xl mx-auto space-y-10">
-                    <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
-                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Draft</h2>
-                            <div className="relative flex-grow max-w-sm sm:max-w-xs">
-                                <input type="text" placeholder="Cari draft..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={draftSearchTerm} onChange={(e) => setDraftSearchTerm(e.target.value)} />
-                                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                {draftSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setDraftSearchTerm('')} />)}
-                            </div>
-                        </div>
-                        {loadingDrafts ? (<p className="text-center text-gray-400">Memuat artikel draft...</p>) : errorDrafts ? (<p className="text-center text-red-400">{errorDrafts}</p>) : filteredDraftArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel draft yang ditemukan.</p>) : (
-                            <AnimatePresence>
-                                {filteredDraftArticles.map((artikel) => (
-                                    <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
-                                        <div className="flex-grow">
-                                            <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
-                                            <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
-                                            <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                            {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
+                    <AnimatePresence mode="wait">
+                        {currentArticle ? (
+                            <ArticleForm
+                                key="article-edit-form"
+                                currentArticle={currentArticle}
+                                onSave={handleSaveArticle}
+                                onCancel={handleCancelEdit}
+                                isSaving={isSaving}
+                                isCompressingImage={isCompressingImage}
+                            />
+                        ) : (
+                            <>
+                                <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
+                                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                                        <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Draft</h2>
+                                        <div className="relative flex-grow max-w-sm sm:max-w-xs">
+                                            <input type="text" placeholder="Cari draft..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={draftSearchTerm} onChange={(e) => setDraftSearchTerm(e.target.value)} />
+                                            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            {draftSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setDraftSearchTerm('')} />)}
                                         </div>
-                                        <div className="flex flex-wrap gap-2 md:ml-4">
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'draft')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('publish', artikel)} className={`${glassButtonClasses} text-green-400 hover:text-green-400`}><Send size={16} /> Publikasi</motion.button>
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'draft')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
+                                    </div>
+                                    {loadingDrafts ? (<p className="text-center text-gray-400">Memuat artikel draft...</p>) : errorDrafts ? (<p className="text-center text-red-400">{errorDrafts}</p>) : filteredDraftArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel draft yang ditemukan.</p>) : (
+                                        <AnimatePresence>
+                                            {filteredDraftArticles.map((artikel) => (
+                                                <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
+                                                    <div className="flex-grow">
+                                                        <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
+                                                        <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
+                                                        <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                        {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 md:ml-4">
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'draft')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('publish', artikel)} className={`${glassButtonClasses} text-green-400 hover:text-green-400`}><Send size={16} /> Publikasi</motion.button>
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'draft')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    )}
+                                </motion.div>
+                                <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
+                                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                                        <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Publikasi</h2>
+                                        <div className="relative flex-grow max-w-sm sm:max-w-xs">
+                                            <input type="text" placeholder="Cari publikasi..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={publishedSearchTerm} onChange={(e) => setPublishedSearchTerm(e.target.value)} />
+                                            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            {publishedSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setPublishedSearchTerm('')} />)}
                                         </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
+                                    </div>
+                                    {loadingPublished ? (<p className="text-center text-gray-400">Memuat artikel publikasi...</p>) : errorPublished ? (<p className="text-center text-red-400">{errorPublished}</p>) : filteredPublishedArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel publikasi yang ditemukan.</p>) : (
+                                        <AnimatePresence>
+                                            {filteredPublishedArticles.map((artikel) => (
+                                                <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
+                                                    <div className="flex-grow">
+                                                        <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
+                                                        <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
+                                                        <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                        {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
+                                                        <p className={`text-xs font-semibold mt-1 ${artikel.published ? 'text-green-400' : 'text-red-400'}`}>Status: {artikel.published ? 'Dipublikasi' : 'Tidak Dipublikasi'}</p>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 md:ml-4">
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'published')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('unpublish', artikel)} className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}><ChevronLeft size={16} /> Unpublish</motion.button>
+                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'published')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    )}
+                                </motion.div>
+                            </>
                         )}
-                    </motion.div>
-                    <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
-                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Publikasi</h2>
-                            <div className="relative flex-grow max-w-sm sm:max-w-xs">
-                                <input type="text" placeholder="Cari publikasi..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={publishedSearchTerm} onChange={(e) => setPublishedSearchTerm(e.target.value)} />
-                                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                {publishedSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setPublishedSearchTerm('')} />)}
-                            </div>
-                        </div>
-                        {loadingPublished ? (<p className="text-center text-gray-400">Memuat artikel publikasi...</p>) : errorPublished ? (<p className="text-center text-red-400">{errorPublished}</p>) : filteredPublishedArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel publikasi yang ditemukan.</p>) : (
-                            <AnimatePresence>
-                                {filteredPublishedArticles.map((artikel) => (
-                                    <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
-                                        <div className="flex-grow">
-                                            <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
-                                            <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
-                                            <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                            {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
-                                            <p className={`text-xs font-semibold mt-1 ${artikel.published ? 'text-green-400' : 'text-red-400'}`}>Status: {artikel.published ? 'Dipublikasi' : 'Tidak Dipublikasi'}</p>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 md:ml-4">
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'published')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('unpublish', artikel)} className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}><ChevronLeft size={16} /> Unpublish</motion.button>
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'published')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        )}
-                    </motion.div>
+                    </AnimatePresence>
                 </div>
             </main>
 
-            <Modal isOpen={showEditModal} onClose={handleCloseEditModal} title="Edit Artikel">
-                <div className="w-full max-w-lg mx-auto p-4">
-                    <form onSubmit={handleSaveEdit} className="space-y-4 text-left">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                            <div className="flex-grow w-full">
-                                <label htmlFor="editJudul" className="block text-gray-300 text-xs font-medium mb-1">Judul</label>
-                                <textarea id="editJudul" rows="3" className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-sm text-white resize-none" value={editForm.judul} onChange={(e) => setEditForm({ ...editForm, judul: e.target.value })} required />
-                            </div>
-
-                            <div className="w-full sm:w-auto sm:flex-shrink-0">
-                                <label className="block text-gray-300 text-xs font-medium mb-1 text-center sm:text-left">Cover</label>
-                                <div
-                                    className="group w-full sm:w-32 h-32 sm:h-20 bg-white/5 rounded-lg border-2 border-white/10 border-dashed flex justify-center items-center relative cursor-pointer"
-                                    onClick={() => {
-                                        if (isMobile) {
-                                            setShowCoverActionSheet(true);
-                                        }
-                                    }}
-                                >
-                                    {isCompressingImage ? (
-                                        <div className="text-center"><p className="text-xs text-gray-400">Memproses...</p></div>
-                                    ) : coverImagePreview ? (
-                                        <>
-                                            <img src={coverImagePreview} alt="Pratinjau Cover" className="h-full w-full object-cover rounded-md" />
-                                            <div className="absolute inset-0 bg-black/60 justify-center items-center gap-2 opacity-0 transition-opacity duration-300 hidden sm:flex sm:group-hover:opacity-100">
-                                                <div 
-                                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }} 
-                                                    title="Ganti dari file" 
-                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                                >
-                                                    <Replace size={18} />
-                                                </div>
-                                                <div 
-                                                    onClick={(e) => { e.stopPropagation(); setShowImageBrowser(true); }}
-                                                    title="Pilih dari galeri" 
-                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                                >
-                                                    <ImageIcon size={18} />
-                                                </div>
-                                                <div 
-                                                    onClick={(e) => { e.stopPropagation(); handleRemoveCover(); }}
-                                                    title="Hapus gambar" 
-                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center p-2">
-                                            <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                                            <p className="mt-1 text-xs font-medium text-[#FF9F1C]">Pilih Gambar</p>
-                                        </div>
-                                    )}
-                                    <input type="file" ref={fileInputRef} onChange={handleCoverFileChange} className="hidden" accept="image/*" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-gray-300 text-xs font-medium mb-1">Deskripsi / Konten</label>
-                            <div className="bg-white/5 rounded-lg border border-white/10">
-                                <TiptapToolbar editor={editor} />
-                                <EditorContent editor={editor} />
-                            </div>
-                        </div>
-
-                        {editStatus.error && <p className="text-red-400 text-xs">{editStatus.message}</p>}
-                        {editStatus.success && <p className="text-green-400 text-xs">{editStatus.message}</p>}
-
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="w-full mt-2 bg-white/5 border border-white/10 rounded-md text-blue-400 py-2 text-sm font-semibold hover:text-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSaving || !isDirty || isCompressingImage}>
-                                 {isSaving ? 'Menyimpan...' : (isCompressingImage ? 'Gambar diproses...' : 'Simpan Perubahan')}
-                        </motion.button>
-                    </form>
-                </div>
-            </Modal>
-
-            <ActionSheetModal
-                isOpen={showCoverActionSheet}
-                onClose={() => setShowCoverActionSheet(false)}
-                title="Opsi Gambar Sampul"
-                actions={coverActions}
-            />
-            
-            <ImageBrowserModal isOpen={showImageBrowser} onClose={() => setShowImageBrowser(false)} onImageSelect={handleSelectFromBrowser} />
-
-            <Modal isOpen={showUnsavedChangesModal} onClose={() => setShowUnsavedChangesModal(false)} title="Perubahan Belum Disimpan" contentClassName="pt-6 pb-8" className="w-full max-w-sm mx-auto">
-                <div className="flex flex-col justify-center">
-                    <p className="text-gray-300 text-sm text-center mt-2">Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin menutup editor?</p>
-                    <div className="flex justify-center gap-4 mt-6">
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowUnsavedChangesModal(false)} className={`${glassButtonClasses} text-gray-300 hover:text-white`}>Lanjutkan Mengedit</motion.button>
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={discardChangesAndClose} className={`${glassButtonClasses} text-red-400 hover:text-red-300`}>Tutup & Buang</motion.button>
-                    </div>
-                </div>
-            </Modal>
-            
             <Modal isOpen={showConfirmModal} onClose={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} title={confirmModalProps.title} statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null} actions={
                 <>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleConfirmAction} className={`${glassButtonClasses} ${confirmModalProps.buttonClass}`} disabled={isProcessingAction}>
