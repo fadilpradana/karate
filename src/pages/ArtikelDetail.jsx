@@ -3,10 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion } from 'framer-motion';
 import brevetLogo from '../assets/brevet.png';
-import bg1 from '../assets/bg1.jpg'; // Import gambar background
+import bg1 from '../assets/bg1.jpg';
 import { User, Calendar, ArrowLeft } from 'lucide-react';
 
-// Nama komponen diubah menjadi ArtikelDetail
 export default function ArtikelDetail() { 
     const { id } = useParams();
     const [artikel, setArtikel] = useState(null);
@@ -123,8 +122,8 @@ export default function ArtikelDetail() {
                             </div>
                         )}
                         
-                        <div className="prose prose-invert max-w-none prose-p:text-gray-300 prose-headings:text-white text-sm sm:text-base leading-relaxed">
-                            <p dangerouslySetInnerHTML={{ __html: artikel.deskripsi }}></p>
+                        <div className="prose prose-invert max-w-none prose-p:text-gray-300 prose-headings:text-white text-sm sm:text-base leading-relaxed text-justify">
+                            <div dangerouslySetInnerHTML={{ __html: artikel.deskripsi }} />
                         </div>
                     </motion.div>
                 </main>
@@ -139,11 +138,11 @@ export default function ArtikelDetail() {
 
                         {/* Tengah: Logo selalu di tengah */}
                         <div className="w-full md:w-1/3 flex justify-center">
-                            <img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" /> {/* Menjaga kelas responsif logo */}
+                            <img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" />
                         </div>
 
                         {/* Kanan: Link navigasi */}
-                        <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3"> {/* Menjaga kelas responsif gap */}
+                        <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
                             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
                             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
                             <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>

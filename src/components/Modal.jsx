@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
 export default function Modal({ isOpen, onClose, title, children, actions, statusMessage }) {
-    // Definisi animasi untuk konten modal (yang bergerak dari atas)
     const modalContentVariants = {
         hidden: { y: -50, opacity: 0 },
         visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 10 } },
@@ -12,43 +11,51 @@ export default function Modal({ isOpen, onClose, title, children, actions, statu
 
     return (
         <AnimatePresence>
-            {isOpen && ( // Komponen dirender jika isOpen true
+            {isOpen && (
                 <motion.div
-                    // Animasi untuk overlay hitam (hanya opacity)
-                    initial={{ opacity: 0 }} // Mulai dengan transparan penuh
-                    animate={{ opacity: 1, transition: { duration: 0.3 } }} // Fade in ke opacity penuh (sesuai bg-opacity-70)
-                    exit={{ opacity: 0, transition: { duration: 0.3 } }}    // Fade out kembali ke transparan penuh
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, transition: { duration: 0.3 } }}
+                    exit={{ opacity: 0, transition: { duration: 0.3 } }}
                     className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
-                    // Penting: Hapus onClick={onClose} dari div ini
-                    // agar klik di luar modal tidak menutupnya. Penutupan hanya dari tombol X.
+                    // Tidak ada onClose di sini, jadi klik di luar modal tidak akan menutupnya.
                 >
-                    {/* Konten modal itu sendiri (form/pesan konfirmasi) dengan animasinya */}
                     <motion.div
-                        variants={modalContentVariants} // Menggunakan variants yang sudah didefinisikan
+                        variants={modalContentVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6 w-full max-w-md relative text-center"
-                        onClick={(e) => e.stopPropagation()} // Mencegah event klik menyebar dari konten modal
+                        onClick={(e) => e.stopPropagation()}
+                        // Kunci perubahan di sini: sesuaikan padding dan max-width umum modal
+                        // p-4 akan memberi padding lebih kecil secara default.
+                        // max-w-sm sebagai default yang lebih ringkas.
+                        // h-fit memastikan tingginya mengikuti konten.
+                        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-4 w-full max-w-sm relative text-center flex flex-col h-fit"
                     >
                         <button
-                            onClick={onClose} // Tombol X yang memanggil fungsi onClose dari parent
+                            onClick={onClose}
                             className="absolute top-3 right-3 text-gray-400 hover:text-white"
                         >
                             <X size={24} />
                         </button>
                         <h2 className="text-xl font-bold mb-4 text-[#FF9F1C]">{title}</h2>
-                        <div className="mb-6 text-gray-300">
-                            {children}
+                        
+                        {/* Wrapper ini memastikan children terpusat vertikal jika ada ruang lebih */}
+                        <div className="flex-grow flex flex-col justify-center items-center">
+                            <div className="mb-4 text-gray-300 w-full"> {/* Kurangi mb- ke mb-4 */}
+                                {children}
+                            </div>
+                            {statusMessage && (
+                                <p className={`text-sm mb-4 ${statusMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                                    {statusMessage.message}
+                                </p>
+                            )}
                         </div>
-                        {statusMessage && (
-                            <p className={`text-sm mb-4 ${statusMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                                {statusMessage.message}
-                            </p>
+
+                        {actions && (
+                            <div className="flex justify-center gap-4 mt-4"> {/* Kurangi mt- ke mt-4 */}
+                                {actions}
+                            </div>
                         )}
-                        <div className="flex justify-center gap-4">
-                            {actions}
-                        </div>
                     </motion.div>
                 </motion.div>
             )}
