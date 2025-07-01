@@ -1,4 +1,4 @@
-// src/pages/ModerasiArtikel.jsx (atau path yang sesuai)
+// src/pages/ModerasiArtikel.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,11 +62,24 @@ export default function ModerasiArtikel() {
     const [actionStatus, setActionStatus] = useState({ success: null, error: null, message: '' });
     const [isProcessingAction, setIsProcessingAction] = useState(false);
 
+    // [PERUBAHAN] State untuk deteksi mobile
+    const [isMobile, setIsMobile] = useState(false);
+
     const editor = useEditor({
         extensions: [ StarterKit, Image, Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' })],
         editorProps: { attributes: { class: 'tiptap max-h-[150px] overflow-y-auto' } },
         onUpdate: () => setIsDirty(true),
     });
+
+    // [PERUBAHAN] Effect untuk mengecek ukuran layar
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 640); // Tailwind's 'sm' breakpoint
+        };
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
 
     useEffect(() => {
         if (showEditModal && initialFormState.current) {
@@ -160,7 +173,7 @@ export default function ModerasiArtikel() {
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
                 finalImageUrl = urlData.publicUrl;
             }
-            if (oldImageUrl && finalImageUrl !== oldImageUrl) {
+            if (oldImageUrl && (finalImageUrl !== oldImageUrl || isCoverRemoved)) {
                 const oldImagePath = oldImageUrl.split('/gambarartikel/')[1];
                 if (oldImagePath) {
                     const { error: deleteError } = await supabase.storage.from('gambarartikel').remove([oldImagePath]);
@@ -172,7 +185,7 @@ export default function ModerasiArtikel() {
             const { error: updateError } = await supabase.from(tableName).update({
                 judul: editForm.judul,
                 deskripsi: kontenHtml,
-                gambar_url: finalImageUrl
+                gambar_url: isCoverRemoved ? null : finalImageUrl
             }).eq('id', editingArticle.id);
             if (updateError) throw updateError;
             setEditStatus({ success: true, error: false, message: "Perubahan berhasil disimpan!" });
@@ -325,13 +338,13 @@ export default function ModerasiArtikel() {
             label: 'Ganti dari File',
             icon: <Replace size={20} />,
             onClick: () => fileInputRef.current.click(),
-            isPrimary: true // Akan diwarnai biru cerah (blue-500)
+            isPrimary: true 
         },
         {
             label: 'Pilih dari Galeri',
             icon: <ImageIcon size={20} />,
             onClick: () => setShowImageBrowser(true),
-            isSecondary: true // Akan diwarnai teal cerah (teal-400)
+            isSecondary: true 
         },
         {
             label: 'Hapus Gambar',
@@ -435,17 +448,41 @@ export default function ModerasiArtikel() {
                                 <label className="block text-gray-300 text-xs font-medium mb-1 text-center sm:text-left">Cover</label>
                                 <div
                                     className="group w-full sm:w-32 h-32 sm:h-20 bg-white/5 rounded-lg border-2 border-white/10 border-dashed flex justify-center items-center relative cursor-pointer"
-                                    onClick={() => setShowCoverActionSheet(true)}
+                                    // [PERUBAHAN] Klik hanya memicu action sheet di mobile
+                                    onClick={() => {
+                                        if (isMobile) {
+                                            setShowCoverActionSheet(true);
+                                        }
+                                    }}
                                 >
                                     {isCompressingImage ? (
                                         <div className="text-center"><p className="text-xs text-gray-400">Memproses...</p></div>
                                     ) : coverImagePreview ? (
                                         <>
                                             <img src={coverImagePreview} alt="Pratinjau Cover" className="h-full w-full object-cover rounded-md" />
+                                            {/* [PERUBAHAN] Aksi di desktop dengan onClick yang sesuai */}
                                             <div className="absolute inset-0 bg-black/60 justify-center items-center gap-2 opacity-0 transition-opacity duration-300 hidden sm:flex sm:group-hover:opacity-100">
-                                                <div title="Ganti dari file" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80"><Replace size={18} /></div>
-                                                <div title="Pilih dari galeri" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80"><ImageIcon size={18} /></div>
-                                                <div title="Hapus gambar" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80"><Trash2 size={18} /></div>
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }} 
+                                                    title="Ganti dari file" 
+                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                                >
+                                                    <Replace size={18} />
+                                                </div>
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); setShowImageBrowser(true); }}
+                                                    title="Pilih dari galeri" 
+                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                                >
+                                                    <ImageIcon size={18} />
+                                                </div>
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); handleRemoveCover(); }}
+                                                    title="Hapus gambar" 
+                                                    className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </div>
                                             </div>
                                         </>
                                     ) : (
