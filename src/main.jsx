@@ -22,6 +22,7 @@ import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import TulisArtikelBaru from './pages/TulisArtikelBaru';
 import ModerasiArtikel from './pages/ModerasiArtikel';
+import AdminPrestasi from './pages/AdminPrestasi';
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -69,6 +70,15 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
+
+      {
+        path: 'admin-prestasi',
+        element: (
+          <AdminRoute>
+            <AdminPrestasi />
+          </AdminRoute>
+        ),
+      },      
 
       // --- Halaman 404 Not Found ---
       {
