@@ -7,6 +7,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align'; // ⬇️ DITAMBAHKAN: Impor ekstensi perataan teks
 import { TiptapToolbar } from '../components/TiptapToolbar'; // Pastikan path ini benar
 import '../TiptapStyles.css'; // Pastikan path ini benar
 
@@ -44,6 +45,10 @@ export default function TulisArtikelBaru() {
             Image.configure({ inline: false }),
             Placeholder.configure({
                 placeholder: 'Tulis konten artikel Anda di sini...',
+            }),
+            // ⬇️ DITAMBAHKAN: Konfigurasi untuk perataan teks
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
             }),
         ],
         editorProps: {
@@ -90,7 +95,7 @@ export default function TulisArtikelBaru() {
         }
     };
 
-    // ++ DITAMBAHKAN: Fungsi handler untuk tombol "Artikel Saya" dari menu manajemen ++
+    // Fungsi handler untuk tombol "Artikel Saya" dari menu manajemen
     const handleMyArticlesClick = () => {
         if (user && user.user_metadata?.username) {
             navigate(`/artikel?author=${user.user_metadata.username}`);
@@ -138,7 +143,7 @@ export default function TulisArtikelBaru() {
             </AnimatePresence>
             <div className="relative z-10 flex flex-col min-h-screen justify-between">
                 
-                {/* ++ DITAMBAHKAN: Menu Manajemen Desktop ++ */}
+                {/* Menu Manajemen Desktop */}
                 {(userRole === 'pengurus' || userRole === 'admin') && (
                     <motion.div variants={sidebarVariants} initial="hidden" animate="visible" className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
                         <nav className="space-y-3">
@@ -151,7 +156,7 @@ export default function TulisArtikelBaru() {
 
                 <motion.main className="flex-grow flex flex-col items-center justify-start pt-24 pb-16 px-4 gap-8" variants={containerVariants} initial="hidden" animate="visible">
                     
-                    {/* ++ DITAMBAHKAN: Menu Manajemen Mobile ++ */}
+                    {/* Menu Manajemen Mobile */}
                     {(userRole === 'pengurus' || userRole === 'admin') && (
                         <motion.div variants={itemVariants} className="block md:hidden">
                             <div className="p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg w-fit">
@@ -221,7 +226,7 @@ export default function TulisArtikelBaru() {
                     </motion.div>
                 </motion.main>
                 
-                {/* ++ DITAMBAHKAN: Footer ++ */}
+                {/* Footer */}
                 <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-xs sm:text-sm py-6 sm:py-10 px-4 sm:px-6 md:px-20 border-t border-[#333]">
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
                         <div className="text-center md:text-left w-full md:w-1/3"> &copy; With Love STMKG Karate Club Periode 2025 </div>

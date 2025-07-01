@@ -16,6 +16,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
+import TextAlign from '@tiptap/extension-text-align'; // ⬇️ DITAMBAHKAN: Impor ekstensi perataan teks
 import { TiptapToolbar } from '../components/TiptapToolbar';
 import '../TiptapStyles.css';
 
@@ -62,16 +63,22 @@ export default function ModerasiArtikel() {
     const [actionStatus, setActionStatus] = useState({ success: null, error: null, message: '' });
     const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-    // [PERUBAHAN] State untuk deteksi mobile
     const [isMobile, setIsMobile] = useState(false);
 
     const editor = useEditor({
-        extensions: [ StarterKit, Image, Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' })],
+        extensions: [
+            StarterKit,
+            Image,
+            Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }),
+            // ⬇️ DITAMBAHKAN: Konfigurasi untuk perataan teks
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+            }),
+        ],
         editorProps: { attributes: { class: 'tiptap max-h-[150px] overflow-y-auto' } },
         onUpdate: () => setIsDirty(true),
     });
 
-    // [PERUBAHAN] Effect untuk mengecek ukuran layar
     useEffect(() => {
         const checkIsMobile = () => {
             setIsMobile(window.innerWidth < 640); // Tailwind's 'sm' breakpoint
@@ -338,13 +345,13 @@ export default function ModerasiArtikel() {
             label: 'Ganti dari File',
             icon: <Replace size={20} />,
             onClick: () => fileInputRef.current.click(),
-            isPrimary: true 
+            isPrimary: true
         },
         {
             label: 'Pilih dari Galeri',
             icon: <ImageIcon size={20} />,
             onClick: () => setShowImageBrowser(true),
-            isSecondary: true 
+            isSecondary: true
         },
         {
             label: 'Hapus Gambar',
@@ -448,7 +455,6 @@ export default function ModerasiArtikel() {
                                 <label className="block text-gray-300 text-xs font-medium mb-1 text-center sm:text-left">Cover</label>
                                 <div
                                     className="group w-full sm:w-32 h-32 sm:h-20 bg-white/5 rounded-lg border-2 border-white/10 border-dashed flex justify-center items-center relative cursor-pointer"
-                                    // [PERUBAHAN] Klik hanya memicu action sheet di mobile
                                     onClick={() => {
                                         if (isMobile) {
                                             setShowCoverActionSheet(true);
@@ -460,7 +466,6 @@ export default function ModerasiArtikel() {
                                     ) : coverImagePreview ? (
                                         <>
                                             <img src={coverImagePreview} alt="Pratinjau Cover" className="h-full w-full object-cover rounded-md" />
-                                            {/* [PERUBAHAN] Aksi di desktop dengan onClick yang sesuai */}
                                             <div className="absolute inset-0 bg-black/60 justify-center items-center gap-2 opacity-0 transition-opacity duration-300 hidden sm:flex sm:group-hover:opacity-100">
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }} 
@@ -508,7 +513,7 @@ export default function ModerasiArtikel() {
                         {editStatus.success && <p className="text-green-400 text-xs">{editStatus.message}</p>}
 
                         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="w-full mt-2 bg-white/5 border border-white/10 rounded-md text-blue-400 py-2 text-sm font-semibold hover:text-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSaving || !isDirty || isCompressingImage}>
-                             {isSaving ? 'Menyimpan...' : (isCompressingImage ? 'Gambar diproses...' : 'Simpan Perubahan')}
+                                 {isSaving ? 'Menyimpan...' : (isCompressingImage ? 'Gambar diproses...' : 'Simpan Perubahan')}
                         </motion.button>
                     </form>
                 </div>
