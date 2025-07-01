@@ -2,11 +2,8 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 
 export default function ActionSheetModal({ isOpen, onClose, title, actions }) {
-    if (!isOpen) return null;
-
     const sheetVariants = {
         hidden: { y: "100%" },
         visible: { y: "0%", transition: { type: 'spring', damping: 25, stiffness: 200 } },
@@ -19,11 +16,26 @@ export default function ActionSheetModal({ isOpen, onClose, title, actions }) {
         exit: { opacity: 0 }
     };
 
+    // Fungsi ini diperbarui untuk menangani beberapa warna utama
+    const getActionClasses = (action) => {
+        const baseClasses = 'flex items-center gap-4 w-full p-4 rounded-lg text-left text-base transition-colors border bg-white/10 hover:bg-white/20 border-white/10';
+
+        if (action.isDestructive) {
+            return `${baseClasses} text-red-400`; // Aksi berbahaya
+        }
+        if (action.isPrimary) {
+            return `${baseClasses} text-blue-400`; // Aksi utama #1 (Biru Cerah)
+        }
+        if (action.isSecondary) {
+            return `${baseClasses} text-teal-400`; // Aksi utama #2 (Teal Cerah)
+        }
+        return `${baseClasses} text-white`; // Aksi standar
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex flex-col justify-end">
-                    {/* Backdrop */}
                     <motion.div
                         className="absolute inset-0 bg-black/60"
                         variants={backdropVariants}
@@ -33,15 +45,14 @@ export default function ActionSheetModal({ isOpen, onClose, title, actions }) {
                         onClick={onClose}
                     ></motion.div>
 
-                    {/* Action Sheet Content */}
                     <motion.div
-                        className="relative bg-gray-800 rounded-t-2xl p-4 shadow-lg"
+                        className="relative bg-white/10 backdrop-blur-lg rounded-t-2xl p-4 shadow-lg border-t border-x border-white/20"
                         variants={sheetVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
                     >
-                        {title && <h3 className="text-center text-gray-400 text-sm font-medium mb-4">{title}</h3>}
+                        {title && <h3 className="text-center text-gray-300 text-sm font-medium mb-4">{title}</h3>}
                         
                         <div className="flex flex-col gap-2">
                             {actions.map((action, index) => (
@@ -51,11 +62,7 @@ export default function ActionSheetModal({ isOpen, onClose, title, actions }) {
                                         action.onClick();
                                         onClose();
                                     }}
-                                    className={`flex items-center gap-4 w-full p-4 rounded-lg text-left text-base transition-colors ${
-                                        action.isDestructive 
-                                            ? 'text-red-400 bg-white/5 hover:bg-red-500/20' 
-                                            : 'text-white bg-white/5 hover:bg-white/10'
-                                    }`}
+                                    className={getActionClasses(action)}
                                 >
                                     {action.icon && <div className="w-6 flex justify-center">{action.icon}</div>}
                                     <span>{action.label}</span>
@@ -65,7 +72,7 @@ export default function ActionSheetModal({ isOpen, onClose, title, actions }) {
 
                         <button
                             onClick={onClose}
-                            className="w-full mt-4 p-4 rounded-lg text-base text-white bg-white/10 hover:bg-white/20 transition-colors"
+                            className="w-full mt-4 p-4 rounded-lg text-base text-white bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
                         >
                             Batal
                         </button>

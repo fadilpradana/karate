@@ -1,3 +1,5 @@
+// src/pages/ModerasiArtikel.jsx (atau path yang sesuai)
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
@@ -322,12 +324,14 @@ export default function ModerasiArtikel() {
         {
             label: 'Ganti dari File',
             icon: <Replace size={20} />,
-            onClick: () => fileInputRef.current.click()
+            onClick: () => fileInputRef.current.click(),
+            isPrimary: true // Akan diwarnai biru cerah (blue-500)
         },
         {
             label: 'Pilih dari Galeri',
             icon: <ImageIcon size={20} />,
-            onClick: () => setShowImageBrowser(true)
+            onClick: () => setShowImageBrowser(true),
+            isSecondary: true // Akan diwarnai teal cerah (teal-400)
         },
         {
             label: 'Hapus Gambar',
