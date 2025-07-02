@@ -12,9 +12,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Komponen Modal
 import Modal from '../components/Modal';
 
-
-// Komponen Pop-up dari bawah (Action Sheet) yang meniru referensi Anda
+// Komponen Action Sheet dengan pengunci scroll
 const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -61,20 +69,114 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     );
 };
 
+// Komponen Lightbox dengan ukuran terkontrol
+const ImageViewerModal = ({ isOpen, onClose, imageUrl }) => {
+    if (!isOpen || !imageUrl) return null;
 
-// Komponen internal baru untuk mengelola tampilan dan interaksi avatar
-function AvatarEditor({ initialUrl, onUpdate, profileId }) {
-    const [avatarFile, setAvatarFile] = useState(null);
-    const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(initialUrl);
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-2xl w-full"
+            >
+                <img src={imageUrl} alt="Tampilan Penuh" className="w-full h-auto object-contain max-h-[85vh] rounded-lg shadow-2xl" />
+                <button
+                    onClick={onClose}
+                    className="absolute -top-3 -right-3 p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40 transition-colors"
+                    aria-label="Tutup"
+                >
+                    <X size={20} />
+                </button>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+
+// Komponen AvatarEditor yang dipanggil dari ProfileCard
+function AvatarEditor({
+    initialUrl,
+    isUploading,
+    onFileChange,
+    onView,
+    onEdit,
+    onRemove,
+    fileInputRef
+}) {
+    return (
+        <div className="flex flex-col items-center sm:items-start relative">
+            <label className="block mb-1 text-sm text-gray-300 w-full sm:text-left">Foto Profil</label>
+            <div
+                className="relative group w-32 h-32 sm:w-28 sm:h-28 flex-shrink-0 cursor-pointer"
+                onClick={() => {
+                    if (window.innerWidth < 640 && onEdit) {
+                        onEdit();
+                    }
+                }}
+            >
+                <div className="w-full h-full rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 border-dashed">
+                    {isUploading ? (
+                        <Loader2 className="animate-spin text-white h-10 w-10" />
+                    ) : initialUrl ? (
+                        <img src={initialUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        <Camera size={40} className="text-gray-400" />
+                    )}
+                </div>
+
+                <div className="hidden sm:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300 items-center justify-center gap-1.5">
+                    <button type="button" title="Lihat Foto" onClick={() => onView(initialUrl)} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70 disabled:opacity-30" disabled={!initialUrl}><Eye size={16} /></button>
+                    <button type="button" title="Ganti Foto" onClick={() => fileInputRef.current.click()} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70"><Replace size={16} /></button>
+                    <button type="button" title="Hapus Foto" onClick={onRemove} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70 disabled:opacity-30" disabled={!initialUrl || isUploading}><Trash2 size={16} /></button>
+                </div>
+            </div>
+            <input type="file" ref={fileInputRef} accept="image/*" onChange={onFileChange} className="hidden" />
+        </div>
+    );
+}
+
+
+// Komponen ProfileCard untuk menampilkan data profil
+function ProfileCard({
+    profileData,
+    session,
+    onUpdate,
+    isMyProfile = false,
+    onLogout,
+    onViewAvatar,
+    onEditAvatar,
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState(profileData || {});
+    const [loading, setLoading] = useState(false);
+    
     const [isUploading, setIsUploading] = useState(false);
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(profileData?.avatar_url || null);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        setAvatarPreviewUrl(initialUrl);
-    }, [initialUrl]);
+        setFormData(profileData || {});
+        setAvatarPreviewUrl(profileData?.avatar_url || null);
+    }, [profileData]);
 
-    const handleAvatarChange = async (event) => {
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAvatarFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -90,111 +192,23 @@ function AvatarEditor({ initialUrl, onUpdate, profileId }) {
         }
     };
     
-    // Fungsi ini akan dipanggil dari tombol 'Simpan' di parent component
-    const processAvatarUpdate = async () => {
-        if (!avatarFile) return null;
-
+    const handleRemoveAvatar = async () => {
         setIsUploading(true);
         try {
-            const fileExt = avatarFile.name.split('.').pop();
-            const fileName = `${profileId}-${Date.now()}.${fileExt}`;
-            const filePath = `${fileName}`;
-
-            if (initialUrl) {
-                const oldFileName = initialUrl.split('/').pop();
-                await supabase.storage.from('avatars').remove([oldFileName]);
-            }
-
-            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, avatarFile);
-            if (uploadError) throw uploadError;
-
-            const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-            return publicUrlData.publicUrl;
-        } catch (error) {
-            console.error("Gagal unggah avatar:", error);
-            throw error;
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const handleRemoveAvatar = async () => {
-         setIsUploading(true);
-         setIsPopupOpen(false);
-         try {
-             if (avatarPreviewUrl) {
-                 const oldFileName = avatarPreviewUrl.split('/').pop();
+             if (profileData?.avatar_url) {
+                 const oldFileName = profileData.avatar_url.split('/').pop();
                  await supabase.storage.from('avatars').remove([oldFileName]);
              }
-             await supabase.from('profiles').update({ avatar_url: null }).eq('id', profileId);
+             await supabase.from('profiles').update({ avatar_url: null }).eq('id', profileData.id);
              setAvatarFile(null);
              setAvatarPreviewUrl(null);
-             onUpdate({ avatar_url: null });
-         } catch(error) {
+             onUpdate(null, 'Foto profil berhasil dihapus.', 'success', true);
+        } catch(error) {
              console.error("Gagal hapus avatar:", error);
-         } finally {
+             onUpdate(null, `Gagal hapus avatar: ${error.message}`, 'error');
+        } finally {
              setIsUploading(false);
-         }
-    };
-    
-    // Definisikan aksi untuk ActionSheet
-    const avatarActions = [
-        { label: 'Lihat Foto', icon: <Eye size={20} />, onClick: () => { if(avatarPreviewUrl) window.open(avatarPreviewUrl, '_blank'); setIsPopupOpen(false); }, disabled: !avatarPreviewUrl },
-        { label: 'Ganti Foto', icon: <Replace size={20} />, onClick: () => { fileInputRef.current.click(); setIsPopupOpen(false); } },
-        { label: 'Hapus Foto', icon: <Trash2 size={20} />, onClick: handleRemoveAvatar, disabled: !avatarPreviewUrl, isDestructive: true }
-    ];
-
-    return (
-        <div className="flex flex-col items-center sm:items-start relative">
-             <label className="block mb-1 text-sm text-gray-300 w-full sm:text-left">Foto Profil</label>
-             <div 
-                className="relative group w-32 h-32 sm:w-28 sm:h-28 flex-shrink-0 cursor-pointer"
-                onClick={() => { if (window.innerWidth < 640) setIsPopupOpen(true); }}
-             >
-                 <div className="w-full h-full rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 border-dashed">
-                     {isUploading ? (
-                         <Loader2 className="animate-spin text-white h-10 w-10" />
-                     ) : avatarPreviewUrl ? (
-                         <img src={avatarPreviewUrl} alt="Avatar" className="w-full h-full object-cover" />
-                     ) : (
-                         <Camera size={40} className="text-gray-400" />
-                     )}
-                 </div>
-
-                 {/* Desktop Hover Actions (Dikecilkan & di dalam frame) */}
-                 <div className="hidden sm:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300 items-center justify-center gap-1.5">
-                    <button type="button" title="Lihat Foto" onClick={() => avatarPreviewUrl && window.open(avatarPreviewUrl, '_blank')} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70 disabled:opacity-30" disabled={!avatarPreviewUrl}><Eye size={16} /></button>
-                    <button type="button" title="Ganti Foto" onClick={() => fileInputRef.current.click()} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70"><Replace size={16} /></button>
-                    <button type="button" title="Hapus Foto" onClick={handleRemoveAvatar} className="p-2 bg-black/40 rounded-full text-white hover:bg-black/70 disabled:opacity-30" disabled={!avatarPreviewUrl || isUploading}><Trash2 size={16} /></button>
-                 </div>
-             </div>
-             <input type="file" ref={fileInputRef} accept="image/*" onChange={handleAvatarChange} className="hidden" />
-             
-             {/* Mobile Action Sheet */}
-             <ActionSheetModal 
-                isOpen={isPopupOpen}
-                onClose={() => setIsPopupOpen(false)}
-                title="Opsi Foto Profil"
-                actions={avatarActions}
-             />
-        </div>
-    );
-}
-
-
-function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLogout }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState(profileData || {});
-    const [loading, setLoading] = useState(false);
-    const avatarEditorRef = useRef();
-
-    useEffect(() => {
-        setFormData(profileData || {});
-    }, [profileData]);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -203,27 +217,41 @@ function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLo
 
         const updatedProfileData = { ...formData };
         
-        if (avatarEditorRef.current) {
+        if (avatarFile) {
             try {
-                const newAvatarUrl = await avatarEditorRef.current.processAvatarUpdate();
-                if (newAvatarUrl) {
-                    updatedProfileData.avatar_url = newAvatarUrl;
+                const fileExt = avatarFile.name.split('.').pop();
+                const fileName = `${profileData.id}-${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+    
+                if (profileData.avatar_url) {
+                    const oldFileName = profileData.avatar_url.split('/').pop();
+                    await supabase.storage.from('avatars').remove([oldFileName]);
                 }
+    
+                const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, avatarFile);
+                if (uploadError) throw uploadError;
+    
+                const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                updatedProfileData.avatar_url = publicUrlData.publicUrl;
+
             } catch (error) {
-                 onUpdate(null, `Gagal mengunggah foto: ${error.message}`);
-                 setLoading(false);
-                 return;
+                onUpdate(null, `Gagal mengunggah foto: ${error.message}`, 'error');
+                setLoading(false);
+                return;
             }
         }
         
         await onUpdate(updatedProfileData);
         setLoading(false);
         setIsEditing(false);
+        setAvatarFile(null);
     };
-    
-    const handleAvatarUpdated = (newAvatarData) => {
-        setFormData(prev => ({...prev, ...newAvatarData}));
-        onUpdate(null, `Foto profil berhasil dihapus.`, 'success', true);
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setAvatarPreviewUrl(profileData.avatar_url);
+        setAvatarFile(null);
+        setFormData(profileData);
     }
 
     const inputStyle = "w-full px-3 py-2 text-sm bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white";
@@ -240,14 +268,22 @@ function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLo
                 <form onSubmit={handleSubmit} className="mt-6 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
                          <AvatarEditor 
-                            ref={avatarEditorRef}
-                            initialUrl={formData.avatar_url} 
-                            profileId={formData.id} 
-                            onUpdate={handleAvatarUpdated}
+                            initialUrl={avatarPreviewUrl}
+                            isUploading={isUploading}
+                            fileInputRef={fileInputRef}
+                            onFileChange={handleAvatarFileChange}
+                            onView={onViewAvatar}
+                            onEdit={() => onEditAvatar({ 
+                                onRemove: handleRemoveAvatar, 
+                                onReplace: () => fileInputRef.current.click(),
+                                onShow: () => onViewAvatar(avatarPreviewUrl),
+                                avatarUrl: avatarPreviewUrl
+                            })}
+                            onRemove={handleRemoveAvatar}
                          />
                          <div className="space-y-3 w-full">
-                            <div><label className={labelStyle}>Username</label><input type="text" name="username" value={formData.username || ''} onChange={handleInputChange} required className={inputStyle} /></div>
-                            <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={formData.nama_lengkap || ''} onChange={handleInputChange} required className={inputStyle}/></div>
+                             <div><label className={labelStyle}>Username</label><input type="text" name="username" value={formData.username || ''} onChange={handleInputChange} required className={inputStyle} /></div>
+                             <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={formData.nama_lengkap || ''} onChange={handleInputChange} required className={inputStyle}/></div>
                          </div>
                     </div>
 
@@ -260,8 +296,8 @@ function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLo
                     </div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Role</p><p className="text-sm text-gray-400 capitalize">{profileData.role} (tidak bisa diubah)</p></div>
                     <div className="flex justify-end gap-3 pt-4">
-                        <button type="button" onClick={() => setIsEditing(false)} className={`${glassButtonStyle} text-white`}>Batal</button>
-                        <button type="submit" disabled={loading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+                        <button type="button" onClick={handleCancelEdit} className={`${glassButtonStyle} text-white`}>Batal</button>
+                        <button type="submit" disabled={loading || isUploading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
                     </div>
                 </form>
             ) : (
@@ -269,17 +305,27 @@ function ProfileCard({ profileData, session, onUpdate, isMyProfile = false, onLo
                      <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
                          <div className="flex flex-col items-center sm:items-start">
                              <label className="block mb-1 text-sm text-gray-300 w-full sm:text-left">Foto Profil</label>
-                             <div className="w-32 h-32 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10">
+                             {/* [PERMINTAAN BARU] Menambahkan interaksi pada avatar di mode lihat */}
+                             <div 
+                                className="relative group w-32 h-32 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 cursor-pointer"
+                                onClick={() => onViewAvatar(profileData.avatar_url)}
+                             >
                                  {profileData.avatar_url ? (
                                      <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                                  ) : (
                                      <Camera size={40} className="text-gray-400" />
                                  )}
+                                 {/* Overlay hanya untuk lihat foto saat hover di desktop */}
+                                 {profileData.avatar_url && (
+                                     <div className="hidden sm:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-center justify-center">
+                                         <Eye size={32} className="text-white"/>
+                                     </div>
+                                 )}
                              </div>
                          </div>
                          <div className="space-y-4 w-full">
-                            <div className={dataDisplayStyle}><p className={labelStyle}>Username</p><p className={textDataStyle}>{profileData.username}</p></div>
-                            <div className={dataDisplayStyle}><p className={labelStyle}>Nama Lengkap</p><p className={textDataStyle}>{profileData.nama_lengkap}</p></div>
+                             <div className={dataDisplayStyle}><p className={labelStyle}>Username</p><p className={textDataStyle}>{profileData.username}</p></div>
+                             <div className={dataDisplayStyle}><p className={labelStyle}>Nama Lengkap</p><p className={textDataStyle}>{profileData.nama_lengkap}</p></div>
                          </div>
                      </div>
                     
@@ -311,15 +357,25 @@ function Dashboard() {
 
     const [myProfile, setMyProfile] = useState(null);
     const [allProfiles, setAllProfiles] = useState([]);
-    const [selectedProfile, setSelectedProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editFormData, setEditFormData] = useState({});
     const [updateStatus, setUpdateStatus] = useState({ message: '', type: null });
     
+    // State untuk modal diangkat ke sini
+    const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+    const [viewerImageUrl, setViewerImageUrl] = useState(null);
+    const [actionSheetActions, setActionSheetActions] = useState([]);
+
+    // State & Ref untuk manajemen profil lain oleh admin
+    const [selectedProfile, setSelectedProfile] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [profileToDelete, setProfileToDelete] = useState(null);
-    const adminAvatarEditorRef = useRef();
+    const [adminAvatarFile, setAdminAvatarFile] = useState(null);
+    const [isUploadingAdminAvatar, setIsUploadingAdminAvatar] = useState(false);
+    const [isAvatarRemovedByAdmin, setIsAvatarRemovedByAdmin] = useState(false);
+    const adminFileInputRef = useRef(null);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -350,6 +406,24 @@ function Dashboard() {
         setTimeout(() => setUpdateStatus({ message: '', type: null }), 4000);
     };
 
+    const handleOpenImageViewer = (url) => {
+        if (!url) return;
+        setViewerImageUrl(url);
+        setIsImageViewerOpen(true);
+        setIsActionSheetOpen(false);
+    };
+
+    const handleOpenActionSheet = (actionsConfig) => {
+        const { onShow, onReplace, onRemove, avatarUrl } = actionsConfig;
+        const configuredActions = [
+            { label: 'Lihat Foto', icon: <Eye size={20} />, onClick: () => { onShow(); setIsActionSheetOpen(false); }, disabled: !avatarUrl },
+            { label: 'Ganti Foto', icon: <Replace size={20} />, onClick: () => { onReplace(); setIsActionSheetOpen(false); }},
+            { label: 'Hapus Foto', icon: <Trash2 size={20} />, onClick: () => { onRemove(); setIsActionSheetOpen(false); }, disabled: !avatarUrl, isDestructive: true }
+        ];
+        setActionSheetActions(configuredActions);
+        setIsActionSheetOpen(true);
+    };
+
     const handleUpdateMyProfile = async (updatedData, errorMessage = null, successMessage = null, immediateFeedback = false) => {
         if(errorMessage) {
             showUpdateFeedback(errorMessage, 'error');
@@ -367,46 +441,81 @@ function Dashboard() {
             const { id, created_at, email, role, ...updatePayload } = updatedData;
             const { error } = await supabase.from('profiles').update(updatePayload).eq('id', session.user.id);
             if (error) throw error;
-            setMyProfile(updatedData);
+
+            const { data: refreshedProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            setMyProfile(refreshedProfile);
+
             showUpdateFeedback('Profil Anda berhasil diperbarui!', 'success');
         } catch (err) {
             showUpdateFeedback(`Gagal memperbarui: ${err.message}`, 'error');
         }
     };
     
-    const handleAdminAvatarUpdated = (newAvatarData) => {
-        setAllProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...newAvatarData } : p));
-        setEditFormData(prev => ({ ...prev, ...newAvatarData }));
-        showUpdateFeedback(`Foto profil untuk ${selectedProfile.username} telah dihapus.`);
-    };
+    const handleAdminAvatarFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
 
+        setIsUploadingAdminAvatar(true);
+        try {
+            const compressedFile = await compressAndConvertToWebP(file);
+            setAdminAvatarFile(compressedFile);
+            setEditFormData(prev => ({...prev, avatar_url: URL.createObjectURL(compressedFile)}));
+            setIsAvatarRemovedByAdmin(false);
+        } catch (error) {
+            console.error("Gagal kompresi gambar oleh admin:", error);
+        } finally {
+            setIsUploadingAdminAvatar(false);
+        }
+    }
+
+    const handleAdminRemoveAvatar = () => {
+        setEditFormData(prev => ({...prev, avatar_url: null}));
+        setAdminAvatarFile(null);
+        setIsAvatarRemovedByAdmin(true);
+    }
+    
     const handleUpdateOtherProfileByAdmin = async (e) => {
         e.preventDefault(); 
         setLoading(true);
 
         const updatePayload = { ...editFormData };
-        delete updatePayload.id;
-        delete updatePayload.created_at;
-        delete updatePayload.email;
-        
+        const originalProfile = allProfiles.find(p => p.id === selectedProfile.id);
+
         try {
-            if (adminAvatarEditorRef.current) {
-                const newAvatarUrl = await adminAvatarEditorRef.current.processAvatarUpdate();
-                if (newAvatarUrl) {
-                    updatePayload.avatar_url = newAvatarUrl;
+            if (adminAvatarFile) {
+                const fileExt = adminAvatarFile.name.split('.').pop();
+                const fileName = `${selectedProfile.id}-${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, adminAvatarFile);
+                if (uploadError) throw uploadError;
+
+                if (originalProfile.avatar_url) {
+                    await supabase.storage.from('avatars').remove([originalProfile.avatar_url.split('/').pop()]);
                 }
+                const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+                updatePayload.avatar_url = publicUrlData.publicUrl;
+            } else if (isAvatarRemovedByAdmin && originalProfile.avatar_url) {
+                await supabase.storage.from('avatars').remove([originalProfile.avatar_url.split('/').pop()]);
+                updatePayload.avatar_url = null;
             }
+
+            delete updatePayload.id;
+            delete updatePayload.created_at;
+            delete updatePayload.email;
             
             const { error } = await supabase.from('profiles').update(updatePayload).eq('id', selectedProfile.id);
             if (error) throw error;
             
-            setAllProfiles(prev => prev.map(p => p.id === selectedProfile.id ? { ...p, ...updatePayload } : p));
+            const { data: refreshedProfiles } = await supabase.from('profiles').select('*').neq('id', session.user.id).order('nama_lengkap', { ascending: true });
+            setAllProfiles(refreshedProfiles || []);
+
             showUpdateFeedback(`Profil ${selectedProfile.username} berhasil diperbarui!`, 'success');
             setSelectedProfile(null);
         } catch (err) {
             showUpdateFeedback(`Gagal memperbarui: ${err.message}`, 'error');
         } finally { 
             setLoading(false); 
+            setAdminAvatarFile(null);
+            setIsAvatarRemovedByAdmin(false);
         }
     };
     
@@ -418,6 +527,8 @@ function Dashboard() {
     const handleSelectProfileToEdit = (profile) => {
         setSelectedProfile(profile);
         setEditFormData(profile);
+        setAdminAvatarFile(null);
+        setIsAvatarRemovedByAdmin(false);
     };
 
     const confirmDeleteProfile = (profile) => {
@@ -430,10 +541,13 @@ function Dashboard() {
         setLoading(true);
         setShowDeleteConfirmModal(false);
         try {
+            if (profileToDelete.avatar_url) {
+                await supabase.storage.from('avatars').remove([profileToDelete.avatar_url.split('/').pop()]);
+            }
+
             const { error } = await supabase.functions.invoke('delete-user', {
                 body: { userId: profileToDelete.id }
             });
-
             if (error) throw error;
             
             setAllProfiles(prev => prev.filter(p => p.id !== profileToDelete.id));
@@ -461,7 +575,7 @@ function Dashboard() {
     const inputStyle = "w-full px-3 py-2 text-sm bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white";
     const labelStyle = "block mb-1 text-[10px] text-gray-400 uppercase";
     const glassButtonStyle = "flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors";
-    
+
     return (
         <div className="flex flex-col min-h-screen pt-24">
             <main className="flex-grow flex flex-col justify-start items-center pb-12 px-4">
@@ -473,7 +587,15 @@ function Dashboard() {
                         </motion.div>
                         <motion.div variants={containerVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <motion.div variants={itemVariants} className="lg:col-span-1">
-                                <ProfileCard profileData={myProfile} session={session} onUpdate={handleUpdateMyProfile} isMyProfile={true} onLogout={handleLogout} />
+                                <ProfileCard 
+                                    profileData={myProfile} 
+                                    session={session} 
+                                    onUpdate={handleUpdateMyProfile} 
+                                    isMyProfile={true} 
+                                    onLogout={handleLogout}
+                                    onViewAvatar={handleOpenImageViewer}
+                                    onEditAvatar={handleOpenActionSheet}
+                                />
                             </motion.div>
                             <motion.div variants={itemVariants} className="lg:col-span-2">
                                 <div className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
@@ -485,10 +607,18 @@ function Dashboard() {
                                                 <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
                                                 <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
                                                     <AvatarEditor 
-                                                        ref={adminAvatarEditorRef}
-                                                        initialUrl={editFormData.avatar_url} 
-                                                        profileId={selectedProfile.id} 
-                                                        onUpdate={handleAdminAvatarUpdated}
+                                                        initialUrl={editFormData.avatar_url}
+                                                        isUploading={isUploadingAdminAvatar}
+                                                        fileInputRef={adminFileInputRef}
+                                                        onFileChange={handleAdminAvatarFileChange}
+                                                        onView={handleOpenImageViewer}
+                                                        onRemove={handleAdminRemoveAvatar}
+                                                        onEdit={() => handleOpenActionSheet({
+                                                            onShow: () => handleOpenImageViewer(editFormData.avatar_url),
+                                                            onReplace: () => adminFileInputRef.current.click(),
+                                                            onRemove: handleAdminRemoveAvatar,
+                                                            avatarUrl: editFormData.avatar_url
+                                                        })}
                                                     />
                                                     <div className="space-y-3 w-full">
                                                         <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
@@ -516,7 +646,7 @@ function Dashboard() {
                                                 </div>
                                                 <div className="flex justify-end gap-3 pt-2">
                                                     <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
-                                                    <button type="submit" disabled={loading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
+                                                    <button type="submit" disabled={loading || isUploadingAdminAvatar} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
                                                 </div>
                                             </form>
                                         </motion.div>
@@ -526,12 +656,21 @@ function Dashboard() {
                                         {allProfiles.map(p => (
                                             <div key={p.id} className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
                                                 <div className="flex items-center gap-3 flex-grow min-w-0">
-                                                    <div className="w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0">
+                                                    {/* [PERMINTAAN BARU] Menambahkan interaksi pada avatar di daftar pengguna */}
+                                                    <div
+                                                        className="relative group w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0 cursor-pointer"
+                                                        onClick={() => handleOpenImageViewer(p.avatar_url)}
+                                                    >
                                                         {p.avatar_url ? (
                                                             <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover"/>
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center">
                                                                 <Camera size={20} className="text-gray-500"/>
+                                                            </div>
+                                                        )}
+                                                        {p.avatar_url && (
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <Eye size={20} className="text-white" />
                                                             </div>
                                                         )}
                                                     </div>
@@ -552,7 +691,17 @@ function Dashboard() {
                         </motion.div>
                     </motion.div>
                 ) : (
-                    myProfile && <motion.div variants={itemVariants} initial="hidden" animate="visible"><ProfileCard profileData={myProfile} session={session} onUpdate={handleUpdateMyProfile} isMyProfile={true} onLogout={handleLogout} /></motion.div>
+                    myProfile && <motion.div variants={itemVariants} initial="hidden" animate="visible">
+                        <ProfileCard 
+                            profileData={myProfile} 
+                            session={session} 
+                            onUpdate={handleUpdateMyProfile} 
+                            isMyProfile={true} 
+                            onLogout={handleLogout}
+                            onViewAvatar={handleOpenImageViewer}
+                            onEditAvatar={handleOpenActionSheet}
+                        />
+                    </motion.div>
                 )}
             </main>
 
@@ -574,6 +723,19 @@ function Dashboard() {
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>
 
+            <ImageViewerModal
+                isOpen={isImageViewerOpen}
+                onClose={() => setIsImageViewerOpen(false)}
+                imageUrl={viewerImageUrl}
+            />
+
+            <ActionSheetModal
+                isOpen={isActionSheetOpen}
+                onClose={() => setIsActionSheetOpen(false)}
+                title="Opsi Foto Profil"
+                actions={actionSheetActions}
+            />
+
             <Modal isOpen={showDeleteConfirmModal} onClose={() => setShowDeleteConfirmModal(false)} title="Konfirmasi Hapus Akun">
                 <div className="flex flex-col items-center justify-center space-y-4">
                     <AlertTriangle className="h-12 w-12 text-red-500" />
@@ -585,7 +747,7 @@ function Dashboard() {
                  <div className="flex justify-center gap-4 mt-6">
                      <button onClick={() => setShowDeleteConfirmModal(false)} className="px-6 py-2 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 transition-colors text-white">Batal</button>
                      <button onClick={handleDeleteProfile} className="px-6 py-2 rounded-md bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 text-white" disabled={loading}>{loading ? 'Menghapus...' : 'Hapus'}</button>
-                </div>
+                 </div>
             </Modal>
         </div>
     );
