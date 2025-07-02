@@ -1,13 +1,53 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { X, Plus, Edit, Trash, Loader2, UploadCloud, ArrowLeft } from 'lucide-react';
+import { X, Plus, Edit, Trash, Loader2, UploadCloud, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; 
 
 import brevetLogo from "../assets/brevet.png";
 
 const glassButtonClasses = "flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
+
+// [FIX 2] Komponen Modal Konfirmasi Hapus dengan efek glass
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+                onClick={onClose}
+            >
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-sm p-6 rounded-2xl"
+                    style={{ backgroundColor: 'rgba(28, 28, 28, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}
+                >
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <AlertTriangle className="text-yellow-400" />
+                        {title}
+                    </h3>
+                    <div className="text-gray-300 text-sm mb-6">{children}</div>
+                    <div className="flex justify-end gap-3">
+                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onClose} className={`${glassButtonClasses} px-4 py-2 text-sm text-white`}>
+                            Batal
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onConfirm} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors">
+                            Hapus
+                        </motion.button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+};
 
 // --- Komponen Form Inline ---
 const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompressing }) => {
@@ -113,12 +153,13 @@ export default function AdminPrestasi() {
     const [currentPrestasi, setCurrentPrestasi] = useState(null); 
     const [uploading, setUploading] = useState(false);
     const [userRole, setUserRole] = useState(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     useEffect(() => { const checkUser = async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) { navigate('/login'); return; } const { data: profileData, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single(); if (profileError || profileData?.role !== 'admin') { navigate('/'); } else { setUserRole(profileData.role); fetchPrestasi(); }}; checkUser(); }, [navigate]);
     
     const fetchPrestasi = async () => { setLoading(true); setError(null); const { data, error } = await supabase.from('prestasi').select('*').order('created_at', { ascending: false }); if (error) { setError("Gagal memuat prestasi."); console.error(error); } else { const dataWithImageUrls = await Promise.all(data.map(async (item) => { let imageUrl = item.gambar_url; if (imageUrl) { const { data: publicUrlData } = supabase.storage.from('gambarprestasi').getPublicUrl(imageUrl); imageUrl = publicUrlData ? publicUrlData.publicUrl : null; } return { ...item, gambar: imageUrl }; })); setPrestasiList(dataWithImageUrls); } setLoading(false); };
     
-    // --- PERUBAHAN UTAMA DI FUNGSI handleSave ---
     const handleSave = async (formData) => {
         setUploading(true);
         setError(null);
@@ -129,39 +170,32 @@ export default function AdminPrestasi() {
             return;
         }
 
-        // Dapatkan path gambar original dari state 'currentPrestasi' (data sebelum diedit)
         const originalImagePath = currentPrestasi ? currentPrestasi.gambar_url : null;
         let finalImagePath = originalImagePath;
 
         try {
-            // KASUS 1: Ada file gambar baru yang diunggah dari form
             if (formData.gambar && typeof formData.gambar === 'object') {
                 const file = formData.gambar;
                 const fileName = `${Date.now()}-prestasi.webp`;
                 
-                // Unggah file baru
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('gambarprestasi')
                     .upload(fileName, file, { upsert: true });
 
                 if (uploadError) throw uploadError;
 
-                finalImagePath = uploadData.path; // Path gambar final adalah path file yang baru
+                finalImagePath = uploadData.path;
 
-                // Jika ada gambar lama, hapus dari storage
                 if (originalImagePath) {
                     const { error: removeError } = await supabase.storage
                         .from('gambarprestasi')
                         .remove([originalImagePath]);
                     if (removeError) {
-                        // Log error tapi jangan hentikan proses, agar data tetap tersimpan
                         console.error("Gagal hapus gambar lama saat mengganti:", removeError);
                     }
                 }
             }
-            // KASUS 2: Tidak ada file baru, TAPI gambar lama dihapus dari form
             else if (originalImagePath && !formData.gambar_url && !formData.gambar) {
-                // Hapus gambar lama dari storage
                 const { error: removeError } = await supabase.storage
                     .from('gambarprestasi')
                     .remove([originalImagePath]);
@@ -169,27 +203,24 @@ export default function AdminPrestasi() {
                 if (removeError) {
                     console.error("Gagal hapus gambar lama:", removeError);
                 }
-                finalImagePath = null; // Set path gambar menjadi null untuk database
+                finalImagePath = null;
             }
 
-            // Siapkan data untuk disimpan ke database
             const dataToSave = {
                 judul: formData.judul,
                 deskripsi: formData.deskripsi,
                 medali_emas: formData.medali_emas,
                 medali_perak: formData.medali_perak,
                 medali_perunggu: formData.medali_perunggu,
-                gambar_url: finalImagePath, // Gunakan path gambar final
+                gambar_url: finalImagePath,
             };
 
-            // Lakukan update atau insert ke database
             const { error: dbError } = await (formData.id
                 ? supabase.from('prestasi').update(dataToSave).eq('id', formData.id)
                 : supabase.from('prestasi').insert(dataToSave));
 
             if (dbError) throw dbError;
 
-            // Sukses, kembali ke daftar prestasi
             setCurrentPrestasi(null);
             fetchPrestasi();
 
@@ -201,15 +232,40 @@ export default function AdminPrestasi() {
         }
     };
     
-    const handleDelete = async (id, imageUrl) => { if (!window.confirm("Yakin hapus prestasi ini?")) return; try { const { error: dbError } = await supabase.from('prestasi').delete().eq('id', id); if (dbError) throw dbError; if (imageUrl) { const imagePath = new URL(imageUrl).pathname.split('/gambarprestasi/')[1]; const { error: storageError } = await supabase.storage.from('gambarprestasi').remove([imagePath]); if (storageError) console.error("Gagal hapus file dari storage:", storageError); } fetchPrestasi(); } catch (error) { setError("Gagal hapus prestasi."); console.error(error); }};
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        
+        try {
+            const { error: dbError } = await supabase.from('prestasi').delete().eq('id', itemToDelete.id);
+            if (dbError) throw dbError;
+
+            if (itemToDelete.gambar) { // 'gambar' di sini adalah URL publik
+                const imagePath = new URL(itemToDelete.gambar).pathname.split('/gambarprestasi/')[1];
+                if (imagePath) {
+                    const { error: storageError } = await supabase.storage.from('gambarprestasi').remove([imagePath]);
+                    if (storageError) console.error("Gagal hapus file dari storage:", storageError);
+                }
+            }
+            fetchPrestasi();
+        } catch (error) {
+            setError("Gagal hapus prestasi.");
+            console.error(error);
+        } finally {
+            setIsConfirmModalOpen(false);
+            setItemToDelete(null);
+        }
+    };
     
+    const promptDelete = (item) => {
+        setItemToDelete(item);
+        setIsConfirmModalOpen(true);
+    };
+
     const showAddForm = () => setCurrentPrestasi({ judul: '', deskripsi: '', medali_emas: 0, medali_perak: 0, medali_perunggu: 0, gambar_url: null, gambar: null });
     
-    // Saat form edit ditampilkan, kita simpan data original ke 'currentPrestasi'
     const showEditForm = (prestasi) => {
-      // Pastikan 'gambar' sesuai dengan URL, dan 'gambar_url' adalah path-nya
-      const originalPath = prestasisList.find(p => p.id === prestasi.id)?.gambar_url;
-      setCurrentPrestasi({ ...prestasi, gambar_url: originalPath });
+        const originalPath = prestasiList.find(p => p.id === prestasi.id)?.gambar_url;
+        setCurrentPrestasi({ ...prestasi, gambar_url: originalPath });
     };
 
     const showListView = () => setCurrentPrestasi(null);
@@ -236,15 +292,15 @@ export default function AdminPrestasi() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {prestasiList.map((item) => (
-                                        <motion.div key={item.id} className="p-5 rounded-xl relative overflow-hidden bg-white/5 border border-white/10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                        <motion.div key={item.id} className="p-5 rounded-xl relative bg-white/5 border border-white/10 flex flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                             {item.gambar && <img src={item.gambar} alt={item.judul} className="w-full h-40 object-cover rounded-md mb-4" />}
                                             <h3 className="text-xl font-league uppercase text-accent mb-2">{item.judul}</h3>
-                                            <p className="text-sm font-[Montserrat] text-gray-300 mb-4 line-clamp-3">{item.deskripsi}</p>
+                                            <p className="text-sm font-[Montserrat] text-gray-300 mb-4 line-clamp-3 flex-grow">{item.deskripsi}</p>
                                             <div className="flex justify-end gap-2 mt-4">
                                                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => showEditForm(item)} className={`${glassButtonClasses} p-2 text-blue-400 hover:text-blue-300`}>
                                                     <Edit size={16} />
                                                 </motion.button>
-                                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleDelete(item.id, item.gambar)} className={`${glassButtonClasses} p-2 text-red-500 hover:text-red-400`}>
+                                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => promptDelete(item)} className={`${glassButtonClasses} p-2 text-red-500 hover:text-red-400`}>
                                                     <Trash size={16} />
                                                 </motion.button>
                                             </div>
@@ -256,16 +312,28 @@ export default function AdminPrestasi() {
                     )}
                 </AnimatePresence>
             </main>
-            <footer className="relative z-[30] bg-[#0E0004] text-gray-400 text-sm py-10 px-6 md:px-20 border-t border-white/10">
+            {/* [MODIFIKASI] Footer disamakan dengan Dashboard */}
+            <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="text-center md:text-left">&copy; {new Date().getFullYear()} STMKG Karate Club</div>
-                    <img src={brevetLogo} alt="Logo Brevet" className="h-5" />
-                    <div className="flex gap-4">
-                        <Link to="/" className="hover:text-white">Beranda</Link>
-                        <Link to="/artikel" className="hover:text-white">Artikel</Link>
+                    <div className="text-center md:text-left w-full md:w-1/3">&copy; With Love STMKG Karate Club Periode 2025</div>
+                    <div className="w-full md:w-1/3 flex justify-center"><img src={brevetLogo} alt="Logo Brevet" className="h-5" /></div>
+                    <div className="flex flex-wrap justify-center md:justify-end gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
+                        <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
+                        <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
+                        <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
+                        <Link to="/artikel" className="hover:text-[#FF9F1C]">Artikel</Link>
+                        <Link to="/kontak" className="hover:text-[#FF9F1C]">Kontak</Link>
                     </div>
                 </div>
             </footer>
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Konfirmasi Hapus"
+            >
+                <p>Apakah Anda yakin ingin menghapus prestasi <strong className="text-white">{itemToDelete?.judul}</strong>? Tindakan ini tidak dapat dibatalkan.</p>
+            </ConfirmationModal>
         </div>
     );
 }
