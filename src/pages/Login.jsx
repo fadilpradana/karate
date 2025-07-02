@@ -2,19 +2,19 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import brevetLogo from '../assets/brevet.png';
-import { motion, AnimatePresence } from 'framer-motion'; // Import motion dan AnimatePresence
-import { CheckCircle, AlertTriangle, LoaderCircle } from 'lucide-react'; // Import ikon untuk notifikasi dan loading
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { supabase } from '../supabaseClient'; 
 
 function Login() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [feedback, setFeedback] = useState({ message: '', type: null }); // State untuk notifikasi
+    const [feedback, setFeedback] = useState({ message: '', type: null });
 
     const navigate = useNavigate();
     const { signIn } = useAuth();
 
-    // Gaya glassmorphism untuk notifikasi
     const glassFrameStyle = { 
         backgroundColor: 'rgba(255, 255, 255, 0.08)', 
         backdropFilter: 'blur(10px)', 
@@ -26,21 +26,18 @@ function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setFeedback({ message: '', type: null }); // Reset feedback saat memulai login
+        setFeedback({ message: '', type: null });
         try {
             const { error } = await signIn({ email, password });
             if (error) {
-                // Supabase error: email/password salah, user tidak ditemukan, dll.
-                // Supabase error.message sudah cukup deskriptif
                 throw error; 
             }
             setFeedback({ message: 'Login berhasil! Mengalihkan...', type: 'success' });
             setTimeout(() => {
-                navigate('/dashboard'); // Alihkan setelah notifikasi terlihat sebentar
-            }, 1500); // Tunda sedikit agar notifikasi terlihat
+                navigate('/dashboard');
+            }, 1500);
         } catch (error) {
             console.error('Login error:', error.message);
-            // Tangani error berdasarkan pesan dari Supabase atau custom message
             let errorMessage = 'Terjadi kesalahan tidak dikenal saat login.';
             if (error.message.includes('Invalid login credentials')) {
                 errorMessage = 'Email atau password salah. Silakan coba lagi.';
@@ -50,12 +47,11 @@ function Login() {
                 errorMessage = 'Email Anda belum terkonfirmasi. Silakan cek inbox Anda.';
             }
             setFeedback({ message: errorMessage, type: 'error' });
-        } finally {
-            setLoading(false);
-            // Feedback akan hilang otomatis setelah beberapa detik
             setTimeout(() => {
                 setFeedback({ message: '', type: null });
-            }, 5000); // Notifikasi akan hilang setelah 5 detik
+            }, 5000);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -63,9 +59,7 @@ function Login() {
     const glassButtonStyle = "group w-full mt-6 px-4 py-3 font-bold text-white rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 disabled:opacity-50 transition-all duration-300";
 
     return (
-        // Wrapper utama untuk layout sticky footer
-        <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white"> {/* Tambah bg-gray-900 */}
-            {/* Notifikasi Pop-up */}
+        <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
             <AnimatePresence>
                 {feedback.type && (
                     <motion.div
@@ -82,7 +76,6 @@ function Login() {
                 )}
             </AnimatePresence>
 
-            {/* Konten utama */}
             <main className="flex-grow flex justify-center items-center pt-20 pb-12 px-4">
                 <div className="w-full max-w-md p-8 space-y-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
                     <h1 className="text-3xl font-bold text-center text-white">Selamat Datang Kembali</h1>
@@ -110,6 +103,12 @@ function Login() {
                                 required 
                                 className={inputStyle}
                             />
+                        </div>
+
+                        <div className="text-right">
+                            <Link to="/lupa-password" className="text-xs text-gray-400 hover:text-[#FF9F1C] hover:underline">
+                                Lupa Password?
+                            </Link>
                         </div>
 
                         <button 
@@ -141,7 +140,6 @@ function Login() {
                 </div>
             </main>
             
-            {/* Footer */}
             <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-xs sm:text-sm py-6 sm:py-10 px-4 sm:px-6 md:px-20 border-t border-[#333]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="text-center md:text-left w-full md:w-1/3">

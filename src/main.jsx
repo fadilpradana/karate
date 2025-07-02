@@ -23,6 +23,7 @@ import Dashboard from './pages/Dashboard';
 import TulisArtikelBaru from './pages/TulisArtikelBaru';
 import ModerasiArtikel from './pages/ModerasiArtikel';
 import AdminPrestasi from './pages/AdminPrestasi';
+import LupaPassword from './pages/LupaPassword';
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -42,7 +43,8 @@ const router = createBrowserRouter([
       { path: 'pendaftaran', element: <Pendaftaran /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <SignUp /> },
-      
+      { path: 'lupa-password', element: <LupaPassword /> },
+
       // --- Rute untuk Pengguna Terautentikasi (cukup login) ---
       {
         path: 'dashboard',
