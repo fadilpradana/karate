@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom'; // [PERBAIKAN] Import createPortal
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -12,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Komponen Modal
 import Modal from '../components/Modal';
 
-// Komponen Action Sheet dengan pengunci scroll
+// [PERBAIKAN] Komponen ActionSheetModal sekarang menggunakan React Portal dan siap untuk AnimatePresence
 const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     useEffect(() => {
         if (isOpen) {
@@ -23,9 +24,9 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
         };
     }, [isOpen]);
 
-    if (!isOpen) return null;
+    // `if (!isOpen) return null;` dihapus, AnimatePresence akan mengontrolnya.
 
-    return (
+    return createPortal(
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -65,15 +66,16 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
                     ))}
                 </div>
             </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };
 
-// Komponen Lightbox dengan ukuran terkontrol
+// [PERBAIKAN] Komponen ImageViewerModal sekarang menggunakan React Portal dan siap untuk AnimatePresence
 const ImageViewerModal = ({ isOpen, onClose, imageUrl }) => {
-    if (!isOpen || !imageUrl) return null;
+    // `if (!isOpen || !imageUrl) return null;` dihapus.
 
-    return (
+    return createPortal(
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -99,7 +101,8 @@ const ImageViewerModal = ({ isOpen, onClose, imageUrl }) => {
                     <X size={20} />
                 </button>
             </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };
 
@@ -196,8 +199,8 @@ function ProfileCard({
         setIsUploading(true);
         try {
              if (profileData?.avatar_url) {
-                 const oldFileName = profileData.avatar_url.split('/').pop();
-                 await supabase.storage.from('avatars').remove([oldFileName]);
+                const oldFileName = profileData.avatar_url.split('/').pop();
+                await supabase.storage.from('avatars').remove([oldFileName]);
              }
              await supabase.from('profiles').update({ avatar_url: null }).eq('id', profileData.id);
              setAvatarFile(null);
@@ -305,7 +308,6 @@ function ProfileCard({
                      <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
                          <div className="flex flex-col items-center sm:items-start">
                              <label className="block mb-1 text-sm text-gray-300 w-full sm:text-left">Foto Profil</label>
-                             {/* [PERMINTAAN BARU] Menambahkan interaksi pada avatar di mode lihat */}
                              <div 
                                 className="relative group w-32 h-32 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 cursor-pointer"
                                 onClick={() => onViewAvatar(profileData.avatar_url)}
@@ -315,7 +317,6 @@ function ProfileCard({
                                  ) : (
                                      <Camera size={40} className="text-gray-400" />
                                  )}
-                                 {/* Overlay hanya untuk lihat foto saat hover di desktop */}
                                  {profileData.avatar_url && (
                                      <div className="hidden sm:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-center justify-center">
                                          <Eye size={32} className="text-white"/>
@@ -361,13 +362,11 @@ function Dashboard() {
     const [error, setError] = useState(null);
     const [updateStatus, setUpdateStatus] = useState({ message: '', type: null });
     
-    // State untuk modal diangkat ke sini
     const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [viewerImageUrl, setViewerImageUrl] = useState(null);
     const [actionSheetActions, setActionSheetActions] = useState([]);
 
-    // State & Ref untuk manajemen profil lain oleh admin
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [editFormData, setEditFormData] = useState({});
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
@@ -525,10 +524,14 @@ function Dashboard() {
     };
 
     const handleSelectProfileToEdit = (profile) => {
-        setSelectedProfile(profile);
-        setEditFormData(profile);
-        setAdminAvatarFile(null);
-        setIsAvatarRemovedByAdmin(false);
+        if(selectedProfile && selectedProfile.id === profile.id) {
+            setSelectedProfile(null);
+        } else {
+            setSelectedProfile(profile);
+            setEditFormData(profile);
+            setAdminAvatarFile(null);
+            setIsAvatarRemovedByAdmin(false);
+        }
     };
 
     const confirmDeleteProfile = (profile) => {
@@ -600,90 +603,99 @@ function Dashboard() {
                             <motion.div variants={itemVariants} className="lg:col-span-2">
                                 <div className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
                                     <h2 className="text-xl font-bold text-white mb-4">Manajemen Pengguna ({allProfiles.length})</h2>
-                                    <AnimatePresence>
-                                    {selectedProfile && (
-                                        <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: 'auto'}} exit={{opacity: 0, height: 0}} transition={{ ease: "easeInOut", duration: 0.3 }} className="mb-6 overflow-hidden">
-                                            <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
-                                                <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
-                                                <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
-                                                    <AvatarEditor 
-                                                        initialUrl={editFormData.avatar_url}
-                                                        isUploading={isUploadingAdminAvatar}
-                                                        fileInputRef={adminFileInputRef}
-                                                        onFileChange={handleAdminAvatarFileChange}
-                                                        onView={handleOpenImageViewer}
-                                                        onRemove={handleAdminRemoveAvatar}
-                                                        onEdit={() => handleOpenActionSheet({
-                                                            onShow: () => handleOpenImageViewer(editFormData.avatar_url),
-                                                            onReplace: () => adminFileInputRef.current.click(),
-                                                            onRemove: handleAdminRemoveAvatar,
-                                                            avatarUrl: editFormData.avatar_url
-                                                        })}
-                                                    />
-                                                    <div className="space-y-3 w-full">
-                                                        <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                        <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div><label className={labelStyle}>Email</label><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
-                                                <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                    <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                    <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                </div>
-                                                <div>
-                                                    <label className={labelStyle}>Role</label>
-                                                    <div className="relative">
-                                                        <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
-                                                            <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
-                                                            <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
-                                                            <option value="admin" className="bg-gray-900 text-white">Admin</option>
-                                                        </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-end gap-3 pt-2">
-                                                    <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
-                                                    <button type="submit" disabled={loading || isUploadingAdminAvatar} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
-                                                </div>
-                                            </form>
-                                        </motion.div>
-                                    )}
-                                    </AnimatePresence>
+                                    
                                     <div className="space-y-2">
                                         {allProfiles.map(p => (
-                                            <div key={p.id} className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
-                                                <div className="flex items-center gap-3 flex-grow min-w-0">
-                                                    {/* [PERMINTAAN BARU] Menambahkan interaksi pada avatar di daftar pengguna */}
-                                                    <div
-                                                        className="relative group w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0 cursor-pointer"
-                                                        onClick={() => handleOpenImageViewer(p.avatar_url)}
+                                            <React.Fragment key={p.id}>
+                                                <div className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
+                                                    <div className="flex items-center gap-3 flex-grow min-w-0">
+                                                        <div
+                                                            className="relative group w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0 cursor-pointer"
+                                                            onClick={() => handleOpenImageViewer(p.avatar_url)}
+                                                        >
+                                                            {p.avatar_url ? (
+                                                                <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover"/>
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <Camera size={20} className="text-gray-500"/>
+                                                                </div>
+                                                            )}
+                                                            {p.avatar_url && (
+                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <Eye size={20} className="text-white" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-white truncate">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400">({p.username})</span></p>
+                                                            <p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                        <button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20"><Edit size={16} className="text-white"/></button>
+                                                        <button onClick={() => confirmDeleteProfile(p)} className="p-2 rounded-md hover:bg-red-500/20"><Trash2 size={16} className="text-red-400"/></button>
+                                                    </div>
+                                                </div>
+
+                                                <AnimatePresence>
+                                                {selectedProfile && selectedProfile.id === p.id && (
+                                                    <motion.div 
+                                                        initial={{opacity: 0, height: 0, marginTop: 0}} 
+                                                        animate={{opacity: 1, height: 'auto', marginTop: '0.5rem'}} 
+                                                        exit={{opacity: 0, height: 0, marginTop: 0}} 
+                                                        transition={{ ease: "easeInOut", duration: 0.3 }} 
+                                                        className="overflow-hidden"
                                                     >
-                                                        {p.avatar_url ? (
-                                                            <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover"/>
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center">
-                                                                <Camera size={20} className="text-gray-500"/>
+                                                        <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
+                                                            <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
+                                                                <AvatarEditor 
+                                                                    initialUrl={editFormData.avatar_url}
+                                                                    isUploading={isUploadingAdminAvatar}
+                                                                    fileInputRef={adminFileInputRef}
+                                                                    onFileChange={handleAdminAvatarFileChange}
+                                                                    onView={handleOpenImageViewer}
+                                                                    onRemove={handleAdminRemoveAvatar}
+                                                                    onEdit={() => handleOpenActionSheet({
+                                                                        onShow: () => handleOpenImageViewer(editFormData.avatar_url),
+                                                                        onReplace: () => adminFileInputRef.current.click(),
+                                                                        onRemove: handleAdminRemoveAvatar,
+                                                                        avatarUrl: editFormData.avatar_url
+                                                                    })}
+                                                                />
+                                                                <div className="space-y-3 w-full">
+                                                                    <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                    <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                        {p.avatar_url && (
-                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                <Eye size={20} className="text-white" />
+                                                            
+                                                            <div><label className={labelStyle}>Email</label><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
+                                                            <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                                <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="font-bold text-white truncate">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400">({p.username})</span></p>
-                                                        <p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 flex-shrink-0">
-                                                    <button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20"><Edit size={16} className="text-white"/></button>
-                                                    <button onClick={() => confirmDeleteProfile(p)} className="p-2 rounded-md hover:bg-red-500/20"><Trash2 size={16} className="text-red-400"/></button>
-                                                </div>
-                                            </div>
+                                                            <div>
+                                                                <label className={labelStyle}>Role</label>
+                                                                <div className="relative">
+                                                                    <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                                                        <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
+                                                                        <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
+                                                                        <option value="admin" className="bg-gray-900 text-white">Admin</option>
+                                                                    </select>
+                                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-end gap-3 pt-2">
+                                                                <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
+                                                                <button type="submit" disabled={loading || isUploadingAdminAvatar} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
+                                                            </div>
+                                                        </form>
+                                                    </motion.div>
+                                                )}
+                                                </AnimatePresence>
+                                            </React.Fragment>
                                         ))}
                                     </div>
                                 </div>
@@ -723,18 +735,27 @@ function Dashboard() {
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>
 
-            <ImageViewerModal
-                isOpen={isImageViewerOpen}
-                onClose={() => setIsImageViewerOpen(false)}
-                imageUrl={viewerImageUrl}
-            />
+            {/* [PERBAIKAN] Membungkus modal dengan AnimatePresence untuk animasi keluar */}
+            <AnimatePresence>
+                {isImageViewerOpen && (
+                    <ImageViewerModal
+                        isOpen={isImageViewerOpen}
+                        onClose={() => setIsImageViewerOpen(false)}
+                        imageUrl={viewerImageUrl}
+                    />
+                )}
+            </AnimatePresence>
 
-            <ActionSheetModal
-                isOpen={isActionSheetOpen}
-                onClose={() => setIsActionSheetOpen(false)}
-                title="Opsi Foto Profil"
-                actions={actionSheetActions}
-            />
+            <AnimatePresence>
+                {isActionSheetOpen && (
+                    <ActionSheetModal
+                        isOpen={isActionSheetOpen}
+                        onClose={() => setIsActionSheetOpen(false)}
+                        title="Opsi Foto Profil"
+                        actions={actionSheetActions}
+                    />
+                )}
+            </AnimatePresence>
 
             <Modal isOpen={showDeleteConfirmModal} onClose={() => setShowDeleteConfirmModal(false)} title="Konfirmasi Hapus Akun">
                 <div className="flex flex-col items-center justify-center space-y-4">

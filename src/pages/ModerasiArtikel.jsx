@@ -1,7 +1,6 @@
-// src/pages/ModerasiArtikel.jsx
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion'; // AnimatePresence sudah diimpor
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
@@ -10,7 +9,6 @@ import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, R
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import Modal from '../components/Modal';
 import ImageBrowserModal from '../components/ImageBrowserModal';
-import ActionSheetModal from '../components/ActionSheetModal';
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -28,6 +26,74 @@ const stripHtml = (html) => {
 
 const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
+const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    // [PERBAIKAN] Kondisi "if (!isOpen) return null;" dihapus.
+    // Visibilitas sekarang dikontrol oleh AnimatePresence di parent.
+
+    const getActionClass = (action) => {
+        if (action.isDestructive) {
+            return 'text-red-400 hover:bg-red-500/10';
+        }
+        if (action.isSecondary) {
+            return 'text-gray-300 hover:bg-white/10';
+        }
+        return 'text-blue-400 hover:bg-blue-500/10';
+    };
+
+    return createPortal(
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }} // Animasi fade out untuk overlay
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-end"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: "0%" }}
+                exit={{ y: "100%" }} // Animasi slide down untuk keluar
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full bg-[#1c1c1c] border-t border-white/10 rounded-t-2xl p-4"
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-white">{title}</h3>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10">
+                        <X size={20} className="text-gray-400" />
+                    </button>
+                </div>
+                <div className="space-y-2">
+                    {actions.map((action, index) => (
+                        <button
+                            key={index}
+                            onClick={action.onClick}
+                            disabled={action.disabled}
+                            className={`w-full flex items-center gap-4 p-3 rounded-lg text-left transition-colors text-base
+                                ${getActionClass(action)}
+                                ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                            `}
+                        >
+                            {action.icon}
+                            <span>{action.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </motion.div>
+        </motion.div>,
+        document.body
+    );
+};
+
 // --- Komponen Form Inline untuk Artikel ---
 const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressingImage, setIsFormDirty, setIsCompressingImageParent }) => {
     const [formData, setFormData] = useState(currentArticle);
@@ -38,7 +104,6 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
 
     const initialFormState = useRef(null);
 
-    // DEKLARASIKAN useEditor DI SINI, SEBELUM updateIsDirty
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -49,8 +114,8 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
             }),
         ],
         editorProps: { attributes: { class: 'tiptap max-h-[250px] overflow-y-auto' } },
-        onUpdate: ({ editor }) => { // Pastikan editor diakses dari parameter callback
-            if (!initialFormState.current) return; // Tambahkan pengaman
+        onUpdate: ({ editor }) => { 
+            if (!initialFormState.current) return; 
 
             const titleChanged = formData.judul !== initialFormState.current.judul;
             const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
@@ -59,13 +124,9 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
             setIsFormDirty(titleChanged || contentChanged || coverChanged);
         },
     });
-
-    // Callback untuk memperbarui isFormDirty di parent
-    // Perhatikan: updateIsDirty ini sekarang tidak perlu mengakses 'editor' secara langsung
-    // karena onUpdate Tiptap sudah memberi parameter 'editor' pada callback-nya.
-    // Namun, kita tetap butuh ini untuk perubahan judul dan gambar.
+    
     const updateIsDirty = useCallback(() => {
-        if (!initialFormState.current || !editor) return; // Pastikan editor sudah ada
+        if (!initialFormState.current || !editor) return;
 
         const titleChanged = formData.judul !== initialFormState.current.judul;
         const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
@@ -74,8 +135,6 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
         setIsFormDirty(titleChanged || contentChanged || coverChanged);
     }, [formData.judul, editor, coverImagePreview, newCoverImageFile, isCoverRemoved, setIsFormDirty]);
 
-
-    // Inisialisasi initialFormState saat currentArticle berubah
     useEffect(() => {
         if (currentArticle) {
             initialFormState.current = {
@@ -83,24 +142,21 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                 deskripsi: currentArticle.deskripsi || '',
                 gambar_url: currentArticle.gambar_url || null
             };
-            setFormData(currentArticle); // Pastikan formData sinkron dengan currentArticle
+            setFormData(currentArticle); 
             setCoverImagePreview(currentArticle.gambar_url || null);
             setNewCoverImageFile(null);
             setIsCoverRemoved(false);
-            if (editor) { // Pastikan editor sudah diinisialisasi sebelum mencoba menggunakannya
+            if (editor) { 
                 editor.commands.setContent(currentArticle.deskripsi || '');
             }
-            setIsFormDirty(false); // Reset dirty state saat artikel baru dibuka untuk diedit
+            setIsFormDirty(false); 
         }
     }, [currentArticle, editor, setIsFormDirty]);
 
-    // Panggil updateIsDirty saat formData (judul) atau state gambar berubah
     useEffect(() => {
         updateIsDirty();
     }, [formData.judul, coverImagePreview, newCoverImageFile, isCoverRemoved, updateIsDirty]);
 
-
-    // Cleanup Tiptap editor on unmount
     useEffect(() => {
         return () => {
             if (editor && editor.destroy) {
@@ -287,13 +343,19 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                     {isSaving ? 'Menyimpan...' : (isCompressingImage ? 'Gambar diproses...' : 'Simpan Perubahan')}
                 </motion.button>
             </form>
-
-            <ActionSheetModal
-                isOpen={showCoverActionSheet}
-                onClose={() => setShowCoverActionSheet(false)}
-                title="Opsi Gambar Sampul"
-                actions={coverActions}
-            />
+            
+            {/* [PERBAIKAN] Membungkus ActionSheetModal dengan AnimatePresence */}
+            {/* Ini akan mengaktifkan animasi `exit` saat komponen ditutup */}
+            <AnimatePresence>
+                {showCoverActionSheet && (
+                    <ActionSheetModal
+                        isOpen={showCoverActionSheet}
+                        onClose={() => setShowCoverActionSheet(false)}
+                        title="Opsi Gambar Sampul"
+                        actions={coverActions}
+                    />
+                )}
+            </AnimatePresence>
 
             <ImageBrowserModal isOpen={showImageBrowser} onClose={() => setShowImageBrowser(false)} onImageSelect={handleSelectFromBrowser} />
         </motion.div>
@@ -368,14 +430,12 @@ export default function ModerasiArtikel() {
             deskripsi: article.deskripsi || '',
             type,
         });
-        // isFormDirty akan di-reset di dalam ArticleForm melalui useEffect
     }, []);
 
 
     const handleSaveArticle = async ({ id, judul, deskripsi, newCoverImageFile, isCoverRemoved, coverImagePreview, type }) => {
         setIsSaving(true);
-        // isCompressingImage dikelola oleh ArticleForm melalui setIsCompressingImageParent
-
+        
         const oldImageUrl = type === 'draft'
             ? draftArticles.find(a => a.id === id)?.gambar_url
             : publishedArticles.find(a => a.id === id)?.gambar_url;
@@ -384,14 +444,12 @@ export default function ModerasiArtikel() {
 
         try {
             if (newCoverImageFile) {
-                // isCompressingImage sudah diatur true oleh ArticleForm
                 const file = newCoverImageFile;
                 const fileName = `${Date.now()}_${file.name}`;
                 const { data: uploadData, error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, file);
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
                 finalImageUrl = urlData.publicUrl;
-                // isCompressingImage akan diatur false oleh ArticleForm setelah proses selesai
             }
 
             if (oldImageUrl && (finalImageUrl !== oldImageUrl || isCoverRemoved)) {
@@ -411,23 +469,21 @@ export default function ModerasiArtikel() {
 
             if (updateError) throw updateError;
 
-            // Update successful
             setCurrentArticle(null);
-            setIsFormDirty(false); // Reset dirty state setelah berhasil menyimpan
+            setIsFormDirty(false); 
             fetchDraftArticles();
             fetchPublishedArticles();
 
         } catch (error) {
             console.error("Error saving article:", error);
-            // Anda bisa menambahkan state error lokal di ModerasiArtikel untuk menampilkan pesan ke user
         } finally {
             setIsSaving(false);
-            setIsCompressingImage(false); // Pastikan ini selalu direset pada akhirnya
+            setIsCompressingImage(false); 
         }
     };
 
     const handleCancelEdit = useCallback(() => {
-        if (isFormDirty && !isSaving && !isCompressingImage) { // Tambahkan isCompressingImage ke kondisi
+        if (isFormDirty && !isSaving && !isCompressingImage) { 
             setShowUnsavedChangesModal(true);
         } else {
             setCurrentArticle(null);
