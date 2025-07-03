@@ -4,10 +4,8 @@ import { Menu, X, CheckCircle, AlertTriangle, LoaderCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo_bintangcompress.png";
 import { useAuth } from '../context/AuthContext';
-// --- PERUBAHAN BARU: Impor supabase client untuk mengambil data profil ---
 import { supabase } from '../supabaseClient';
 
-// --- Tidak ada perubahan di blok ini ---
 const staticNavLinks = [
   { name: "Beranda", path: "/" },
   { name: "Profil", path: "/profil" },
@@ -19,7 +17,6 @@ const staticNavLinks = [
 const pengurusLink = { name: "Pengurus", path: "/pengurus" };
 const loginLink = { name: "Login / Register", path: "/signup" };
 const dashboardLink = { name: "Dashboard", path: "/dashboard" };
-// --- PERUBAHAN BARU: Definisikan link baru untuk Kelola Prestasi ---
 const kelolaPrestasiLink = { name: "Kelola Prestasi", path: "/admin-prestasi" };
 
 
@@ -37,10 +34,8 @@ export default function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutFeedback, setLogoutFeedback] = useState({ message: '', type: null });
 
-  // --- PERUBAHAN BARU: State untuk menyimpan role pengguna ---
   const [userRole, setUserRole] = useState(null);
 
-  // --- PERUBAHAN BARU: useEffect untuk mengambil role pengguna saat sesi berubah ---
   useEffect(() => {
     const fetchUserRole = async () => {
       if (session?.user?.id) {
@@ -51,29 +46,33 @@ export default function Navbar() {
             .eq('id', session.user.id)
             .single();
 
-          if (error) {
-            throw error;
-          }
-          if (profile) {
-            setUserRole(profile.role);
-          }
+          if (error) throw error;
+          if (profile) setUserRole(profile.role);
+
         } catch (error) {
           console.error('Error fetching user role:', error.message);
-          setUserRole(null); // Reset jika ada error
+          setUserRole(null);
         }
       } else {
-        setUserRole(null); // Reset jika tidak ada sesi
+        setUserRole(null);
       }
     };
-
     fetchUserRole();
-  }, [session]); // Jalankan setiap kali sesi berubah
+  }, [session]);
 
   const allMainLinks = useMemo(() => (
     session
       ? staticNavLinks
       : [...staticNavLinks, loginLink]
   ), [session]);
+
+  // [LOGIKA BARU] Buat kondisi khusus untuk menentukan apakah menu 'Artikel' harus aktif
+  const isArtikelActive = useMemo(() =>
+    location.pathname.startsWith('/artikel') ||
+    location.pathname === '/moderasi-artikel' ||
+    location.pathname === '/tulis-artikel-baru',
+    [location.pathname]
+  );
 
   const handleNavLinkClick = useCallback(() => {
     setMenuOpen(false);
@@ -107,20 +106,31 @@ export default function Navbar() {
       setIndicatorProps({ left: 0, width: 0 });
       return;
     }
-    const activeLinkIndex = allMainLinks.findIndex(link => location.pathname === link.path);
+
+    // [PENERAPAN LOGIKA] Sesuaikan cara mencari link aktif untuk indikator
+    let activeLinkIndex = -1;
+    if (isArtikelActive) {
+        // Jika salah satu halaman artikel aktif, paksa indikator untuk menunjuk ke link 'Artikel'
+        activeLinkIndex = allMainLinks.findIndex(link => link.path === '/artikel');
+    } else {
+        // Jika tidak, gunakan logika biasa
+        activeLinkIndex = allMainLinks.findIndex(link => location.pathname === link.path);
+    }
+
     let targetEl = null;
     if (activeLinkIndex !== -1) {
       targetEl = navLinksRefs.current[activeLinkIndex];
     } else if (location.pathname === pengurusLink.path) {
       targetEl = pengurusRef.current;
     }
+
     if (targetEl) {
       const { offsetLeft, offsetWidth } = targetEl;
       setIndicatorProps({ left: offsetLeft, width: offsetWidth });
     } else {
       setIndicatorProps({ left: 0, width: 0 });
     }
-  }, [location.pathname, allMainLinks]);
+  }, [location.pathname, allMainLinks, isArtikelActive]); // Tambahkan isArtikelActive sebagai dependensi
 
   const baseRightNavLinkClass = "hidden md:flex items-center px-3 py-1 text-xs font-medium rounded-md border transition-all duration-300";
   const getPengurusClass = () => location.pathname === pengurusLink.path ? `${baseRightNavLinkClass} border-[#FF9F1C] bg-transparent text-white hover:text-[#FF9F1C] hover:border-[#FF9F1C]` : `${baseRightNavLinkClass} text-white border-white bg-transparent hover:text-[#FF9F1C] hover:border-[#FF9F1C]`;
@@ -141,7 +151,17 @@ export default function Navbar() {
             <div className="hidden md:block rounded-md">
               <motion.div className="md:flex relative items-center gap-1 backdrop-blur-md bg-white/10 px-1 py-1 rounded-md shadow-sm" variants={mainContainerVariants} initial="hidden" animate="visible">
                 {indicatorProps.width > 0 && (<motion.div className="absolute top-1 bottom-1 rounded-md z-0" animate={{ left: indicatorProps.left, width: indicatorProps.width }} transition={{ duration: 0.3, ease: "easeInOut" }} style={glassFrameStyle} />)}
-                {staticNavLinks.map((link, index) => (<motion.div key={link.path} variants={itemVariants}><Link to={link.path} ref={(el) => (navLinksRefs.current[index] = el)} className={`relative z-10 px-2 py-1 text-xs font-medium transition-all duration-200 hover:text-[#FF9F1C] ${location.pathname === link.path ? "text-[#FF9F1C] font-semibold" : "text-white"}`}>{link.name}</Link></motion.div>))}
+                {staticNavLinks.map((link, index) => {
+                  // [PENERAPAN LOGIKA] Gunakan kondisi isArtikelActive khusus untuk link 'Artikel'
+                  const isActive = link.path === '/artikel' ? isArtikelActive : location.pathname === link.path;
+                  return (
+                    <motion.div key={link.path} variants={itemVariants}>
+                      <Link to={link.path} ref={(el) => (navLinksRefs.current[index] = el)} className={`relative z-10 px-2 py-1 text-xs font-medium transition-all duration-200 hover:text-[#FF9F1C] ${isActive ? "text-[#FF9F1C] font-semibold" : "text-white"}`}>
+                        {link.name}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
                 {session ? (
                   <motion.div variants={itemVariants}>
                     <button onClick={handleLogout} className={`relative z-10 px-4 py-1.5 text-xs rounded-md border border-white/60 bg-black/20 text-white/90 hover:bg-red-500/30 hover:border-red-500/70 transition-all duration-300`}>
@@ -160,7 +180,6 @@ export default function Navbar() {
           <div className="flex items-center pr-4 md:pr-0 space-x-2">
             {session && (
               <>
-                {/* --- PERUBAHAN BARU: Tambahkan link "Kelola Prestasi" untuk admin --- */}
                 {userRole === 'admin' && (
                   <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
                     <Link to={kelolaPrestasiLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
@@ -169,8 +188,6 @@ export default function Navbar() {
                     </Link>
                   </motion.div>
                 )}
-                {/* --- Akhir Perubahan --- */}
-
                 <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
                   <Link to={dashboardLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
                     <div className="absolute -inset-px rounded-md" style={glassFrameStyle} />
@@ -188,10 +205,19 @@ export default function Navbar() {
         <AnimatePresence>
           {menuOpen && (
             <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 md:hidden z-50" variants={mobileMenuVariants} initial="hidden" animate="visible" exit="exit">
-              {allMainLinks.map((link) => (<motion.div key={`mobile-${link.path}`} variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={link.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === link.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{link.name}</Link></motion.div>))}
+              {allMainLinks.map((link) => {
+                // [PENERAPAN LOGIKA] Gunakan kondisi isArtikelActive khusus untuk link 'Artikel' di menu mobile
+                const isActive = link.path === '/artikel' ? isArtikelActive : location.pathname === link.path;
+                return (
+                  <motion.div key={`mobile-${link.path}`} variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                    <Link to={link.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${isActive ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>
+                      {link.name}
+                    </Link>
+                  </motion.div>
+                );
+              })}
               <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
               {session && (<>
-                {/* --- PERUBAHAN BARU: Tambahkan link "Kelola Prestasi" untuk admin di menu mobile --- */}
                 {userRole === 'admin' && (
                   <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
                     <Link to={kelolaPrestasiLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === kelolaPrestasiLink.path ? "text-teal-300" : "text-white hover:text-teal-300"}`}>
@@ -199,8 +225,6 @@ export default function Navbar() {
                     </Link>
                   </motion.div>
                 )}
-                {/* --- Akhir Perubahan --- */}
-
                 <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
                   <Link to={dashboardLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === dashboardLink.path ? "text-green-400" : "text-white hover:text-green-400"}`}>{dashboardLink.name}</Link>
                 </motion.div>

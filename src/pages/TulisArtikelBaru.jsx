@@ -4,32 +4,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-// [PENAMBAHAN] Impor ikon dan komponen yang diperlukan dari ModerasiArtikel
 import { Pencil, Image as ImageIcon, Send, FileText, Settings, ChevronLeft, UploadCloud, Replace, Trash2, X, Loader2, Save } from 'lucide-react';
 
-// [PENAMBAHAN] Impor komponen Modal dari ModerasiArtikel
 import Modal from '../components/Modal'; 
 import ImageBrowserModal from '../components/ImageBrowserModal';
 
-// Impor Tiptap dan ekstensi yang diperlukan
 import { useEditor, EditorContent, ReactNodeViewRenderer, BubbleMenu, NodeViewWrapper } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Node, mergeAttributes } from '@tiptap/core'; // [MODIFIKASI] Impor Node & mergeAttributes
+import { Node, mergeAttributes } from '@tiptap/core';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { TiptapToolbar } from '../components/TiptapToolbar';
 import '../TiptapStyles.css';
 
-// Impor hook, komponen, dan utilitas
 import { useAuth } from '../context/AuthContext';
 import { AuthStatusDisplay } from '../components/AuthStatusDisplay';
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 
-// Impor aset statis
 import brevetLogo from '../assets/brevet.png';
 import bg1 from '../assets/bg1.jpg';
 
-// [PENAMBAHAN] Komponen Node Kustom Tiptap untuk Gambar dengan Caption (dari ModerasiArtikel)
 const ImageWithCaptionComponent = ({ node, updateAttributes, selected, editor }) => {
     return (
         <NodeViewWrapper className={`image-with-caption ${selected ? 'ProseMirror-selectednode' : ''}`} data-drag-handle>
@@ -77,7 +71,6 @@ export default function TulisArtikelBaru() {
     const { user, role: userRole, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
-    // State untuk form
     const [judul, setJudul] = useState('');
     const [coverImageFile, setCoverImageFile] = useState(null);
     const [coverImagePreview, setCoverImagePreview] = useState(null);
@@ -87,27 +80,24 @@ export default function TulisArtikelBaru() {
     const [submitError, setSubmitError] = useState(null);
     const [submitSuccess, setSubmitSuccess] = useState(null);
 
-    // [PENAMBAHAN] State untuk manajemen fitur baru
     const [isFormDirty, setIsFormDirty] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
-    const [sessionUploadedUrls, setSessionUploadedUrls] = useState(new Set()); // Lacak semua upload
+    const [sessionUploadedUrls, setSessionUploadedUrls] = useState(new Set());
     const editorImageInputRef = useRef(null);
 
-    // Konfigurasi editor Tiptap dengan node kustom
     const editor = useEditor({
         extensions: [
             StarterKit,
-            ImageWithCaptionNode, // [MODIFIKASI] Menggunakan node gambar kustom
+            ImageWithCaptionNode,
             Placeholder.configure({ placeholder: 'Tulis konten artikel Anda di sini...' }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
         ],
-        editorProps: { attributes: { class: 'tiptap' } },
+        editorProps: { attributes: { class: 'tiptap px-4 py-2' } },
         onUpdate: ({ editor }) => {
-            setIsFormDirty(true); // Tandai form sebagai 'dirty' saat konten berubah
+            setIsFormDirty(true);
         },
     });
 
-    // [PENAMBAHAN] Logika untuk menangani upload gambar di dalam editor
     const handleImageUploadForEditor = async (file) => {
         if (!file) return;
         try {
@@ -118,7 +108,7 @@ export default function TulisArtikelBaru() {
             const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
             const imageUrl = urlData.publicUrl;
             
-            setSessionUploadedUrls(prev => new Set(prev).add(imageUrl)); // Lacak URL
+            setSessionUploadedUrls(prev => new Set(prev).add(imageUrl));
             editor.chain().focus().setImageWithCaption({ src: imageUrl }).run();
         } catch (error) {
             console.error("Gagal mengunggah gambar ke editor:", error);
@@ -126,7 +116,6 @@ export default function TulisArtikelBaru() {
         }
     };
 
-    // [PENAMBAHAN] Aksi untuk bubble menu
     const deleteImageInEditor = () => {
         const { from, to } = editor.state.selection;
         editor.state.doc.nodesBetween(from, to, (node) => {
@@ -147,7 +136,6 @@ export default function TulisArtikelBaru() {
         editorImageInputRef.current?.click();
     };
     
-    // [MODIFIKASI] Menulis ulang fungsi handleSubmit untuk menyertakan pembersihan file yatim
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (!editor || isCompressing || isSubmitting) return;
@@ -158,22 +146,19 @@ export default function TulisArtikelBaru() {
         const kontenHtml = editor.getHTML();
         let finalCoverImageUrl = '';
 
-        // Kumpulkan semua URL yang ada di konten final
         const finalContentUrls = new Set(extractImageUrls(kontenHtml));
         let allUploadedUrls = new Set(sessionUploadedUrls);
 
         try {
-            // 1. Handle upload gambar sampul jika ada file baru
             if (coverImageFile) {
                 const fileName = `cover_${Date.now()}_${coverImageFile.name}`;
                 const { error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, coverImageFile);
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
                 finalCoverImageUrl = urlData.publicUrl;
-                allUploadedUrls.add(finalCoverImageUrl); // Lacak URL sampul juga
+                allUploadedUrls.add(finalCoverImageUrl);
             }
 
-            // 2. Insert artikel ke database
             const { data: articleData, error: insertError } = await supabase
                 .from('draft_artikel')
                 .insert([{
@@ -186,7 +171,6 @@ export default function TulisArtikelBaru() {
 
             if (insertError) throw insertError;
 
-            // 3. Pembersihan file yatim
             const urlsToKeep = new Set(finalContentUrls);
             if (finalCoverImageUrl) {
                 urlsToKeep.add(finalCoverImageUrl);
@@ -212,7 +196,6 @@ export default function TulisArtikelBaru() {
         }
     };
 
-    // Fungsi untuk mengekstrak URL dari HTML (seperti di moderasi)
     const extractImageUrls = useCallback((html) => {
         if (!html) return [];
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -258,19 +241,28 @@ export default function TulisArtikelBaru() {
         }
     }, [user, userRole, authLoading]);
 
-    // Cleanup URL objek
     useEffect(() => {
         const preview = coverImagePreview;
         return () => { if (preview) { URL.revokeObjectURL(preview); } };
     }, [coverImagePreview]);
     
-    // [PENAMBAHAN] Fungsi untuk membatalkan dan memeriksa unsaved changes
     const handleCancel = () => {
         if (isFormDirty) {
             setShowUnsavedChangesModal(true);
         } else {
             navigate('/artikel');
         }
+    };
+
+    // [ANIMASI] Definisikan varian animasi untuk container dan item
+    const formContainerVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+
+    const formItemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } }
     };
 
     if (authLoading || !isAuthorized) {
@@ -333,17 +325,23 @@ export default function TulisArtikelBaru() {
                      )}
 
                     <div className="w-full max-w-xl">
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 w-full">
-                            <h1 className="text-2xl sm:text-4xl font-league font-bold uppercase text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</h1>
+                        {/* [ANIMASI] Bungkus container form dengan motion.div */}
+                        <motion.div 
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 w-full"
+                            variants={formContainerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
+                            <motion.h1 variants={formItemVariants} className="text-2xl sm:text-4xl font-league font-bold uppercase text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</motion.h1>
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                <div>
+                                <motion.div variants={formItemVariants}>
                                     <label htmlFor="judul" className="block text-gray-300 text-sm font-medium mb-2">Judul Artikel</label>
                                     <div className="relative">
                                         <input type="text" id="judul" className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-3 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" placeholder="Masukkan judul artikel..." value={judul} onChange={(e) => { setJudul(e.target.value); setIsFormDirty(true); }} required />
                                         <Pencil size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     </div>
-                                </div>
-                                <div>
+                                </motion.div>
+                                <motion.div variants={formItemVariants}>
                                     <label className="block text-gray-300 text-sm font-medium mb-2">Gambar Sampul (Cover)</label>
                                     <div className="mt-1 flex justify-center items-center px-6 pt-5 pb-6 border-2 border-white/20 border-dashed rounded-md min-h-[200px]">
                                         <div className="space-y-1 text-center">
@@ -369,20 +367,22 @@ export default function TulisArtikelBaru() {
                                             <p className="text-xs text-gray-500">Gambar akan diubah ke WebP & dikompres</p>
                                         </div>
                                     </div>
-                                </div>
-                                <div>
+                                </motion.div>
+                                <motion.div variants={formItemVariants}>
                                     <label className="block text-gray-300 text-sm font-medium mb-2">Konten Artikel</label>
                                     <div className="bg-white/5 rounded-lg border border-white/10">
                                         <TiptapToolbar editor={editor} onImageUploadClick={() => editorImageInputRef.current?.click()} />
                                         <EditorContent editor={editor} />
                                     </div>
-                                </div>
-                                {submitError && ( <p className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-lg">{submitError}</p> )}
-                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C] disabled:opacity-50 disabled:cursor-not-allowed`} disabled={isSubmitting || isCompressing}>
-                                    {isSubmitting ? ( <><Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />Memproses...</> ) : ( <> <Send size={20} /> Buat & Simpan Draft</> )}
-                                </motion.button>
+                                </motion.div>
+                                {submitError && ( <motion.p variants={formItemVariants} className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-lg">{submitError}</motion.p> )}
+                                <motion.div variants={formItemVariants}>
+                                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C] disabled:opacity-50 disabled:cursor-not-allowed`} disabled={isSubmitting || isCompressing}>
+                                        {isSubmitting ? ( <><Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />Memproses...</> ) : ( <> <Send size={20} /> Buat & Simpan Draft</> )}
+                                    </motion.button>
+                                </motion.div>
                             </form>
-                        </div>
+                        </motion.div>
                     </div>
                 </main>
                 

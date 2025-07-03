@@ -205,7 +205,7 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
 
     const editor = useEditor({
         extensions: [ StarterKit, ImageWithCaptionNode, Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }), TextAlign.configure({ types: ['heading', 'paragraph'] }), ],
-        editorProps: { attributes: { class: 'tiptap min-h-[250px] overflow-y-auto' } },
+        editorProps: { attributes: { class: 'tiptap min-h-[250px] overflow-y-auto px-4 py-2' } },
         onUpdate: () => {
             if (!initialFormState.current) return;
             updateIsDirty();

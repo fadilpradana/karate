@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Plus, Edit, Trash, Loader2, UploadCloud, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; 
@@ -9,7 +9,6 @@ import brevetLogo from "../assets/brevet.png";
 
 const glassButtonClasses = "flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
-// [FIX 2] Komponen Modal Konfirmasi Hapus dengan efek glass
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
     if (!isOpen) return null;
 
@@ -49,12 +48,22 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
     );
 };
 
-// --- Komponen Form Inline ---
 const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompressing }) => {
-    // State dan logika form tidak berubah
     const [formData, setFormData] = useState(currentPrestasi);
     const [imagePreview, setImagePreview] = useState(currentPrestasi.gambar || null);
     const [internalCompressing, setInternalCompressing] = useState(isCompressing);
+    
+    // [PERUBAHAN 1] Buat ref untuk textarea deskripsi
+    const deskripsiRef = useRef(null);
+
+    // [PERUBAHAN 2] Gunakan useEffect untuk menyesuaikan tinggi textarea
+    useEffect(() => {
+        if (deskripsiRef.current) {
+            const textarea = deskripsiRef.current;
+            textarea.style.height = 'auto'; 
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [formData?.deskripsi]);
 
     const handleInputChange = async (e) => {
         const { name, value, type, files } = e.target;
@@ -63,7 +72,6 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
             setInternalCompressing(true);
             try {
                 const compressedFile = await compressAndConvertToWebP(file);
-                // Saat file baru dipilih, kita simpan sebagai object File dan kosongkan gambar_url
                 setFormData(prev => ({ ...prev, gambar: compressedFile, gambar_url: '' }));
                 setImagePreview(URL.createObjectURL(compressedFile));
             } catch (error) { console.error("Gagal kompresi gambar:", error); } 
@@ -74,7 +82,6 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
     };
 
     const removeImage = () => { 
-        // Saat gambar dihapus, kita set `gambar` dan `gambar_url` menjadi null
         setFormData(prev => ({ ...prev, gambar: null, gambar_url: null })); 
         setImagePreview(null); 
         const fileInput = document.getElementById('gambar-input'); 
@@ -120,7 +127,17 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
                         </div>
                         <div>
                             <label htmlFor="deskripsi" className="block text-sm font-semibold mb-1.5">Deskripsi</label>
-                            <textarea id="deskripsi" name="deskripsi" value={formData?.deskripsi || ''} onChange={handleInputChange} className="p-2.5 resize-y" style={glassInputStyle} rows="1" required></textarea>
+                            {/* [PERUBAHAN 3] Tambahkan ref, hapus 'resize-y' dan 'rows' */}
+                            <textarea 
+                                id="deskripsi" 
+                                name="deskripsi" 
+                                ref={deskripsiRef}
+                                value={formData?.deskripsi || ''} 
+                                onChange={handleInputChange} 
+                                className="p-2.5 overflow-hidden" 
+                                style={glassInputStyle}
+                                required
+                            ></textarea>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-1.5">Perolehan Medali</label>
@@ -143,8 +160,6 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
     );
 };
 
-
-// --- Komponen Halaman Utama ---
 export default function AdminPrestasi() {
     const navigate = useNavigate();
     const [prestasiList, setPrestasiList] = useState([]);
@@ -186,7 +201,7 @@ export default function AdminPrestasi() {
 
                 finalImagePath = uploadData.path;
 
-                if (originalImagePath) {
+                if (originalImagePath && originalImagePath !== finalImagePath) {
                     const { error: removeError } = await supabase.storage
                         .from('gambarprestasi')
                         .remove([originalImagePath]);
@@ -239,12 +254,9 @@ export default function AdminPrestasi() {
             const { error: dbError } = await supabase.from('prestasi').delete().eq('id', itemToDelete.id);
             if (dbError) throw dbError;
 
-            if (itemToDelete.gambar) { // 'gambar' di sini adalah URL publik
-                const imagePath = new URL(itemToDelete.gambar).pathname.split('/gambarprestasi/')[1];
-                if (imagePath) {
-                    const { error: storageError } = await supabase.storage.from('gambarprestasi').remove([imagePath]);
-                    if (storageError) console.error("Gagal hapus file dari storage:", storageError);
-                }
+            if (itemToDelete.gambar_url) { // Menggunakan gambar_url (path asli) untuk hapus
+                const { error: storageError } = await supabase.storage.from('gambarprestasi').remove([itemToDelete.gambar_url]);
+                if (storageError) console.error("Gagal hapus file dari storage:", storageError);
             }
             fetchPrestasi();
         } catch (error) {
@@ -257,15 +269,20 @@ export default function AdminPrestasi() {
     };
     
     const promptDelete = (item) => {
-        setItemToDelete(item);
+        // Saat akan menghapus, kita butuh path asli (gambar_url), bukan URL publik (gambar)
+        const itemWithOriginalPath = prestasiList.find(p => p.id === item.id);
+        setItemToDelete(itemWithOriginalPath);
         setIsConfirmModalOpen(true);
     };
 
     const showAddForm = () => setCurrentPrestasi({ judul: '', deskripsi: '', medali_emas: 0, medali_perak: 0, medali_perunggu: 0, gambar_url: null, gambar: null });
     
     const showEditForm = (prestasi) => {
-        const originalPath = prestasiList.find(p => p.id === prestasi.id)?.gambar_url;
-        setCurrentPrestasi({ ...prestasi, gambar_url: originalPath });
+        const originalItem = prestasiList.find(p => p.id === prestasi.id);
+        setCurrentPrestasi({ 
+            ...prestasi, 
+            gambar_url: originalItem.gambar_url // Pastikan kita membawa path asli, bukan URL publik
+        });
     };
 
     const showListView = () => setCurrentPrestasi(null);
@@ -312,7 +329,6 @@ export default function AdminPrestasi() {
                     )}
                 </AnimatePresence>
             </main>
-            {/* [MODIFIKASI] Footer disamakan dengan Dashboard */}
             <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="text-center md:text-left w-full md:w-1/3">&copy; With Love STMKG Karate Club Periode 2025</div>
