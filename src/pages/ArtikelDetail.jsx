@@ -6,6 +6,9 @@ import brevetLogo from '../assets/brevet.png';
 import bg1 from '../assets/bg1.jpg';
 import { User, Calendar, ArrowLeft } from 'lucide-react';
 
+// Impor file CSS Tiptap yang sudah final
+import '../TiptapStyles.css';
+
 export default function ArtikelDetail() {
     const { id } = useParams();
     const [artikel, setArtikel] = useState(null);
@@ -18,13 +21,7 @@ export default function ArtikelDetail() {
             setLoading(true);
             const { data, error } = await supabase
                 .from('artikel')
-                .select(`
-                    *,
-                    profiles!penulis_id (
-                        username,
-                        nama_lengkap
-                    )
-                `)
+                .select(`*, profiles!penulis_id (username, nama_lengkap)`)
                 .eq('id', id)
                 .single();
 
@@ -48,49 +45,19 @@ export default function ArtikelDetail() {
         }
     };
 
-    if (loading) return (
-        <div
-            className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed"
-            style={{ backgroundImage: `url(${bg1})` }}
-        >
-            <div className="absolute inset-0 bg-black opacity-70"></div>
-            <div className="relative z-10 text-lg">Memuat artikel...</div>
-        </div>
-    );
-    if (error) return (
-        <div
-            className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed"
-            style={{ backgroundImage: `url(${bg1})` }}
-        >
-            <div className="absolute inset-0 bg-black opacity-70"></div>
-            <div className="relative z-10 text-lg text-red-400">{error}</div>
-        </div>
-    );
-    if (!artikel) return (
-        <div
-            className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed"
-            style={{ backgroundImage: `url(${bg1})` }}
-        >
-            <div className="absolute inset-0 bg-black opacity-70"></div>
-            <div className="relative z-10 text-lg">Artikel tidak ditemukan.</div>
-        </div>
-    );
+    // ... (blok loading, error, not found tidak berubah)
+    if (loading) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg">Memuat artikel...</div> </div> );
+    if (error) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg text-red-400">{error}</div> </div> );
+    if (!artikel) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg">Artikel tidak ditemukan.</div> </div> );
+
 
     return (
-        <div
-            className="relative min-h-screen text-white bg-cover bg-center bg-fixed"
-            style={{ backgroundImage: `url(${bg1})` }}
-        >
+        <div className="relative min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
             <div className="absolute inset-0 bg-black opacity-70"></div>
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ ease: "easeOut", duration: 0.6 }}
-                        className="max-w-4xl mx-auto"
-                    >
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ease: "easeOut", duration: 0.6 }} className="max-w-4xl mx-auto">
                         <Link to="/artikel" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 text-sm sm:text-base">
                             <ArrowLeft size={16} />
                             Kembali ke semua artikel
@@ -102,10 +69,7 @@ export default function ArtikelDetail() {
                             <div className="flex items-center gap-2">
                                 <User size={14} sm:size={16} />
                                 <span>Ditulis oleh {' '}
-                                    <button
-                                        onClick={() => handleAuthorClick(artikel.profiles?.username)}
-                                        className="text-white hover:text-[#FF9F1C] font-semibold cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] focus:ring-opacity-50"
-                                    >
+                                    <button onClick={() => handleAuthorClick(artikel.profiles?.username)} className="text-white hover:text-[#FF9F1C] font-semibold cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] focus:ring-opacity-50">
                                         {artikel.profiles?.nama_lengkap || 'Anonim'}
                                     </button>
                                 </span>
@@ -116,35 +80,29 @@ export default function ArtikelDetail() {
                             </div>
                         </div>
 
-                        {/* Blok ini untuk gambar utama (jika ada), yang akan tetap di tengah */}
                         {artikel.gambar_url && (
                             <div className="w-full mb-8 flex justify-center">
-                                <img
-                                    src={artikel.gambar_url}
-                                    alt={artikel.judul}
-                                    className="max-w-full h-auto rounded-2xl shadow-lg"
-                                />
+                                <img src={artikel.gambar_url} alt={artikel.judul} className="max-w-full h-auto rounded-2xl shadow-lg" />
                             </div>
                         )}
                         
-                        {/* === BAGIAN YANG DIPERBARUI === */}
-                        {/* Tambahkan `prose-p:mb-4` untuk memberi jarak antar paragraf */}
-                        <div className="prose prose-invert max-w-none prose-p:text-gray-300 prose-headings:text-white text-sm sm:text-base leading-relaxed text-justify prose-img:block prose-img:mx-auto prose-img:rounded-xl prose-p:mb-4">
-                            <div dangerouslySetInnerHTML={{ __html: artikel.deskripsi }} />
-                        </div>
+                        {/*
+                          [PERBAIKAN FINAL]
+                          Wadah ini sekarang HANYA perlu kelas 'tiptap' untuk menerapkan SEMUA
+                          gaya dari file CSS yang sudah kita perbaiki. Bersih dan bebas konflik.
+                        */}
+                        <div
+                            className="tiptap text-gray-300 text-justify"
+                            dangerouslySetInnerHTML={{ __html: artikel.deskripsi }}
+                        />
 
                     </motion.div>
                 </main>
 
-                {/* Footer */}
                 <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-xs sm:text-sm py-6 sm:py-10 px-4 sm:px-6 md:px-20 border-t border-[#333]">
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-                        <div className="text-center md:text-left w-full md:w-1/3">
-                            &copy; With Love STMKG Karate Club Periode 2025
-                        </div>
-                        <div className="w-full md:w-1/3 flex justify-center">
-                            <img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" />
-                        </div>
+                        <div className="text-center md:text-left w-full md:w-1/3">&copy; With Love STMKG Karate Club Periode 2025</div>
+                        <div className="w-full md:w-1/3 flex justify-center"><img src={brevetLogo} alt="Logo Brevet" className="h-4 sm:h-5" /></div>
                         <div className="flex flex-wrap justify-center md:justify-end gap-3 sm:gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
                             <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
                             <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
