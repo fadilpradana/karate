@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Bold, Italic, Strikethrough, Heading2, List, ListOrdered,
     Image as ImageIcon, Loader, AlignLeft, AlignCenter, AlignRight, AlignJustify
@@ -9,65 +9,69 @@ import { compressAndConvertToWebP } from '../utils/imageCompressor';
 export const TiptapToolbar = ({ editor }) => {
     // State untuk menangani loading saat gambar inline diunggah
     const [isUploading, setIsUploading] = useState(false);
+    // [PENYEMPURNAAN] Menggunakan useRef untuk mengelola elemen input file
+    const imageInputRef = useRef(null);
 
     if (!editor) {
         return null;
     }
 
+    const handleImageButtonClick = () => {
+        // Memicu klik pada input file yang tersembunyi
+        imageInputRef.current?.click();
+    };
+
     /**
-     * Menangani proses upload gambar inline:
-     * 1. Membuka dialog file.
-     * 2. Mengompres dan mengubah gambar ke WebP.
-     * 3. Mengunggah file yang sudah diproses ke Supabase Storage.
-     * 4. Menyisipkan URL gambar ke dalam editor Tiptap.
+     * Menangani proses upload gambar inline setelah file dipilih.
      */
-    const handleImageUpload = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                setIsUploading(true); // Mulai loading
-                try {
-                    // Panggil fungsi helper untuk memproses gambar
-                    const processedFile = await compressAndConvertToWebP(file);
+    const handleFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsUploading(true); // Mulai loading
+            try {
+                const processedFile = await compressAndConvertToWebP(file);
+                const originalName = processedFile.name.substring(0, processedFile.name.lastIndexOf('.'));
+                const fileName = `inline-${originalName}-${Date.now()}.webp`;
 
-                    // Buat nama file yang unik dengan ekstensi .webp
-                    const originalName = processedFile.name.substring(0, processedFile.name.lastIndexOf('.'));
-                    const fileName = `inline-${originalName}-${Date.now()}.webp`;
+                const { error: uploadError } = await supabase.storage
+                    .from('gambarartikel')
+                    .upload(fileName, processedFile, {
+                        contentType: 'image/webp',
+                        cacheControl: '3600',
+                        upsert: false
+                    });
 
-                    // Unggah file yang sudah diproses ke Supabase
-                    const { error: uploadError } = await supabase.storage
-                        .from('gambarartikel') // Pastikan nama bucket sudah benar
-                        .upload(fileName, processedFile, {
-                            contentType: 'image/webp', // Set content type secara eksplisit
-                            cacheControl: '3600',
-                            upsert: false
-                        });
+                if (uploadError) {
+                    throw uploadError;
+                }
 
-                    if (uploadError) {
-                        throw uploadError;
-                    }
+                const { data } = supabase.storage
+                    .from('gambarartikel')
+                    .getPublicUrl(fileName);
 
-                    // Dapatkan URL publik dari file yang baru diunggah
-                    const { data } = supabase.storage
-                        .from('gambarartikel')
-                        .getPublicUrl(fileName);
+                // [PERBAIKAN UTAMA] Menggunakan perintah yang benar untuk menyisipkan node kustom
+                if (data.publicUrl) {
+                    editor.chain().focus().insertContent({
+                        type: 'imageWithCaption', // Nama node kustom kita
+                        attrs: {
+                            src: data.publicUrl,
+                            alt: originalName
+                        },
+                    }).run();
+                }
+                // ===================================================================
 
-                    // Sisipkan gambar ke dalam editor
-                    if (data.publicUrl) {
-                        editor.chain().focus().setImage({ src: data.publicUrl, alt: originalName }).run();
-                    }
-                } catch (error) {
-                    console.error('Gagal mengunggah gambar inline:', error);
-                    alert('Gagal memproses atau mengunggah gambar. Silakan periksa konsol untuk detail.');
-                } finally {
-                    setIsUploading(false); // Selesai loading
+            } catch (error) {
+                console.error('Gagal mengunggah gambar inline:', error);
+                alert('Gagal memproses atau mengunggah gambar. Silakan periksa konsol untuk detail.');
+            } finally {
+                setIsUploading(false); // Selesai loading
+                // Reset nilai input agar bisa memilih file yang sama lagi jika diperlukan
+                if(imageInputRef.current) {
+                    imageInputRef.current.value = "";
                 }
             }
-        };
-        input.click();
+        }
     };
 
     // Fungsi helper untuk styling tombol toolbar
@@ -75,7 +79,7 @@ export const TiptapToolbar = ({ editor }) => {
         `p-1.5 rounded-md text-gray-300 transition-colors duration-200 ${isActive ? 'bg-[#FF9F1C] text-white' : 'hover:bg-white/10'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`;
 
     return (
-        <div className="flex flex-wrap items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-t-lg">
+        <div className="flex flex-wrap items-center gap-2 p-2 bg-black/20 border-b border-white/10 rounded-t-lg">
             {/* Tombol Format Teks Dasar */}
             <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} disabled={!editor.can().chain().focus().toggleBold().run()} className={buttonClass(editor.isActive('bold'))} title="Bold">
                 <Bold size={18} />
@@ -118,10 +122,17 @@ export const TiptapToolbar = ({ editor }) => {
 
             <div className="w-px h-5 bg-white/20 mx-1"></div>
             
-            {/* Tombol Sisipkan Gambar */}
-            <button type="button" onClick={handleImageUpload} className={buttonClass(false, isUploading)} title="Insert Image" disabled={isUploading}>
+            {/* [PENYEMPURNAAN] Tombol Sisipkan Gambar sekarang menggunakan ref */}
+            <button type="button" onClick={handleImageButtonClick} className={buttonClass(false, isUploading)} title="Sisipkan Gambar" disabled={isUploading}>
                 {isUploading ? <Loader size={18} className="animate-spin" /> : <ImageIcon size={18} />}
             </button>
+            <input
+                type="file"
+                accept="image/*"
+                ref={imageInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+            />
         </div>
     );
 };

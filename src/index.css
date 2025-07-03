@@ -1,231 +1,173 @@
-/* src/index.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Kelas untuk judul hero Anda - MODIFIED FOR GLOW ONLY */
-/* Kelas ini mungkin tidak lagi relevan jika .gradient-text adalah yang utama */
-.text-glow-only {
-  color: white; /* Atur warna teks menjadi putih solid */
-  text-shadow:
-    0 0 15px rgba(255, 255, 255, 0.276),
-    0 0 10px rgba(42, 20, 54, 0.6);
+/* ======================================================= */
+/* === KODE BARU (LANGKAH 5) UNTUK CAPTION GAMBAR TIPTAP === */
+/* ======================================================= */
+.tiptap figcaption {
+  font-size: 0.9em;
+  font-style: italic;
+  color: #a0a0a0;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0 1rem;
 }
 
-/* Tambahkan kelas khusus untuk backdrop filter */
-.glassmorphism-indicator {
-  background: rgba(255, 255, 255, 0.26);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.tiptap figcaption.is-empty::before {
+  content: 'Tulis caption gambar...';
+  color: #666;
+  float: left; /* Trik agar placeholder bisa ditampilkan dengan benar */
+  height: 0;
+  pointer-events: none; /* Membuat placeholder tidak bisa diklik, sehingga fokus langsung ke area ketik */
 }
+/* ======================================================= */
 
-/* KODE BARU UNTUK GLOW BERGRADASI MENGGUNAKAN PSEUDO-ELEMENT DAN GLOW TEKS PUTIH */
-.gradient-text {
-  position: relative; /* Penting untuk posisi pseudo-element */
-  color: #FFFFFF;    /* Warna teks asli: PUTIH TERANG */
 
-  /* Menambahkan glow putih pada teks itu sendiri */
-  text-shadow:
-    0 0 4px rgba(239, 168, 16, 0.457),  /* Glow putih dekat, agak terang */
-    0 0 8px rgba(71, 6, 90, 0.532);  /* Glow putih sedikit lebih menyebar */
-
-  white-space: nowrap; /* Mencegah teks pecah baris */
-  display: inline-block; /* Agar white-space: nowrap berfungsi dengan baik */
-}
-
-/* Pseudo-element untuk efek glow bergradasi (ungu-kuning) */
-.gradient-text::before {
-  content: attr(data-text); /* Mengambil teks dari atribut data-text */
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1; /* Pastikan pseudo-element berada di belakang teks asli */
-
-  /* Gradasi warna untuk glow, dari ATAS ke BAWAH (ungu ke kuning) */
-  background: linear-gradient(to bottom, #8A2BE2, #FFFF00); /* Ungu ke Kuning */
-
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent; /* Membuat teks pseudo-element transparan agar gradien terlihat */
-
-  /* PERUBAHAN DI SINI: Mengaburkan pseudo-element untuk menciptakan efek glow yang LEBIH TERANG & LEBAR */
-  filter: blur(30px); /* Meningkatkan blur lebih jauh untuk efek yang sangat menyebar dan bercahaya */
-  transform: scale(1.1); /* Memperbesar pseudo-element lebih jauh */
-  opacity: 1; /* Opasitas penuh untuk cahaya maksimum */
-}
-
-.glow-text-accent {
-  text-shadow:
-    0 5px 10px rgba(255, 159, 28, 0.5), /* Reduced opacity: 70% */
-    0 8px 20px rgba(255, 159, 28, 0.3), /* Reduced opacity: 50% */
-    0 10px 35px rgba(255, 159, 28, 0.2); /* Reduced opacity: 30% */
-}
-
-/* Define --color-accent if not already defined via Tailwind config */
-/* If you are using Tailwind's JIT mode or have properly configured the accent color,
-   this might not be strictly necessary, but it's good for direct CSS usage. */
-:root {
-  --color-accent: #FF9F1C; /* Example accent color, adjust to your Tailwind config */
-}
-
-.jadwal-title-gradient {
-  /* Definisi Gradasi */
-  /* Sesuaikan warna dan persentase stop sesuai preferensi Anda */
-  background: linear-gradient(
-    to right,
-    #5AC8FA 0%,    /* Biru cerah */
-    #AF52DE 25%,   /* Ungu */
-    #FF2D55 50%,   /* Merah muda gelap/Fuchsia */
-    #FF9500 75%,   /* Oranye terang */
-    #FF3B30 100%   /* Merah oranye/Oranye gelap */
-  );
-
-  /* Properti kunci untuk teks gradasi */
-  -webkit-background-clip: text; /* Wajib untuk browser berbasis WebKit (Chrome, Safari) */
-  background-clip: text;         /* Standar CSS */
-  -webkit-text-fill-color: transparent; /* Membuat teks transparan agar background terlihat */
-  color: transparent;            /* Fallback atau standar CSS */
-
-  /* Penting agar elemen mengambil lebar yang cukup untuk gradasi */
-  display: inline-block;
-}
-
-/* Anda juga bisa menambahkan media queries di sini jika ingin gradasi berbeda di ukuran layar yang berbeda,
-   tapi untuk gradasi teks ini biasanya sudah responsif secara alami karena tergantung font-size */
-
-   /* === Gradasi seperti ikon baterai (Hijau Kekuningan ke Hijau Gelap) === */
-/* Anda bisa menerapkan kelas ini ke elemen yang ingin Anda berikan gradasi ini */
-.battery-style-gradient {
-  background: linear-gradient(
-    to right,
-    #A8EB4B 0%,    /* Hijau kekuningan cerah */
-    #34AF52 100%   /* Hijau gelap */
-  );
-
-  /* Jika ini untuk teks, tambahkan properti text-gradient berikut: */
-  
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  display: inline-block;
-  
-
-  /* Jika ini untuk latar belakang elemen (bukan teks), Anda tidak perlu properti di atas */
-  /* Misalnya, untuk background dari sebuah div atau span yang diberi warna ini */
-}
-
-/* Biarkan kelas jadwal-title-gradient dan jadwal-subtitle-gradient yang sudah ada */
-/* seperti yang Anda inginkan sebelumnya, jika masih digunakan */
-
-.border-gradient-bottom {
-  position: relative;
-  /*
-  Padding-bottom di sini mengatur ruang di bawah konten elemen parent
-  sebelum garis gradasi muncul. Sesuaikan jika Anda merasa jaraknya terlalu jauh
-  atau terlalu dekat dengan elemen berikutnya.
-  Nilai 32px ini sesuai dengan 'py-8' (padding-y: 2rem = 32px)
-  yang Anda miliki pada div prestasi Anda.
-  */
-  padding-bottom: 32px;
-}
-
-.border-gradient-bottom::after {
-  content: '';
-  position: absolute;
-  bottom: 0; /* Memposisikan garis di bagian paling bawah elemen parent */
-  left: 0;
-  width: 100%;
-  height: 1px; /* Ketebalan garis diatur ke 1px agar terlihat namun tetap minimal */
-  background: linear-gradient(to right, transparent, rgba(168, 235, 75, 0.6) 20%, rgba(52, 175, 82, 0.6) 80%, transparent);
-  opacity: 0.2;
-  /*
-  Gradasi warna dari transparan ke hijau terang (#A8EB4B) lalu ke hijau gelap (#34AF52)
-  dan kembali ke transparan.
-  Nilai '0.6' pada RGBA adalah opasitas 60%, membuatnya lebih terlihat
-  daripada 40%, tapi masih cukup samar.
-  */
-  z-index: 20; /* Memastikan garis berada di lapisan atas */
-}
-
-/* Base styles untuk memastikan HTML dan body menutupi seluruh viewport */
+/* Base styles */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* Kelas background default untuk mobile */
-.background-mobile {
-  position: relative; /* Penting untuk positioning pseudo-element */
-  background-image: url('./assets/bg8.jpg'); /* Path ke gambar mobile */
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed; /* Menjaga gambar tetap saat scroll */
-  overflow: hidden; /* Mengatasi potensi scrollbar ganda */
+/* Glassmorphism */
+.glassmorphism-indicator {
+  background: rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-/* Pseudo-element untuk overlay hitam transparan di mobile */
+/* --- Text Glow & Gradient Styles --- */
+.text-glow-only {
+  color: white;
+  text-shadow:
+    0 0 15px rgba(255, 255, 255, 0.276),
+    0 0 10px rgba(42, 20, 54, 0.6);
+}
+
+.gradient-text {
+  position: relative;
+  color: #FFFFFF;
+  text-shadow:
+    0 0 4px rgba(239, 168, 16, 0.457),
+    0 0 8px rgba(71, 6, 90, 0.532);
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.gradient-text::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(to bottom, #8A2BE2, #FFFF00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: blur(30px);
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.glow-text-accent {
+  text-shadow:
+    0 5px 10px rgba(255, 159, 28, 0.5),
+    0 8px 20px rgba(255, 159, 28, 0.3),
+    0 10px 35px rgba(255, 159, 28, 0.2);
+}
+
+.jadwal-title-gradient {
+  background: linear-gradient(to right, #5AC8FA 0%, #AF52DE 25%, #FF2D55 50%, #FF9500 75%, #FF3B30 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+}
+
+.battery-style-gradient {
+  background: linear-gradient(to right, #A8EB4B 0%, #34AF52 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+}
+
+/* --- Border & Background Styles --- */
+.border-gradient-bottom {
+  position: relative;
+  padding-bottom: 32px;
+}
+
+.border-gradient-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(168, 235, 75, 0.6) 20%, rgba(52, 175, 82, 0.6) 80%, transparent);
+  opacity: 0.2;
+  z-index: 20;
+}
+
+.background-mobile, .background-desktop {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  overflow: hidden;
+}
+
+.background-mobile {
+  background-image: url('./assets/bg8.jpg');
+}
+
 .background-mobile::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.4); /* Hitam dengan transparansi 40% */
-  z-index: 1; /* Pastikan overlay di bawah konten, tapi di atas background */
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1;
 }
 
-/* Media query untuk breakpoint desktop (768px ke atas) */
-@media (min-width: 768px) { /* md breakpoint di Tailwind CSS */
-  .background-desktop {
-    background-image: url('./assets/bg8desktop.jpg'); /* Path ke gambar desktop */
-  }
-
-  /* Pseudo-element untuk overlay hitam transparan di desktop */
-  .background-desktop::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3); /* Sesuaikan transparansi jika perlu */
-    z-index: 1;
-  }
-}
-
-/* Background default untuk mobile (Jadwal page) */
-.jadwal-background-mobile {
-  position: relative; /* Penting untuk positioning pseudo-element */
-  background-image: url('./assets/bg7.jpg'); /* Path ke gambar mobile untuk Jadwal */
+.jadwal-background-mobile, .jadwal-background-desktop {
+  position: relative;
   background-size: cover;
   background-position: center;
-  background-attachment: fixed; /* Menjaga gambar tetap saat scroll */
-  overflow: hidden; /* Mengatasi potensi scrollbar ganda */
+  background-attachment: fixed;
+  overflow: hidden;
 }
 
-/* Pseudo-element untuk overlay hitam transparan (berlaku untuk mobile dan desktop) */
-/* Karena tidak ada perbedaan, kita definisikan satu kali saja */
+.jadwal-background-mobile {
+  background-image: url('./assets/bg7.jpg');
+}
+
 .jadwal-background-mobile::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* <-- SETTING OVERLAY DI SINI */
-  z-index: 1; /* Pastikan overlay di bawah konten utama */
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
-/* Media query untuk breakpoint desktop (768px ke atas) */
-@media (min-width: 768px) { /* md breakpoint di Tailwind CSS */
-  .jadwal-background-desktop {
-    background-image: url('./assets/bg7desktop.jpg'); /* Path ke gambar desktop untuk Jadwal */
+@media (min-width: 768px) {
+  .background-desktop {
+    background-image: url('./assets/bg8desktop.jpg');
   }
-  /* Tidak perlu lagi ::before di sini karena sudah disatukan di atas */
+  .background-desktop::before {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  .jadwal-background-desktop {
+    background-image: url('./assets/bg7desktop.jpg');
+  }
 }

@@ -128,8 +128,8 @@ export default function ArtikelDetail() {
                         )}
                         
                         {/* === BAGIAN YANG DIPERBARUI === */}
-                        {/* Tambahkan modifier 'prose-img:*' untuk menata gambar di dalam deskripsi */}
-                        <div className="prose prose-invert max-w-none prose-p:text-gray-300 prose-headings:text-white text-sm sm:text-base leading-relaxed text-justify prose-img:block prose-img:mx-auto prose-img:rounded-xl">
+                        {/* Tambahkan `prose-p:mb-4` untuk memberi jarak antar paragraf */}
+                        <div className="prose prose-invert max-w-none prose-p:text-gray-300 prose-headings:text-white text-sm sm:text-base leading-relaxed text-justify prose-img:block prose-img:mx-auto prose-img:rounded-xl prose-p:mb-4">
                             <div dangerouslySetInnerHTML={{ __html: artikel.deskripsi }} />
                         </div>
 

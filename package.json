@@ -14,7 +14,7 @@
     "@tiptap/extension-image": "^2.23.0",
     "@tiptap/extension-placeholder": "^2.23.0",
     "@tiptap/extension-text-align": "^2.23.1",
-    "@tiptap/react": "^2.23.0",
+    "@tiptap/react": "^2.24.0",
     "@tiptap/starter-kit": "^2.23.0",
     "browser-image-compression": "^2.0.2",
     "framer-motion": "^12.18.1",

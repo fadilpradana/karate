@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion'; // AnimatePresence sudah diimpor
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import brevetLogo from '../assets/brevet.png';
@@ -10,14 +10,17 @@ import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import Modal from '../components/Modal';
 import ImageBrowserModal from '../components/ImageBrowserModal';
 
-import { useEditor, EditorContent } from '@tiptap/react';
+// Tiptap Imports
+import { useEditor, EditorContent, ReactNodeViewRenderer, BubbleMenu, NodeViewWrapper } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import { TiptapToolbar } from '../components/TiptapToolbar';
 import '../TiptapStyles.css';
 
+import { Node, mergeAttributes } from '@tiptap/core';
+
+// --- Helper Functions ---
 const stripHtml = (html) => {
     if (!html) return '';
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -26,6 +29,7 @@ const stripHtml = (html) => {
 
 const glassButtonClasses = "flex items-center justify-center gap-1 px-3 py-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
+// --- ActionSheetModal Component (Tanpa Perubahan) ---
 const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     useEffect(() => {
         if (isOpen) {
@@ -36,16 +40,9 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
         };
     }, [isOpen]);
 
-    // [PERBAIKAN] Kondisi "if (!isOpen) return null;" dihapus.
-    // Visibilitas sekarang dikontrol oleh AnimatePresence di parent.
-
     const getActionClass = (action) => {
-        if (action.isDestructive) {
-            return 'text-red-400 hover:bg-red-500/10';
-        }
-        if (action.isSecondary) {
-            return 'text-gray-300 hover:bg-white/10';
-        }
+        if (action.isDestructive) return 'text-red-400 hover:bg-red-500/10';
+        if (action.isSecondary) return 'text-gray-300 hover:bg-white/10';
         return 'text-blue-400 hover:bg-blue-500/10';
     };
 
@@ -53,7 +50,7 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }} // Animasi fade out untuk overlay
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-black/60 z-50 flex items-end"
             onClick={onClose}
@@ -61,7 +58,7 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
             <motion.div
                 initial={{ y: "100%" }}
                 animate={{ y: "0%" }}
-                exit={{ y: "100%" }} // Animasi slide down untuk keluar
+                exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 onClick={(e) => e.stopPropagation()}
                 className="w-full bg-[#1c1c1c] border-t border-white/10 rounded-t-2xl p-4"
@@ -78,10 +75,7 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
                             key={index}
                             onClick={action.onClick}
                             disabled={action.disabled}
-                            className={`w-full flex items-center gap-4 p-3 rounded-lg text-left transition-colors text-base
-                                ${getActionClass(action)}
-                                ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                            `}
+                            className={`w-full flex items-center gap-4 p-3 rounded-lg text-left transition-colors text-base ${getActionClass(action)} ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {action.icon}
                             <span>{action.label}</span>
@@ -94,76 +88,185 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     );
 };
 
+// --- Komponen Node View Gambar dengan Caption ---
+const ImageWithCaptionComponent = ({ node, updateAttributes, selected, editor }) => {
+    return (
+        <NodeViewWrapper className={`image-with-caption ${selected ? 'ProseMirror-selectednode' : ''}`} data-drag-handle>
+            <figure>
+                <img src={node.attrs.src} alt={node.attrs.alt} className="rounded-md" />
+                <figcaption
+                    contentEditable={editor.isEditable}
+                    suppressContentEditableWarning={true}
+                    className={!node.attrs.caption ? 'is-empty' : ''}
+                    onBlur={(e) => {
+                        updateAttributes({ caption: e.currentTarget.innerText });
+                    }}
+                >{node.attrs.caption}</figcaption>
+            </figure>
+        </NodeViewWrapper>
+    );
+};
+
+
+// --- Definisi Node Kustom Tiptap untuk Gambar dengan Caption ---
+const ImageWithCaptionNode = Node.create({
+    name: 'imageWithCaption',
+    group: 'block',
+    atom: true,
+    draggable: true,
+
+    addAttributes() {
+        return {
+            src: { default: null },
+            alt: { default: null },
+            caption: { default: '' },
+        };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'figure',
+                getAttrs: dom => {
+                    if (typeof dom === 'string') return {};
+                    const img = dom.querySelector('img');
+                    const caption = dom.querySelector('figcaption');
+                    if (!img) return false; 
+                    return {
+                        src: img.getAttribute('src'),
+                        alt: img.getAttribute('alt'),
+                        caption: caption?.innerText,
+                    };
+                },
+            },
+        ];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'figure',
+            { 'data-type': this.name },
+            ['img', { src: HTMLAttributes.src, alt: HTMLAttributes.alt }],
+            ['figcaption', {}, HTMLAttributes.caption || ''],
+        ];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(ImageWithCaptionComponent);
+    },
+
+    addCommands() {
+        return {
+            setImageWithCaption: (options) => ({ commands }) => {
+                return commands.insertContent({
+                    type: this.name,
+                    attrs: options,
+                });
+            },
+        };
+    },
+});
+
+
 // --- Komponen Form Inline untuk Artikel ---
 const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressingImage, setIsFormDirty, setIsCompressingImageParent }) => {
     const [formData, setFormData] = useState(currentArticle);
     const [coverImagePreview, setCoverImagePreview] = useState(currentArticle.gambar_url || null);
     const [newCoverImageFile, setNewCoverImageFile] = useState(null);
     const [isCoverRemoved, setIsCoverRemoved] = useState(false);
+    
+    // [SOLUSI] State untuk melacak URL gambar yang dihapus/diganti selama sesi edit ini
+    const [sessionOrphanedUrls, setSessionOrphanedUrls] = useState(new Set());
+    
     const fileInputRef = useRef(null);
-
+    const editorImageInputRef = useRef(null);
     const initialFormState = useRef(null);
 
+    const handleImageUploadForEditor = async (file) => {
+        if (!file || !editor) return;
+
+        try {
+            const compressedFile = await compressAndConvertToWebP(file);
+            const fileName = `${Date.now()}_${compressedFile.name}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, compressedFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
+            const imageUrl = urlData.publicUrl;
+
+            editor.chain().focus().setImageWithCaption({ src: imageUrl, caption: '' }).run();
+            updateIsDirty();
+        } catch (error) {
+            console.error("Gagal mengunggah gambar ke editor:", error);
+            alert("Gagal mengunggah gambar.");
+        }
+    };
+
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Image,
-            Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }),
-            TextAlign.configure({
-                types: ['heading', 'paragraph'],
-            }),
-        ],
-        editorProps: { attributes: { class: 'tiptap max-h-[250px] overflow-y-auto' } },
-        onUpdate: ({ editor }) => { 
-            if (!initialFormState.current) return; 
-
-            const titleChanged = formData.judul !== initialFormState.current.judul;
-            const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
-            const coverChanged = coverImagePreview !== initialFormState.current.gambar_url || newCoverImageFile !== null || isCoverRemoved;
-
-            setIsFormDirty(titleChanged || contentChanged || coverChanged);
+        extensions: [ StarterKit, ImageWithCaptionNode, Placeholder.configure({ placeholder: 'Tulis konten artikel di sini...' }), TextAlign.configure({ types: ['heading', 'paragraph'] }), ],
+        editorProps: { attributes: { class: 'tiptap min-h-[250px] overflow-y-auto' } },
+        onUpdate: () => {
+            if (!initialFormState.current) return;
+            updateIsDirty();
         },
     });
-    
+
+    // [SOLUSI] Fungsi untuk menangkap URL sebelum dihapus dari editor
+    const captureUrlBeforeDelete = () => {
+        if (!editor) return;
+        const { from, to } = editor.state.selection;
+        editor.state.doc.nodesBetween(from, to, (node) => {
+            if (node.type.name === 'imageWithCaption') {
+                const url = node.attrs.src;
+                if (url) {
+                    setSessionOrphanedUrls(prev => new Set(prev).add(url));
+                }
+            }
+        });
+    };
+
+    const deleteImageInEditor = () => {
+        captureUrlBeforeDelete(); // Tangkap URL sebelum dihapus
+        editor.chain().focus().deleteSelection().run();
+        updateIsDirty();
+    };
+
+    const replaceImageInEditor = () => {
+        captureUrlBeforeDelete(); // Tangkap URL gambar lama sebelum diganti
+        editorImageInputRef.current?.click();
+    };
+
     const updateIsDirty = useCallback(() => {
         if (!initialFormState.current || !editor) return;
-
         const titleChanged = formData.judul !== initialFormState.current.judul;
         const contentChanged = editor.getHTML() !== initialFormState.current.deskripsi;
         const coverChanged = coverImagePreview !== initialFormState.current.gambar_url || newCoverImageFile !== null || isCoverRemoved;
-
         setIsFormDirty(titleChanged || contentChanged || coverChanged);
     }, [formData.judul, editor, coverImagePreview, newCoverImageFile, isCoverRemoved, setIsFormDirty]);
-
+    
     useEffect(() => {
-        if (currentArticle) {
-            initialFormState.current = {
-                judul: currentArticle.judul,
-                deskripsi: currentArticle.deskripsi || '',
-                gambar_url: currentArticle.gambar_url || null
-            };
-            setFormData(currentArticle); 
+        if (currentArticle && editor) {
+            const initialContent = currentArticle.deskripsi || '';
+            initialFormState.current = { judul: currentArticle.judul, deskripsi: initialContent, gambar_url: currentArticle.gambar_url || null };
+            setFormData(currentArticle);
             setCoverImagePreview(currentArticle.gambar_url || null);
             setNewCoverImageFile(null);
             setIsCoverRemoved(false);
-            if (editor) { 
-                editor.commands.setContent(currentArticle.deskripsi || '');
+            
+            if (editor.getHTML() !== initialContent) {
+                editor.commands.setContent(initialContent, false);
             }
-            setIsFormDirty(false); 
+            
+            // [SOLUSI] Reset pelacak URL yatim setiap kali form dibuka
+            setSessionOrphanedUrls(new Set());
+            setIsFormDirty(false);
         }
     }, [currentArticle, editor, setIsFormDirty]);
 
     useEffect(() => {
         updateIsDirty();
     }, [formData.judul, coverImagePreview, newCoverImageFile, isCoverRemoved, updateIsDirty]);
-
-    useEffect(() => {
-        return () => {
-            if (editor && editor.destroy) {
-                editor.destroy();
-            }
-        };
-    }, [editor]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -203,21 +306,21 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setIsFormDirty(false);
         onSave({
             ...formData,
             deskripsi: editor.getHTML(),
             newCoverImageFile,
             isCoverRemoved,
             coverImagePreview,
+            // [SOLUSI] Kirim daftar URL yatim ke fungsi save utama
+            sessionOrphanedUrls: Array.from(sessionOrphanedUrls),
         });
+        setIsFormDirty(false);
     };
 
     const [isMobile, setIsMobile] = useState(false);
     useEffect(() => {
-        const checkIsMobile = () => {
-            setIsMobile(window.innerWidth < 640);
-        };
+        const checkIsMobile = () => setIsMobile(window.innerWidth < 640);
         checkIsMobile();
         window.addEventListener('resize', checkIsMobile);
         return () => window.removeEventListener('resize', checkIsMobile);
@@ -225,52 +328,55 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
 
     const [showImageBrowser, setShowImageBrowser] = useState(false);
     const [showCoverActionSheet, setShowCoverActionSheet] = useState(false);
-
     const coverActions = [
-        {
-            label: 'Ganti dari File',
-            icon: <Replace size={20} />,
-            onClick: () => {
-                fileInputRef.current.click();
-                setShowCoverActionSheet(false);
-            },
-            isPrimary: true
-        },
-        {
-            label: 'Pilih dari Galeri',
-            icon: <ImageIcon size={20} />,
-            onClick: () => {
-                setShowImageBrowser(true);
-                setShowCoverActionSheet(false);
-            },
-            isSecondary: true
-        },
-        {
-            label: 'Hapus Gambar',
-            icon: <Trash2 size={20} />,
-            onClick: () => {
-                handleRemoveCover();
-                setShowCoverActionSheet(false);
-            },
-            isDestructive: true
-        }
+        { label: 'Ganti dari File', icon: <Replace size={20} />, onClick: () => { fileInputRef.current.click(); setShowCoverActionSheet(false); }, isPrimary: true },
+        { label: 'Pilih dari Galeri', icon: <ImageIcon size={20} />, onClick: () => { setShowImageBrowser(true); setShowCoverActionSheet(false); }, isSecondary: true },
+        { label: 'Hapus Gambar', icon: <Trash2 size={20} />, onClick: () => { handleRemoveCover(); setShowCoverActionSheet(false); }, isDestructive: true }
     ];
 
-    const glassFormStyle = { backgroundColor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)'};
+    const glassFormStyle = { backgroundColor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' };
+
+    if (!editor) {
+        return <div className="text-center p-8"><Loader2 className="animate-spin mx-auto" size={32} /></div>;
+    }
 
     return (
         <motion.div
             key="article-form-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="w-full max-w-4xl mx-auto p-6 rounded-2xl"
             style={glassFormStyle}
         >
+            <BubbleMenu
+                editor={editor}
+                tippyOptions={{ duration: 100, placement: 'top', }}
+                shouldShow={({ editor }) => editor.isActive('imageWithCaption')}
+                className="bubble-menu"
+            >
+                <button type="button" onClick={replaceImageInEditor} className="bubble-menu-button">
+                    <Replace size={18} /> Ganti
+                </button>
+                <button type="button" onClick={deleteImageInEditor} className="bubble-menu-button text-red-400">
+                    <Trash2 size={18} /> Hapus
+                </button>
+            </BubbleMenu>
+
+            <input
+                type="file"
+                ref={editorImageInputRef}
+                onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                        handleImageUploadForEditor(e.target.files[0]);
+                    }
+                }}
+                className="hidden"
+                accept="image/*"
+            />
+            
             <div className="flex justify-between items-center mb-5">
                 <h2 className="text-xl md:text-4xl font-league uppercase text-[#FF9F1C]">{formData.id ? "Edit Artikel" : "Tambah Artikel Baru"}</h2>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onCancel} className={`${glassButtonClasses} px-3 py-1.5 text-xs text-gray-300 hover:text-white`}>
+                <motion.button type="button" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onCancel} className={`${glassButtonClasses} px-3 py-1.5 text-xs text-gray-300 hover:text-white`}>
                     <ArrowLeft size={14} /> Batal
                 </motion.button>
             </div>
@@ -280,16 +386,11 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                         <label htmlFor="judul" className="block text-gray-300 text-xs font-medium mb-1">Judul</label>
                         <textarea id="judul" name="judul" rows="3" className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-sm text-white resize-none" value={formData.judul} onChange={handleInputChange} required />
                     </div>
-
                     <div className="w-full sm:w-auto sm:flex-shrink-0">
                         <label className="block text-gray-300 text-xs font-medium mb-1 text-center sm:text-left">Cover</label>
                         <div
                             className="group w-full sm:w-32 h-32 sm:h-20 bg-white/5 rounded-lg border-2 border-white/10 border-dashed flex justify-center items-center relative cursor-pointer"
-                            onClick={() => {
-                                if (isMobile) {
-                                    setShowCoverActionSheet(true);
-                                }
-                            }}
+                            onClick={() => { if (isMobile) { setShowCoverActionSheet(true); } else { fileInputRef.current.click() } }}
                         >
                             {isCompressingImage ? (
                                 <div className="text-center"><p className="text-xs text-gray-400">Memproses...</p></div>
@@ -297,27 +398,9 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                                 <>
                                     <img src={coverImagePreview} alt="Pratinjau Cover" className="h-full w-full object-cover rounded-md" />
                                     <div className="absolute inset-0 bg-black/60 justify-center items-center gap-2 opacity-0 transition-opacity duration-300 hidden sm:flex sm:group-hover:opacity-100">
-                                        <div
-                                            onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}
-                                            title="Ganti dari file"
-                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                        >
-                                            <Replace size={18} />
-                                        </div>
-                                        <div
-                                            onClick={(e) => { e.stopPropagation(); setShowImageBrowser(true); }}
-                                            title="Pilih dari galeri"
-                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                        >
-                                            <ImageIcon size={18} />
-                                        </div>
-                                        <div
-                                            onClick={(e) => { e.stopPropagation(); handleRemoveCover(); }}
-                                            title="Hapus gambar"
-                                            className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"
-                                        >
-                                            <Trash2 size={18} />
-                                        </div>
+                                        <div onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }} title="Ganti dari file" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"><Replace size={18} /></div>
+                                        <div onClick={(e) => { e.stopPropagation(); setShowImageBrowser(true); }} title="Pilih dari galeri" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"><ImageIcon size={18} /></div>
+                                        <div onClick={(e) => { e.stopPropagation(); handleRemoveCover(); }} title="Hapus gambar" className="p-2 bg-black/50 rounded-full text-white hover:bg-black/80 cursor-pointer"><Trash2 size={18} /></div>
                                     </div>
                                 </>
                             ) : (
@@ -334,7 +417,7 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                 <div>
                     <label className="block text-gray-300 text-xs font-medium mb-1">Deskripsi / Konten</label>
                     <div className="bg-white/5 rounded-lg border border-white/10">
-                        <TiptapToolbar editor={editor} />
+                        <TiptapToolbar editor={editor} onImageUploadClick={() => editorImageInputRef.current?.click()} />
                         <EditorContent editor={editor} />
                     </div>
                 </div>
@@ -344,16 +427,9 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
                 </motion.button>
             </form>
             
-            {/* [PERBAIKAN] Membungkus ActionSheetModal dengan AnimatePresence */}
-            {/* Ini akan mengaktifkan animasi `exit` saat komponen ditutup */}
             <AnimatePresence>
                 {showCoverActionSheet && (
-                    <ActionSheetModal
-                        isOpen={showCoverActionSheet}
-                        onClose={() => setShowCoverActionSheet(false)}
-                        title="Opsi Gambar Sampul"
-                        actions={coverActions}
-                    />
+                    <ActionSheetModal isOpen={showCoverActionSheet} onClose={() => setShowCoverActionSheet(false)} title="Opsi Gambar Sampul" actions={coverActions} />
                 )}
             </AnimatePresence>
 
@@ -362,9 +438,9 @@ const ArticleForm = ({ currentArticle, onSave, onCancel, isSaving, isCompressing
     );
 };
 
+
 export default function ModerasiArtikel() {
     const navigate = useNavigate();
-
     const [draftArticles, setDraftArticles] = useState([]);
     const [publishedArticles, setPublishedArticles] = useState([]);
     const [loadingDrafts, setLoadingDrafts] = useState(true);
@@ -373,19 +449,23 @@ export default function ModerasiArtikel() {
     const [errorPublished, setErrorPublished] = useState(null);
     const [draftSearchTerm, setDraftSearchTerm] = useState('');
     const [publishedSearchTerm, setPublishedSearchTerm] = useState('');
-
     const [currentArticle, setCurrentArticle] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isCompressingImage, setIsCompressingImage] = useState(false);
-
     const [isFormDirty, setIsFormDirty] = useState(false);
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
-
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
     const [articleForAction, setArticleForAction] = useState(null);
     const [actionStatus, setActionStatus] = useState({ success: null, error: null, message: '' });
     const [isProcessingAction, setIsProcessingAction] = useState(false);
+
+    const extractImageUrls = useCallback((html) => {
+        if (!html) return [];
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const images = doc.querySelectorAll('figure[data-type="imageWithCaption"] img');
+        return Array.from(images).map(img => img.getAttribute('src')).filter(Boolean);
+    }, []);
 
     useEffect(() => {
         fetchDraftArticles();
@@ -432,58 +512,96 @@ export default function ModerasiArtikel() {
         });
     }, []);
 
-
-    const handleSaveArticle = async ({ id, judul, deskripsi, newCoverImageFile, isCoverRemoved, coverImagePreview, type }) => {
+    // [SOLUSI] Logika save diperbarui untuk menggunakan daftar URL yatim dari sesi edit
+    const handleSaveArticle = async ({ id, judul, deskripsi, newCoverImageFile, isCoverRemoved, coverImagePreview, type, sessionOrphanedUrls }) => {
         setIsSaving(true);
-        
-        const oldImageUrl = type === 'draft'
-            ? draftArticles.find(a => a.id === id)?.gambar_url
-            : publishedArticles.find(a => a.id === id)?.gambar_url;
 
-        let finalImageUrl = coverImagePreview;
+        const articles = type === 'draft' ? draftArticles : publishedArticles;
+        const originalArticle = articles.find(a => a.id === id);
+        
+        if (!originalArticle) {
+            alert("Artikel asli tidak ditemukan.");
+            setIsSaving(false);
+            return;
+        }
+
+        const initialHtml = originalArticle.deskripsi || '';
+        const oldCoverImageUrl = originalArticle.gambar_url;
+
+        // 1. Dapatkan URL gambar yang ada saat artikel dimuat, tapi sudah tidak ada di konten akhir
+        const initialContentImageUrls = extractImageUrls(initialHtml);
+        const finalContentImageUrls = extractImageUrls(deskripsi);
+        const finalUrlSet = new Set(finalContentImageUrls);
+        const persistentUrlsToDelete = initialContentImageUrls.filter(url => !finalUrlSet.has(url));
+
+        // 2. Gabungkan semua sumber URL yang akan dihapus
+        const allUrlsToDelete = new Set([
+            ...persistentUrlsToDelete,  // Gambar lama yang dihapus
+            ...sessionOrphanedUrls,    // Gambar yang dihapus/diganti selama sesi edit
+        ]);
+        
+        let finalCoverImageUrl = oldCoverImageUrl;
 
         try {
+            // Proses upload gambar sampul baru jika ada
             if (newCoverImageFile) {
-                const file = newCoverImageFile;
-                const fileName = `${Date.now()}_${file.name}`;
-                const { data: uploadData, error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, file);
+                const fileName = `${Date.now()}_${newCoverImageFile.name}`;
+                const { error: uploadError } = await supabase.storage.from('gambarartikel').upload(fileName, newCoverImageFile);
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from('gambarartikel').getPublicUrl(fileName);
-                finalImageUrl = urlData.publicUrl;
+                finalCoverImageUrl = urlData.publicUrl;
+            } else if (isCoverRemoved) {
+                finalCoverImageUrl = null;
+            } else {
+                finalCoverImageUrl = coverImagePreview;
             }
 
-            if (oldImageUrl && (finalImageUrl !== oldImageUrl || isCoverRemoved)) {
-                const oldImagePath = oldImageUrl.split('/gambarartikel/')[1];
-                if (oldImagePath) {
-                    const { error: deleteError } = await supabase.storage.from('gambarartikel').remove([oldImagePath]);
-                    if (deleteError) console.error("Gagal menghapus gambar lama di storage:", deleteError.message);
-                }
+            // 3. Tambahkan gambar sampul lama ke daftar hapus jika diganti/dihapus
+            if (oldCoverImageUrl && finalCoverImageUrl !== oldCoverImageUrl) {
+                allUrlsToDelete.add(oldCoverImageUrl);
             }
-
-            let tableName = type === 'draft' ? 'draft_artikel' : 'artikel';
+            
+            // 4. Update data artikel di database
+            const tableName = type === 'draft' ? 'draft_artikel' : 'artikel';
             const { error: updateError } = await supabase.from(tableName).update({
-                judul: judul,
-                deskripsi: deskripsi,
-                gambar_url: isCoverRemoved ? null : finalImageUrl
+                judul,
+                deskripsi,
+                gambar_url: finalCoverImageUrl
             }).eq('id', id);
 
             if (updateError) throw updateError;
+            
+            // 5. Lakukan penghapusan file dari bucket
+            if (allUrlsToDelete.size > 0) {
+                const imagePaths = Array.from(allUrlsToDelete).map(url => {
+                    try {
+                        return new URL(url).pathname.split(`/gambarartikel/`)[1];
+                    } catch (e) { return null; }
+                }).filter(Boolean);
+                
+                if (imagePaths.length > 0) {
+                    console.log("Menghapus file yatim dari storage:", imagePaths);
+                    const { error: deleteStorageError } = await supabase.storage.from('gambarartikel').remove(imagePaths);
+                    if (deleteStorageError) {
+                        console.error("Gagal menghapus beberapa file dari storage:", deleteStorageError);
+                    }
+                }
+            }
 
             setCurrentArticle(null);
-            setIsFormDirty(false); 
-            fetchDraftArticles();
-            fetchPublishedArticles();
+            setIsFormDirty(false);
+            await Promise.all([fetchDraftArticles(), fetchPublishedArticles()]);
 
         } catch (error) {
             console.error("Error saving article:", error);
+            alert(`Gagal menyimpan artikel: ${error.message}`);
         } finally {
             setIsSaving(false);
-            setIsCompressingImage(false); 
         }
     };
-
+    
     const handleCancelEdit = useCallback(() => {
-        if (isFormDirty && !isSaving && !isCompressingImage) { 
+        if (isFormDirty && !isSaving && !isCompressingImage) {
             setShowUnsavedChangesModal(true);
         } else {
             setCurrentArticle(null);
@@ -508,9 +626,17 @@ export default function ModerasiArtikel() {
     const handleConfirmAction = async () => {
         setIsProcessingAction(true);
         setActionStatus({ success: null, error: null, message: '' });
-        if (!articleForAction) return;
+        if (!articleForAction) {
+            setIsProcessingAction(false);
+            return;
+        };
+
+        let success = false;
+        let actionType = confirmAction;
+        let shouldCloseForm = false;
+
         try {
-            switch (confirmAction) {
+            switch (actionType) {
                 case 'publish':
                     const { error: insertError } = await supabase.from('artikel').insert({
                         judul: articleForAction.judul, deskripsi: articleForAction.deskripsi,
@@ -520,6 +646,8 @@ export default function ModerasiArtikel() {
                     if (insertError) throw new Error(`Gagal mempublikasikan: ${insertError.message}`);
                     await supabase.from('draft_artikel').delete().eq('id', articleForAction.id);
                     setActionStatus({ success: true, error: false, message: "Artikel berhasil dipublikasi!" });
+                    success = true;
+                    shouldCloseForm = true;
                     break;
                 case 'unpublish':
                     const { error: insertDraftError } = await supabase.from('draft_artikel').insert({
@@ -530,34 +658,64 @@ export default function ModerasiArtikel() {
                     if (insertDraftError) throw new Error(`Gagal memindahkan ke draft: ${insertDraftError.message}`);
                     await supabase.from('artikel').delete().eq('id', articleForAction.id);
                     setActionStatus({ success: true, error: false, message: "Artikel berhasil dipindahkan ke draft!" });
+                    success = true;
+                    shouldCloseForm = true;
                     break;
                 case 'delete':
                     let tableName = articleForAction.type === 'draft' ? 'draft_artikel' : 'artikel';
+                    
+                    const { data: articleToDelete, error: fetchError } = await supabase
+                        .from(tableName)
+                        .select('deskripsi, gambar_url')
+                        .eq('id', articleForAction.id)
+                        .single();
+
+                    if (fetchError && fetchError.code !== 'PGRST116') { // Ignore error if row not found
+                        throw new Error(`Gagal mengambil data artikel untuk dihapus: ${fetchError.message}`);
+                    }
+
                     const { error: deleteError } = await supabase.from(tableName).delete().eq('id', articleForAction.id);
                     if (deleteError) throw new Error(`Gagal menghapus artikel: ${deleteError.message}`);
-                    if (articleForAction.gambar_url) {
-                        const imagePath = articleForAction.gambar_url.split('/gambarartikel/')[1];
-                        if (imagePath) {
-                            const { error: storageError } = await supabase.storage.from('gambarartikel').remove([imagePath]);
-                            if (storageError) console.error("Gagal menghapus file dari storage:", storageError);
+
+                    const allUrlsToDelete = [];
+                    if (articleToDelete?.gambar_url) {
+                        allUrlsToDelete.push(articleToDelete.gambar_url);
+                    }
+                    if(articleToDelete?.deskripsi){
+                        const contentImageUrls = extractImageUrls(articleToDelete.deskripsi);
+                        allUrlsToDelete.push(...contentImageUrls);
+                    }
+
+                    if (allUrlsToDelete.length > 0) {
+                        const imagePaths = allUrlsToDelete.map(url => url.split('/gambarartikel/')[1]).filter(Boolean);
+                        if (imagePaths.length > 0) {
+                            await supabase.storage.from('gambarartikel').remove(imagePaths);
                         }
                     }
+
                     setActionStatus({ success: true, error: false, message: "Artikel berhasil dihapus!" });
+                    success = true;
+                    shouldCloseForm = true;
                     break;
                 default:
                     throw new Error("Aksi tidak dikenal.");
             }
-            setTimeout(() => {
-                setShowConfirmModal(false);
-                fetchDraftArticles();
-                fetchPublishedArticles();
-            }, 1000);
+            
+            await Promise.all([fetchDraftArticles(), fetchPublishedArticles()]);
+
+            if (success) {
+                setTimeout(() => {
+                    setShowConfirmModal(false);
+                    if (shouldCloseForm) {
+                        setCurrentArticle(null);
+                    }
+                }, 1500);
+            }
+
         } catch (err) {
             setActionStatus({ success: false, error: true, message: err.message });
         } finally {
             setIsProcessingAction(false);
-            fetchDraftArticles();
-            fetchPublishedArticles();
         }
     };
 
@@ -587,7 +745,7 @@ export default function ModerasiArtikel() {
     };
 
     const confirmModalProps = getConfirmModalContent();
-
+    
     return (
         <div className="relative min-h-screen flex flex-col justify-between bg-gray-900 text-white">
             <motion.div variants={sidebarVariants} initial="hidden" animate="visible" className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
@@ -699,7 +857,7 @@ export default function ModerasiArtikel() {
             <Modal isOpen={showConfirmModal} onClose={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} title={confirmModalProps.title} statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null} actions={
                 <>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleConfirmAction} className={`${glassButtonClasses} ${confirmModalProps.buttonClass}`} disabled={isProcessingAction}>
-                        {confirmModalProps.isProcessing ? confirmModalProps.processingText : <>{confirmModalProps.buttonIcon} {confirmModalProps.buttonText}</>}
+                        {confirmModalProps.isProcessing ? <><Loader2 size={16} className="animate-spin" /> {confirmModalProps.processingText}</> : <>{confirmModalProps.buttonIcon} {confirmModalProps.buttonText}</>}
                     </motion.button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`} disabled={isProcessingAction}>
                         <X size={16} /> Batal
