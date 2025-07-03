@@ -16,7 +16,7 @@ import brevetLogo from "../assets/brevet.png";
 import totalMedalsBackground from "../assets/bg-total-medali.jpg";
 // ------------------
 
-const mainTitleWords = ["Karate", "Club", "2025"];
+const mainTitleWords = ["Karate", "Club"];
 const fullMainTitle = mainTitleWords.join(" ");
 
 const subHeadline = "Sekolah Tinggi Meteorologi Klimatologi dan Geofisika";
