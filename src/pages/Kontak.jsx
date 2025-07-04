@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useRef } from "react";
 import brevetLogo from "../assets/brevet.png";
 import { Link } from "react-router-dom";
+import { supabase } from "../supabaseClient.js"; // Impor Supabase client
 
 export default function Kontak() {
   const [sukses, setSukses] = useState(false);
@@ -82,20 +83,32 @@ export default function Kontak() {
     `;
   };
 
+  // Fungsi handleSubmit diubah untuk memanggil Edge Function Supabase
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(formRef.current);
-    const response = await fetch("https://formspree.io/f/meokrapw", {
-      method: "POST",
-      headers: { Accept: "application/json" },
-      body: formData,
-    });
+    const nama = formData.get("nama");
+    const hp = formData.get("hp");
+    const pesan = formData.get("pesan");
 
-    if (response.ok) {
+    try {
+      // Panggil Edge Function 'send-telegram-kontak'
+      const { error } = await supabase.functions.invoke('send-telegram-kontak', {
+        body: { nama, hp, pesan },
+      });
+
+      if (error) {
+        throw error;
+      }
+      
+      // Jika berhasil
       setSukses(true);
       formRef.current.reset();
-    } else {
-      alert("Gagal mengirim pesan. Coba lagi nanti.");
+      setTimeout(() => setSukses(false), 5000);
+
+    } catch (error) {
+      console.error("Error memanggil Edge Function:", error.message);
+      alert("Gagal mengirim pesan. Silakan coba lagi nanti.");
     }
   };
 
@@ -183,9 +196,9 @@ export default function Kontak() {
                 style={{ boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)' }}
               />
               <input
-                type="email"
-                name="email"
-                placeholder="Email kamu..."
+                type="tel"
+                name="hp"
+                placeholder="Nomor HP kamu..."
                 required
                 className="w-full p-2.5 rounded-xl bg-transparent border border-[rgba(255,255,255,0.3)] text-white placeholder:text-[#a7a7a7] focus:outline-none focus:border-[#FF9F1C] transition-colors duration-200 text-sm"
                 style={{ boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)' }}

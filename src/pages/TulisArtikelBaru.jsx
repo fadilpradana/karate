@@ -286,8 +286,8 @@ export default function TulisArtikelBaru() {
                     <Modal isOpen={true} onClose={() => setShowUnsavedChangesModal(false)} title="Perubahan Belum Disimpan">
                          <p className="text-gray-300 text-sm text-center mt-2">Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin keluar?</p>
                          <div className="flex justify-center gap-4 mt-6">
-                            <button onClick={() => setShowUnsavedChangesModal(false)} className="flex items-center justify-center gap-1 px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white">Lanjutkan Menulis</button>
-                            <button onClick={() => { setIsFormDirty(false); navigate('/artikel'); }} className="flex items-center justify-center gap-1 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-md text-red-400">Keluar & Buang</button>
+                             <button onClick={() => setShowUnsavedChangesModal(false)} className="flex items-center justify-center gap-1 px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white">Lanjutkan Menulis</button>
+                             <button onClick={() => { setIsFormDirty(false); navigate('/artikel'); }} className="flex items-center justify-center gap-1 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-md text-red-400">Keluar & Buang</button>
                          </div>
                     </Modal>
                 )}
@@ -295,7 +295,16 @@ export default function TulisArtikelBaru() {
             
             <input type="file" ref={editorImageInputRef} onChange={(e) => handleImageUploadForEditor(e.target.files[0])} className="hidden" accept="image/*" />
             
-            <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bubble-menu">
+            {/* [PERUBAHAN] BubbleMenu hanya muncul saat gambar aktif */}
+            <BubbleMenu 
+                editor={editor} 
+                tippyOptions={{ duration: 100 }} 
+                className="bubble-menu"
+                shouldShow={({ editor }) => {
+                    // Hanya tampilkan menu jika node 'imageWithCaption' sedang aktif/terseleksi
+                    return editor.isActive('imageWithCaption');
+                }}
+            >
                 <button type="button" onClick={replaceImageInEditor} className="bubble-menu-button"><Replace size={18} /> Ganti</button>
                 <button type="button" onClick={deleteImageInEditor} className="bubble-menu-button text-red-400"><Trash2 size={18} /> Hapus</button>
             </BubbleMenu>

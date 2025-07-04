@@ -45,11 +45,9 @@ export default function ArtikelDetail() {
         }
     };
 
-    // ... (blok loading, error, not found tidak berubah)
     if (loading) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg">Memuat artikel...</div> </div> );
     if (error) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg text-red-400">{error}</div> </div> );
     if (!artikel) return ( <div className="flex justify-center items-center min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}> <div className="absolute inset-0 bg-black opacity-70"></div> <div className="relative z-10 text-lg">Artikel tidak ditemukan.</div> </div> );
-
 
     return (
         <div className="relative min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
@@ -86,13 +84,9 @@ export default function ArtikelDetail() {
                             </div>
                         )}
                         
-                        {/*
-                          [PERBAIKAN FINAL]
-                          Wadah ini sekarang HANYA perlu kelas 'tiptap' untuk menerapkan SEMUA
-                          gaya dari file CSS yang sudah kita perbaiki. Bersih dan bebas konflik.
-                        */}
+                        {/* [PERBAIKAN] Kelas 'text-justify' dihapus dari div ini */}
                         <div
-                            className="tiptap text-gray-300 text-justify"
+                            className="tiptap text-gray-300"
                             dangerouslySetInnerHTML={{ __html: artikel.deskripsi }}
                         />
 
