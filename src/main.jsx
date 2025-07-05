@@ -24,6 +24,10 @@ import TulisArtikelBaru from './pages/TulisArtikelBaru';
 import ModerasiArtikel from './pages/ModerasiArtikel';
 import AdminPrestasi from './pages/AdminPrestasi';
 import LupaPassword from './pages/LupaPassword';
+import Pengumuman from './pages/Pengumuman';
+import PengumumanDetail from './pages/PengumumanDetail.jsx';
+import TulisPengumumanBaru from './pages/TulisPengumumanBaru.jsx';
+import ModerasiPengumuman from './pages/ModerasiPengumuman.jsx'
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -44,6 +48,8 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <SignUp /> },
       { path: 'lupa-password', element: <LupaPassword /> },
+      { path: 'pengumuman', element: <Pengumuman /> },
+      { path: 'pengumuman/:id', element: <PengumumanDetail /> },
 
       // --- Rute untuk Pengguna Terautentikasi (cukup login) ---
       {
@@ -62,6 +68,14 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'tulis-pengumuman-baru',
+        element: (
+          <ProtectedRoute>
+            <TulisPengumumanBaru />
+          </ProtectedRoute>
+        ),
+      },
 
       // --- Rute Khusus Admin ---
       {
@@ -72,7 +86,14 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
-
+      {
+        path: 'moderasi-pengumuman',
+        element: (
+          <AdminRoute>
+            <ModerasiPengumuman />
+          </AdminRoute>
+        ),
+      },
       {
         path: 'admin-prestasi',
         element: (
