@@ -27,7 +27,8 @@ import LupaPassword from './pages/LupaPassword';
 import Pengumuman from './pages/Pengumuman';
 import PengumumanDetail from './pages/PengumumanDetail.jsx';
 import TulisPengumumanBaru from './pages/TulisPengumumanBaru.jsx';
-import ModerasiPengumuman from './pages/ModerasiPengumuman.jsx'
+import ModerasiPengumuman from './pages/ModerasiPengumuman.jsx';
+import AdminPendaftaran from './pages/AdminPendaftaran';
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -44,7 +45,6 @@ const router = createBrowserRouter([
       { path: 'artikel', element: <Artikel /> },
       { path: 'artikel/:id', element: <ArtikelDetail /> },
       { path: 'kontak', element: <Kontak /> },
-      { path: 'pendaftaran', element: <Pendaftaran /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <SignUp /> },
       { path: 'lupa-password', element: <LupaPassword /> },
@@ -76,7 +76,14 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
+      {
+        path: 'pendaftaran',
+        element: (
+          <ProtectedRoute>
+            <Pendaftaran />
+          </ProtectedRoute>
+        ),
+      },
       // --- Rute Khusus Admin ---
       {
         path: 'moderasi-artikel',
@@ -102,7 +109,14 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },      
-
+      {
+        path: 'admin-pendaftaran',
+        element: (
+          <AdminRoute>
+            <AdminPendaftaran />
+          </AdminRoute>
+        ),
+      }, 
       // --- Halaman 404 Not Found ---
       {
         path: '*', 

@@ -6,7 +6,7 @@ import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; // Pastikan path ini benar
 
 // Asset & Ikon
-import brevetLogo from '../assets/brevet.png';
+import Footer from '../components/Footer';
 import { CheckCircle, AlertTriangle, Edit, ChevronDown, Trash2, Camera, Eye, X, Loader2, Replace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -717,19 +717,7 @@ function Dashboard() {
                 )}
             </main>
 
-            <footer className="relative z-[30] bg-[#0E0004] text-[#E7E7E7] text-sm py-10 px-6 md:px-20 border-t border-[#333]">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="text-center md:text-left w-full md:w-1/3">&copy; With Love STMKG Karate Club Periode 2025</div>
-                    <div className="w-full md:w-1/3 flex justify-center"><img src={brevetLogo} alt="Logo Brevet" className="h-5" /></div>
-                    <div className="flex flex-wrap justify-center md:justify-end gap-4 font-[Montserrat] font-light text-center md:text-right w-full md:w-1/3">
-                        <Link to="/" className="hover:text-[#FF9F1C]">Beranda</Link>
-                        <Link to="/pengurus" className="hover:text-[#FF9F1C]">Pengurus</Link>
-                        <Link to="/jadwal" className="hover:text-[#FF9F1C]">Jadwal</Link>
-                        <Link to="/artikel" className="hover:text-[#FF9F1C]">Artikel</Link>
-                        <Link to="/kontak" className="hover:text-[#FF9F1C]">Kontak</Link>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
             
             <AnimatePresence>
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}

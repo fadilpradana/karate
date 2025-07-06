@@ -13,12 +13,13 @@ const staticNavLinks = [
   { name: "Artikel", path: "/artikel" },
   { name: "Pengumuman", path: "/pengumuman" },
   { name: "Kontak", path: "/kontak" },
-  { name: "Daftar", path: "/pendaftaran" }, // "Daftar" tetap di sini untuk menjaga indeks
 ];
+
 const pengurusLink = { name: "Pengurus", path: "/pengurus" };
 const loginLink = { name: "Login / Register", path: "/signup" };
 const dashboardLink = { name: "Dashboard", path: "/dashboard" };
 const kelolaPrestasiLink = { name: "Kelola Prestasi", path: "/admin-prestasi" };
+const daftarLink = { name: "Daftar", path: "/pendaftaran" };
 
 
 export default function Navbar() {
@@ -158,11 +159,6 @@ export default function Navbar() {
               <motion.div className="md:flex relative items-center gap-1 backdrop-blur-md bg-white/10 px-1 py-1 rounded-md shadow-sm" variants={mainContainerVariants} initial="hidden" animate="visible">
                 {indicatorProps.width > 0 && (<motion.div className="absolute top-1 bottom-1 rounded-md z-0" animate={{ left: indicatorProps.left, width: indicatorProps.width }} transition={{ duration: 0.3, ease: "easeInOut" }} style={glassFrameStyle} />)}
                 {staticNavLinks.map((link, index) => {
-                  // [PERUBAHAN] Sembunyikan 'Daftar' jika belum login, atau jika role adalah admin/pengurus
-                  if (link.name === "Daftar" && (!session || userRole === 'admin' || userRole === 'pengurus')) {
-                    return null;
-                  }
-
                   let isActive = false;
                   if (link.path === '/artikel') { isActive = isArtikelActive; } 
                   else if (link.path === '/pengumuman') { isActive = isPengumumanActive; } 
@@ -202,6 +198,17 @@ export default function Navbar() {
                     </Link>
                   </motion.div>
                 )}
+                
+                {/* [PERUBAHAN] Posisi tombol Daftar dan Dashboard ditukar */}
+                {session && userRole !== 'admin' && userRole !== 'pengurus' && (
+                  <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
+                    <Link to={daftarLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
+                      <div className="absolute -inset-px rounded-md" style={glassFrameStyle} />
+                      <span className={`relative z-10 hover:text-amber-300 transition-colors ${location.pathname === daftarLink.path ? 'text-amber-300' : 'text-white'}`}>{daftarLink.name}</span>
+                    </Link>
+                  </motion.div>
+                )}
+
                 <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
                   <Link to={dashboardLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
                     <div className="absolute -inset-px rounded-md" style={glassFrameStyle} />
@@ -220,11 +227,6 @@ export default function Navbar() {
           {menuOpen && (
             <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 md:hidden z-50" variants={mobileMenuVariants} initial="hidden" animate="visible" exit="exit">
               {allMainLinks.map((link) => {
-                // [PERUBAHAN] Terapkan logika yang sama untuk menu mobile
-                if (link.name === "Daftar" && (!session || userRole === 'admin' || userRole === 'pengurus')) {
-                    return null;
-                }
-
                 let isActive = false;
                 if (link.path === '/artikel') { isActive = isArtikelActive; } 
                 else if (link.path === '/pengumuman') { isActive = isPengumumanActive; } 
@@ -240,14 +242,25 @@ export default function Navbar() {
               })}
               <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
               {session && (<>
-          _E001_ {userRole === 'admin' && (
+                {userRole === 'admin' && (
                   <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
                     <Link to={kelolaPrestasiLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === kelolaPrestasiLink.path ? "text-teal-300" : "text-white hover:text-teal-300"}`}>{kelolaPrestasiLink.name}</Link>
                   </motion.div>
                 )}
-                <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+
+                {/* [PERUBAHAN] Posisi link Daftar dan Dashboard ditukar di mobile */}
+                {session && userRole !== 'admin' && userRole !== 'pengurus' && (
+                  <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                    <Link to={daftarLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === daftarLink.path ? "text-amber-400" : "text-white hover:text-amber-400"}`}>
+                      {daftarLink.name}
+                    </Link>
+                  </motion.div>
+                )}
+
+        _E001_ <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
                   <Link to={dashboardLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === dashboardLink.path ? "text-green-400" : "text-white hover:text-green-400"}`}>{dashboardLink.name}</Link>
                 </motion.div>
+
                 <motion.div variants={mobileMenuItemVariants}>
                   <button onClick={handleLogout} className="text-2xl font-league uppercase text-white hover:text-red-400 transition-colors">Logout</button>
                 </motion.div>
