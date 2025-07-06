@@ -29,6 +29,7 @@ import PengumumanDetail from './pages/PengumumanDetail.jsx';
 import TulisPengumumanBaru from './pages/TulisPengumumanBaru.jsx';
 import ModerasiPengumuman from './pages/ModerasiPengumuman.jsx';
 import AdminPendaftaran from './pages/AdminPendaftaran';
+import ModerasiPengurus from './pages/ModerasiPengurus';
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -114,6 +115,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <AdminPendaftaran />
+          </AdminRoute>
+        ),
+      }, 
+      {
+        path: 'moderasi-pengurus',
+        element: (
+          <AdminRoute>
+            <ModerasiPengurus />
           </AdminRoute>
         ),
       }, 

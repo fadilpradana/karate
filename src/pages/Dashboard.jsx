@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom'; // [PERBAIKAN] Import createPortal
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { compressAndConvertToWebP } from '../utils/imageCompressor'; // Pastikan path ini benar
+import { compressAndConvertToWebP } from '../utils/imageCompressor';
 
 // Asset & Ikon
 import Footer from '../components/Footer';
@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Komponen Modal
 import Modal from '../components/Modal';
 
-// [PERBAIKAN] Komponen ActionSheetModal sekarang menggunakan React Portal dan siap untuk AnimatePresence
 const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     useEffect(() => {
         if (isOpen) {
@@ -24,90 +23,91 @@ const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
         };
     }, [isOpen]);
 
-    // `if (!isOpen) return null;` dihapus, AnimatePresence akan mengontrolnya.
-
     return createPortal(
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-end"
-            onClick={onClose}
-        >
-            <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: "0%" }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full bg-[#1c1c1c] border-t border-white/10 rounded-t-2xl p-4"
-            >
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-white">{title}</h3>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10">
-                        <X size={20} className="text-gray-400" />
-                    </button>
-                </div>
-                <div className="space-y-2">
-                    {actions.map((action, index) => (
-                        <button
-                            key={index}
-                            onClick={action.onClick}
-                            disabled={action.disabled}
-                            className={`w-full flex items-center gap-4 p-3 rounded-lg text-left transition-colors text-base
-                                ${action.isDestructive ? 'text-red-400 hover:bg-red-500/10' : 'text-blue-400 hover:bg-blue-500/10'}
-                                ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                            `}
-                        >
-                            {action.icon}
-                            <span>{action.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </motion.div>
-        </motion.div>,
-        document.body
-    );
-};
-
-// [PERBAIKAN] Komponen ImageViewerModal sekarang menggunakan React Portal dan siap untuk AnimatePresence
-const ImageViewerModal = ({ isOpen, onClose, imageUrl }) => {
-    // `if (!isOpen || !imageUrl) return null;` dihapus.
-
-    return createPortal(
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative max-w-2xl w-full"
-            >
-                <img src={imageUrl} alt="Tampilan Penuh" className="w-full h-auto object-contain max-h-[85vh] rounded-lg shadow-2xl" />
-                <button
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 bg-black/60 z-50 flex items-end"
                     onClick={onClose}
-                    className="absolute -top-3 -right-3 p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40 transition-colors"
-                    aria-label="Tutup"
                 >
-                    <X size={20} />
-                </button>
-            </motion.div>
-        </motion.div>,
+                    <motion.div
+                        initial={{ y: "100%" }}
+                        animate={{ y: "0%" }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full bg-[#1c1c1c] border-t border-white/10 rounded-t-2xl p-4"
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-white">{title}</h3>
+                            <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10">
+                                <X size={20} className="text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {actions.map((action, index) => (
+                                <button
+                                    key={index}
+                                    onClick={action.onClick}
+                                    disabled={action.disabled}
+                                    className={`w-full flex items-center gap-4 p-3 rounded-lg text-left transition-colors text-base
+                                        ${action.isDestructive ? 'text-red-400 hover:bg-red-500/10' : 'text-blue-400 hover:bg-blue-500/10'}
+                                        ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                                    `}
+                                >
+                                    {action.icon}
+                                    <span>{action.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
         document.body
     );
 };
 
+const ImageViewerModal = ({ isOpen, onClose, imageUrl }) => {
+    return createPortal(
+        <AnimatePresence>
+            {isOpen && imageUrl && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative max-w-2xl w-full"
+                    >
+                        <img src={imageUrl} alt="Tampilan Penuh" className="w-full h-auto object-contain max-h-[85vh] rounded-lg shadow-2xl" />
+                        <button
+                            onClick={onClose}
+                            className="absolute -top-3 -right-3 p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40 transition-colors"
+                            aria-label="Tutup"
+                        >
+                            <X size={20} />
+                        </button>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
+    );
+};
 
-// Komponen AvatarEditor yang dipanggil dari ProfileCard
 function AvatarEditor({
     initialUrl,
     isUploading,
@@ -149,8 +149,6 @@ function AvatarEditor({
     );
 }
 
-
-// Komponen ProfileCard untuk menampilkan data profil
 function ProfileCard({
     profileData,
     session,
@@ -293,14 +291,14 @@ function ProfileCard({
                     <div className={dataDisplayStyle}><p className={labelStyle}>Email</p><p className="text-sm text-gray-400 break-words">{session.user.email} (tidak bisa diubah)</p></div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={formData.nomor_telepon || ''} onChange={handleInputChange} className={inputStyle} /></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={formData.npt || ''} onChange={handleInputChange} className={inputStyle} /></div>
-                        <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={formData.kelas || ''} onChange={handleInputChange} className={inputStyle} /></div>
-                        <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={formData.angkatan || ''} onChange={handleInputChange} className={inputStyle} /></div>
+                         <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={formData.npt || ''} onChange={handleInputChange} className={inputStyle} /></div>
+                         <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={formData.kelas || ''} onChange={handleInputChange} className={inputStyle} /></div>
+                         <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={formData.angkatan || ''} onChange={handleInputChange} className={inputStyle} /></div>
                     </div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Role</p><p className="text-sm text-gray-400 capitalize">{profileData.role} (tidak bisa diubah)</p></div>
                     <div className="flex justify-end gap-3 pt-4">
-                        <button type="button" onClick={handleCancelEdit} className={`${glassButtonStyle} text-white`}>Batal</button>
-                        <button type="submit" disabled={loading || isUploading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+                         <button type="button" onClick={handleCancelEdit} className={`${glassButtonStyle} text-white`}>Batal</button>
+                         <button type="submit" disabled={loading || isUploading} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
                     </div>
                 </form>
             ) : (
@@ -309,8 +307,8 @@ function ProfileCard({
                          <div className="flex flex-col items-center sm:items-start">
                              <label className="block mb-1 text-sm text-gray-300 w-full sm:text-left">Foto Profil</label>
                              <div 
-                                className="relative group w-32 h-32 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 cursor-pointer"
-                                onClick={() => onViewAvatar(profileData.avatar_url)}
+                                 className="relative group w-32 h-32 sm:w-28 sm:h-28 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center border-2 border-white/10 cursor-pointer"
+                                 onClick={() => onViewAvatar(profileData.avatar_url)}
                              >
                                  {profileData.avatar_url ? (
                                      <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
@@ -333,16 +331,16 @@ function ProfileCard({
                     <div className={dataDisplayStyle}><p className={labelStyle}>Email</p><p className={textDataStyle}>{session.user.email}</p></div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Nomor Telepon</p><p className={textDataStyle}>{profileData.nomor_telepon}</p></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className={dataDisplayStyle}><p className={labelStyle}>NPT</p><p className={textDataStyle}>{profileData.npt}</p></div>
-                        <div className={dataDisplayStyle}><p className={labelStyle}>Kelas</p><p className={textDataStyle}>{profileData.kelas}</p></div>
-                        <div className={dataDisplayStyle}><p className={labelStyle}>Angkatan</p><p className={textDataStyle}>{profileData.angkatan}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>NPT</p><p className={textDataStyle}>{profileData.npt}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>Kelas</p><p className={textDataStyle}>{profileData.kelas}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>Angkatan</p><p className={textDataStyle}>{profileData.angkatan}</p></div>
                     </div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Role</p><p className={`${textDataStyle} capitalize`}>{profileData.role}</p></div>
                     
                     {isMyProfile && (
                         <div className="flex justify-end gap-3 pt-4">
-                            <button onClick={() => setIsEditing(true)} className={`${glassButtonStyle} text-white`}><Edit size={16} /> Edit Profil</button>
-                            <button onClick={onLogout} className={`${glassButtonStyle} text-white hover:border-red-500/50`}>Logout</button>
+                             <button onClick={() => setIsEditing(true)} className={`${glassButtonStyle} text-white`}><Edit size={16} /> Edit Profil</button>
+                             <button onClick={onLogout} className={`${glassButtonStyle} text-white hover:border-red-500/50`}>Logout</button>
                         </div>
                     )}
                 </div>
@@ -351,7 +349,6 @@ function ProfileCard({
     );
 }
 
-// Komponen Dashboard Utama
 function Dashboard() {
     const { session, signOut } = useAuth();
     const navigate = useNavigate();
@@ -423,13 +420,13 @@ function Dashboard() {
         setIsActionSheetOpen(true);
     };
 
-    const handleUpdateMyProfile = async (updatedData, errorMessage = null, successMessage = null, immediateFeedback = false) => {
-        if(errorMessage) {
-            showUpdateFeedback(errorMessage, 'error');
+    const handleUpdateMyProfile = async (updatedData, successMessage = 'Profil Anda berhasil diperbarui!', type = 'success', immediateFeedback = false) => {
+        if(type === 'error') {
+            showUpdateFeedback(successMessage, 'error');
             return;
         }
 
-        if(immediateFeedback && successMessage){
+        if(immediateFeedback){
             showUpdateFeedback(successMessage, 'success');
             const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
             setMyProfile(data);
@@ -444,7 +441,7 @@ function Dashboard() {
             const { data: refreshedProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
             setMyProfile(refreshedProfile);
 
-            showUpdateFeedback('Profil Anda berhasil diperbarui!', 'success');
+            showUpdateFeedback(successMessage, 'success');
         } catch (err) {
             showUpdateFeedback(`Gagal memperbarui: ${err.message}`, 'error');
         }
@@ -679,8 +676,10 @@ function Dashboard() {
                                                             <div>
                                                                 <label className={labelStyle}>Role</label>
                                                                 <div className="relative">
+                                                                    {/* [PERBAIKAN] Tambahkan 'calon pengurus' di sini */}
                                                                     <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
                                                                         <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
+                                                                        <option value="calon pengurus" className="bg-gray-900 text-white">Calon Pengurus</option>
                                                                         <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
                                                                         <option value="admin" className="bg-gray-900 text-white">Admin</option>
                                                                     </select>
@@ -723,7 +722,6 @@ function Dashboard() {
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>
 
-            {/* [PERBAIKAN] Membungkus modal dengan AnimatePresence untuk animasi keluar */}
             <AnimatePresence>
                 {isImageViewerOpen && (
                     <ImageViewerModal
