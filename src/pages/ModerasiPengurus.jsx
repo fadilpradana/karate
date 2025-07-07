@@ -7,6 +7,9 @@ import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, 
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 
+// Import gambar background
+import heroBg from '../assets/bg9.jpg'; // Sesuaikan path jika berbeda
+
 export default function ModerasiPengurus() {
     const { role, loading: authLoading } = useAuth();
     const navigate = useNavigate();
@@ -42,6 +45,19 @@ export default function ModerasiPengurus() {
     // State untuk modal konfirmasi hapus pengurus
     const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
     const [pengurusToDelete, setPengurusToDelete] = useState(null); // Menyimpan data pengurus yang akan dihapus
+
+    // Gaya untuk efek glassmorphism pada card, disalin dari Pengurus.jsx
+    const glassmorphismStyle = {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.3)',
+        boxShadow: `
+            0px 4px 10px rgba(0, 0, 0, 0.3),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.2)
+        `,
+        borderRadius: '0.8rem',
+    };
 
     // Fungsi untuk mengambil semua data yang dibutuhkan
     const fetchData = useCallback(async () => {
@@ -180,13 +196,91 @@ export default function ModerasiPengurus() {
     const baseButtonClass = "flex items-center justify-center gap-2 font-bold py-2 px-3 rounded-md transition-colors duration-200 border bg-white/5 border-white/10 hover:border-white/20 shadow-lg disabled:bg-gray-800 disabled:border-gray-600 disabled:text-gray-500 disabled:cursor-not-allowed";
     const iconButtonClass = "p-2 transition-colors duration-200 border bg-white/5 border-white/10 hover:border-white/20 rounded-md shadow-lg";
 
+    // Varian animasi untuk judul halaman
+    const titleVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.8,
+                ease: "easeOut",
+                delay: 0.5
+            }
+        }
+    };
+    const subtitleVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.8,
+                ease: "easeOut",
+                delay: 0.7
+            }
+        }
+    };
 
-    if (authLoading || loading) { return <div className="min-h-screen bg-gray-900 flex justify-center items-center"><LoaderCircle className="animate-spin h-10 w-10 text-white" /></div>; }
-    if (error) { return <div className="min-h-screen bg-gray-900 flex flex-col justify-center items-center text-center p-4"><ServerCrash className="h-16 w-16 text-red-500" /><h1 className="text-3xl font-bold text-red-400 mt-4">Terjadi Kesalahan</h1><p className="text-gray-300 mt-2">{error}</p></div> }
+    // Varian untuk setiap section
+    const sectionVariants = {
+        hidden: { opacity: 0, y: 50 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                type: "spring",
+                stiffness: 100,
+                damping: 12,
+                delayChildren: 0.2,
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    // Varian untuk judul setiap bidang (dalam konteks ini, judul section)
+    const headingVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.6,
+                ease: "easeOut"
+            }
+        }
+    };
+
+
+    if (authLoading || loading) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex justify-center items-center">
+                <LoaderCircle className="animate-spin h-10 w-10 text-white" />
+            </div>
+        );
+    }
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex flex-col justify-center items-center text-center p-4">
+                <ServerCrash className="h-16 w-16 text-red-500" />
+                <h1 className="text-3xl font-bold text-red-400 mt-4">Terjadi Kesalahan</h1>
+                <p className="text-gray-300 mt-2">{error}</p>
+            </div>
+        );
+    }
 
     return (
-        <>
-            <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+        <div className="relative min-h-screen text-white">
+            {/* Fixed Background */}
+            <div
+                className="fixed inset-0 z-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${heroBg})` }}
+            >
+                <div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div> {/* Overlay gelap */}
+            </div>
+
+            {/* Konten Utama dengan z-index agar di atas background */}
+            <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow pt-24 pb-12">
                     {/* Menu Manajemen Pengurus (Mobile) */}
                     {role === 'admin' && (
@@ -251,12 +345,41 @@ export default function ModerasiPengurus() {
                     {/* Perubahan di sini: md:px-20 untuk padding simetris di desktop */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-20 space-y-12">
                         <div className="text-center">
-                            <h1 className="text-4xl md:text-6xl font-league uppercase text-amber-400 mb-2">Moderasi Pengurus</h1>
-                            <p className="text-gray-300">Kelola periode kepengurusan dan anggota tim.</p>
+                            {/* Animasi untuk Judul Halaman */}
+                            <motion.h1
+                                variants={titleVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="text-4xl md:text-6xl font-league uppercase text-accent mb-2 drop-shadow-lg"
+                            >
+                                Moderasi Pengurus
+                            </motion.h1>
+                            <motion.p
+                                variants={subtitleVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="text-gray-300 drop-shadow-md"
+                            >
+                                Kelola periode kepengurusan dan anggota tim.
+                            </motion.p>
                         </div>
 
-                        <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-lg">
-                            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3"><ShieldCheck className="text-amber-400"/>Panel Kontrol Periode</h2>
+                        {/* Animasi untuk setiap Section */}
+                        <motion.section
+                            className="p-6 shadow-lg"
+                            style={glassmorphismStyle}
+                            variants={sectionVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, amount: 0.1 }} // Animasi saat 10% section terlihat
+                        >
+                            <motion.h2
+                                variants={headingVariants}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.5 }}
+                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
+                            ><ShieldCheck className="text-amber-400"/>Panel Kontrol Periode</motion.h2>
                             <div className="space-y-4">
                                 <div className="flex flex-wrap items-center gap-4">
                                     <span className="font-medium">Periode Aktif Saat Ini:</span>
@@ -277,7 +400,7 @@ export default function ModerasiPengurus() {
                                             {semuaPeriode.map(p => (<option key={p.id} value={p.id}>{p.nama_periode}</option>))}
                                         </select>
 
-                                        {selectedPeriodeId && periodeAktif && selectedPeriodeId != periodeAktif.id && (
+                                        {selectedPeriodeId && periodeAktif && selectedPeriodeId !== periodeAktif.id && (
                                             <button onClick={() => handleSetPeriodeAktif(selectedPeriodeId)} className={`${baseButtonClass} w-full md:w-auto text-blue-400`}>
                                                 <Power size={18} />
                                                 <span>Jadikan Aktif</span>
@@ -291,10 +414,23 @@ export default function ModerasiPengurus() {
                                     </div>
                                 </div>
                             </div>
-                        </section>
+                        </motion.section>
 
-                        <section className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 shadow-lg">
-                            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3"><UserPlus className="text-amber-400"/>Angkat Pengurus Baru</h2>
+                        <motion.section
+                            className="p-6 shadow-lg"
+                            style={glassmorphismStyle}
+                            variants={sectionVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, amount: 0.1 }}
+                        >
+                            <motion.h2
+                                variants={headingVariants}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.5 }}
+                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
+                            ><UserPlus className="text-amber-400"/>Angkat Pengurus Baru</motion.h2>
                             <form onSubmit={handleTambahPengurus} className="grid md:grid-cols-4 gap-4 items-end">
                                 <div className="md:col-span-1">
                                     <label htmlFor="user-select" className="block text-sm font-medium text-gray-400 mb-1">Pengguna</label>
@@ -320,17 +456,42 @@ export default function ModerasiPengurus() {
                                     </button>
                                 </div>
                             </form>
-                        </section>
+                        </motion.section>
 
-                        <section>
-                            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3"><Users className="text-amber-400"/>Struktur Kepengurusan Aktif</h2>
+                        <motion.section
+                            variants={sectionVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, amount: 0.1 }}
+                        >
+                            <motion.h2
+                                variants={headingVariants}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.5 }}
+                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
+                            ><Users className="text-amber-400"/>Struktur Kepengurusan Aktif</motion.h2>
                             <div className="space-y-6">
                                 {Object.keys(pengurus).length > 0 ? Object.keys(pengurus).map(bidang => (
-                                    <div key={bidang} className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+                                    <motion.div
+                                        key={bidang}
+                                        className="p-4"
+                                        style={glassmorphismStyle}
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, type: "spring", stiffness: 150, damping: 20 } }
+                                        }}
+                                    >
                                         <h3 className="text-xl font-semibold text-amber-400 mb-3">{bidang}</h3>
                                         <ul className="space-y-2">
                                             {pengurus[bidang].map(p => (
-                                                <li key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-700/50 p-2 rounded-md">
+                                                <motion.li
+                                                    key={p.id}
+                                                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-700/50 p-2 rounded-md"
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ duration: 0.3, delay: 0.1 }} // Animasi untuk setiap item pengurus
+                                                >
                                                     <div>
                                                         <p className="font-medium pl-2">{p.profiles.nama_lengkap}</p>
                                                         <p className="text-sm pl-2 text-gray-400">{p.jabatan}</p>
@@ -338,13 +499,13 @@ export default function ModerasiPengurus() {
                                                     <button onClick={() => handleHapusPengurus(p)} className={`${iconButtonClass} text-red-500 mt-2 sm:mt-0`}>
                                                         <Trash2 size={18}/>
                                                     </button>
-                                                </li>
+                                                </motion.li>
                                             ))}
                                         </ul>
-                                    </div>
+                                    </motion.div>
                                 )) : <p className="text-center text-gray-400 py-8">Belum ada pengurus yang diangkat untuk periode ini.</p>}
                             </div>
-                        </section>
+                        </motion.section>
 
                     </div>
                 </main>
@@ -355,7 +516,7 @@ export default function ModerasiPengurus() {
             <AnimatePresence>
                 {isCreateModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={() => setIsCreateModalOpen(false)}>
-                        <motion.div initial={{ scale: 0.9, y: -20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: -20 }} className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+                        <motion.div initial={{ scale: 0.9, y: -20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: -20 }} className="w-full max-w-md p-6" style={glassmorphismStyle} onClick={(e) => e.stopPropagation()}>
                             <h2 className="text-2xl font-bold mb-4">Buat Periode Kepengurusan Baru</h2>
                             <p className="text-gray-400 mb-6">Periode aktif saat ini akan diarsip dan periode baru ini akan langsung diaktifkan.</p>
                             <div className="space-y-4">
@@ -387,7 +548,8 @@ export default function ModerasiPengurus() {
                             initial={{ scale: 0.9, y: -20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: -20 }}
-                            className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm p-6 text-center"
+                            className="w-full max-w-sm p-6 text-center"
+                            style={glassmorphismStyle}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <X size={24} className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer" onClick={cancelDeletePengurus}/>
@@ -417,6 +579,6 @@ export default function ModerasiPengurus() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </>
+        </div>
     );
 }

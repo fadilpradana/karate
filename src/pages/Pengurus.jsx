@@ -1,3 +1,4 @@
+// src/pages/Pengurus.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings } from 'lucide-react';
@@ -82,62 +83,62 @@ const ProfileModal = ({ member, onClose }) => {
 
 
 const MemberCard = ({ member, onClick, index, totalMembersInBidang }) => {
-  const [isHovered, setIsHovered] = useState(false); // State untuk mengontrol hover
+    const [isHovered, setIsHovered] = useState(false); // State untuk mengontrol hover
 
-  return (
-    <motion.div
-      // Animasi masuk dari kiri, dengan delay berdasarkan index TERBALIK
-      initial={{ opacity: 0, x: -100 }} // Muncul dari kiri
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.7 }} // Memicu saat 20% elemen terlihat
-      
-      // Menggunakan onHoverStart dan onHoverEnd untuk mengelola state isHovered
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+    return (
+        <motion.div
+            // Animasi masuk dari kiri, dengan delay berdasarkan index TERBALIK
+            initial={{ opacity: 0, x: -100 }} // Muncul dari kiri
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.7 }} // Memicu saat 20% elemen terlihat
 
-      // Properti animate akan mengontrol scale dan boxShadow berdasarkan isHovered
-      animate={{
-        scale: isHovered ? 1.05 : 1,
-        // Penting: Kembalikan boxShadow ke nilai default glassmorphismStyle saat tidak di-hover
-        boxShadow: isHovered 
-            ? '0px 8px 20px rgba(0, 0, 0, 0.5)' 
-            : `0px 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)`
-      }}
-      // --- PERBAIKAN: SATUKAN SEMUA DEFINISI TRANSISI DI SINI ---
-      transition={{
-        // Transisi untuk animasi masuk (initial -> whileInView)
-        opacity: { duration: 0.5, ease: "easeOut", delay: (totalMembersInBidang - 1 - index) * 0.6 },
-        x: { duration: 0.5, ease: "easeOut", delay: (totalMembersInBidang - 1 - index) * 0.6 },
-        
-        // Transisi untuk properti yang dikendalikan oleh 'animate' (hover)
-        // Jika tidak ada properti spesifik, ini akan menjadi default untuk 'scale' dan 'boxShadow'
-        default: { type: "spring", stiffness: 300, damping: 20 },
-        // Atau bisa juga didefinisikan secara eksplisit per properti:
-        // scale: { type: "spring", stiffness: 300, damping: 20 },
-        // boxShadow: { type: "spring", stiffness: 300, damping: 20 }
-      }}
-      // --- AKHIR PERBAIKAN ---
+            // Menggunakan onHoverStart dan onHoverEnd untuk mengelola state isHovered
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
 
-      className="w-64 flex flex-col items-center text-center p-6 rounded-xl shadow-lg cursor-pointer mx-auto" // Lebar diubah ke w-64
-      style={glassmorphismStyle} // Menerapkan style glassmorphism
-      onClick={() => onClick(member)}
-    >
-        <img
-            src={member.profiles.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles.nama_lengkap.replace(/\s+/g, '+')}&background=0284c7&color=fff&bold=true`}
-            alt={`Foto ${member.profiles.nama_lengkap}`}
-            className="w-24 h-24 rounded-full object-cover aspect-square mb-4 border-2 border-gray-600 shadow-md"
-        />
-        <h3 className="text-xl font-bold text-white max-w-full text-wrap">
-            {member.profiles.nama_lengkap}
-        </h3>
-        <p className="text-amber-400 font-semibold text-base max-w-full text-wrap">
-            {member.jabatan}
-        </p>
-        <div className="text-sm text-gray-400 mt-1 max-w-full text-wrap">
-            <span>{member.profiles.kelas}</span> | <span>Angkatan {member.profiles.angkatan}</span>
-        </div>
-    </motion.div>
-  );
+            // Properti animate akan mengontrol scale dan boxShadow berdasarkan isHovered
+            animate={{
+                scale: isHovered ? 1.05 : 1,
+                // Penting: Kembalikan boxShadow ke nilai default glassmorphismStyle saat tidak di-hover
+                boxShadow: isHovered
+                    ? '0px 8px 20px rgba(0, 0, 0, 0.5)'
+                    : `0px 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)`
+            }}
+            // --- PERBAIKAN: SATUKAN SEMUA DEFINISI TRANSISI DI SINI ---
+            transition={{
+                // Transisi untuk animasi masuk (initial -> whileInView)
+                opacity: { duration: 0.5, ease: "easeOut", delay: (totalMembersInBidang - 1 - index) * 0.6 },
+                x: { duration: 0.5, ease: "easeOut", delay: (totalMembersInBidang - 1 - index) * 0.6 },
+
+                // Transisi untuk properti yang dikendalikan oleh 'animate' (hover)
+                // Jika tidak ada properti spesifik, ini akan menjadi default untuk 'scale' dan 'boxShadow'
+                default: { type: "spring", stiffness: 300, damping: 20 },
+                // Atau bisa juga didefinisikan secara eksplisit per properti:
+                // scale: { type: "spring", stiffness: 300, damping: 20 },
+                // boxShadow: { type: "spring", stiffness: 300, damping: 20 }
+            }}
+            // --- AKHIR PERBAIKAN ---
+
+            className="w-64 flex flex-col items-center text-center p-6 rounded-xl shadow-lg cursor-pointer mx-auto" // Lebar diubah ke w-64
+            style={glassmorphismStyle} // Menerapkan style glassmorphism
+            onClick={() => onClick(member)}
+        >
+            <img
+                src={member.profiles.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles.nama_lengkap.replace(/\s+/g, '+')}&background=0284c7&color=fff&bold=true`}
+                alt={`Foto ${member.profiles.nama_lengkap}`}
+                className="w-24 h-24 rounded-full object-cover aspect-square mb-4 border-2 border-gray-600 shadow-md"
+            />
+            <h3 className="text-xl font-bold text-white max-w-full text-wrap">
+                {member.profiles.nama_lengkap}
+            </h3>
+            <p className="text-amber-400 font-semibold text-base max-w-full text-wrap">
+                {member.jabatan}
+            </p>
+            <div className="text-sm text-gray-400 mt-1 max-w-full text-wrap">
+                <span>{member.profiles.kelas}</span> | <span>Angkatan {member.profiles.angkatan}</span>
+            </div>
+        </motion.div>
+    );
 };
 
 export default function Pengurus() {
@@ -289,14 +290,15 @@ export default function Pengurus() {
     );
 
     const getIconForBidang = (namaBidang) => {
-        if (namaBidang === 'Sekretaris') return <FileText size={28}/>;
-        if (namaBidang === 'Bendahara') return <Wallet size={28}/>;
-        if (namaBidang === 'Hubungan Masyarakat') return <Megaphone size={28}/>;
-        if (namaBidang === 'Komite Teknik') return <Wrench size={28}/>;
-        if (namaBidang === 'Desain Komunikasi Visual') return <Paintbrush size={28}/>;
-        if (namaBidang === 'Strategi Dana dan Operasional') return <BarChart3 size={28}/>;
-        if (namaBidang === 'Kesehatan') return <HeartPulse size={28}/>;
-        return <Users size={28}/>;
+        // Ukuran ikon disesuaikan: default (mobile) lebih kecil
+        if (namaBidang === 'Sekretaris') return <FileText className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Bendahara') return <Wallet className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Hubungan Masyarakat') return <Megaphone className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Komite Teknik') return <Wrench className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Desain Komunikasi Visual') return <Paintbrush className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Strategi Dana dan Operasional') return <BarChart3 className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Kesehatan') return <HeartPulse className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        return <Users className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
     };
 
     // Varian animasi untuk hero section (lebih kalem)
@@ -446,8 +448,11 @@ export default function Pengurus() {
                                     whileInView="visible"
                                     viewport={{ once: true, amount: 0.5 }}
                                 >
-                                    <h2 className="text-2xl sm:text-3xl font-semibold text-white border-b-2 border-amber-400 pb-2 px-6 flex items-center gap-3 text-center max-w-full sm:max-w-none mx-auto whitespace-normal sm:whitespace-nowrap break-words sm:break-normal">
-                                        <Shield size={28}/> Komandan Karate
+                                    {/* Perubahan: Lebar garis mengikuti konten, gradien diterapkan */}
+                                    <h2 className="text-xl sm:text-3xl font-semibold text-white pb-2 px-6 flex items-center gap-2 sm:gap-3 justify-center relative group">
+                                        <Shield className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" /> Komandan Karate
+                                        {/* Elemen untuk garis gradient */}
+                                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent group-hover:via-[#FF9F1C] transition-colors duration-300"></span>
                                     </h2>
                                 </motion.div>
                                 <div className="flex flex-wrap justify-center gap-6">
@@ -457,7 +462,7 @@ export default function Pengurus() {
                                             member={member}
                                             onClick={handleCardClick}
                                             index={index}
-                                            totalMembersInBidang={komandan.length} // Tambahkan prop ini
+                                            totalMembersInBidang={komandan.length}
                                         />
                                     ))}
                                 </div>
@@ -478,8 +483,11 @@ export default function Pengurus() {
                                     whileInView="visible"
                                     viewport={{ once: true, amount: 0.5 }}
                                 >
-                                    <h2 className="text-2xl sm:text-3xl font-semibold text-white border-b-2 border-amber-400 pb-2 px-6 flex items-center gap-3 text-center max-w-full sm:max-w-none mx-auto whitespace-normal sm:whitespace-nowrap break-words sm:break-normal">
-                                        <FileText size={28}/> Sekretaris <Wallet size={28}/> Bendahara
+                                    {/* Perubahan: Lebar garis mengikuti konten, gradien diterapkan */}
+                                    <h2 className="text-xl sm:text-3xl font-semibold text-white pb-2 px-6 flex items-center gap-2 sm:gap-3 justify-center relative group">
+                                        <FileText className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" /> Sekretaris <Wallet className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" /> Bendahara
+                                        {/* Elemen untuk garis gradient */}
+                                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent group-hover:via-[#FF9F1C] transition-colors duration-300"></span>
                                     </h2>
                                 </motion.div>
                                 <div className="flex flex-col md:flex-row justify-center gap-6">
@@ -514,8 +522,11 @@ export default function Pengurus() {
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.5 }}
                                     >
-                                        <h2 className="text-2xl sm:text-3xl font-semibold text-white border-b-2 border-amber-400 pb-2 px-6 flex items-center gap-3 text-center max-w-full sm:max-w-none mx-auto whitespace-normal sm:whitespace-nowrap break-words sm:break-normal">
+                                        {/* Perubahan: Lebar garis mengikuti konten, gradien diterapkan */}
+                                        <h2 className="text-xl sm:text-3xl font-semibold text-white pb-2 px-6 flex items-center gap-2 sm:gap-3 justify-center relative group">
                                             {getIconForBidang(namaBidang)} {namaBidang}
+                                            {/* Elemen untuk garis gradient */}
+                                            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent group-hover:via-[#FF9F1C] transition-colors duration-300"></span>
                                         </h2>
                                     </motion.div>
                                     <div className="flex flex-wrap justify-center gap-6">
