@@ -375,7 +375,7 @@ export default function Pengurus() {
                             variants={titleVariants}
                             initial="hidden"
                             animate="visible"
-                            className="text-4xl md:text-7xl font-league font-semibold uppercase text-accent mb-2 drop-shadow-lg"
+                            className="text-4xl md:text-7xl font-league font-semibold uppercase battery-style-gradient mb-2 drop-shadow-lg"
                         >
                             Struktur Kepengurusan
                         </motion.h1>
