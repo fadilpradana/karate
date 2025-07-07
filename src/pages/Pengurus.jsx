@@ -72,9 +72,9 @@ const ProfileModal = ({ member, onClose }) => {
                     className="w-60 h-60 object-cover rounded-xl aspect-square mx-auto mb-4 border-4 border-amber-400 shadow-lg"
                 />
                 <h3 className="text-xl font-bold text-white mb-1">{member.profiles.nama_lengkap}</h3>
-                <p className="text-amber-400 font-semibold text-base">{member.jabatan}</p>
+                <p className="battery-style-gradient font-semibold text-base">{member.jabatan}</p>
                 <div className="text-sm text-gray-300 mt-2">
-                    <span>{member.profiles.kelas}</span> | <span>Angkatan {member.profiles.angkatan}</span>
+                    <span>{member.profiles.kelas}</span> | <span>{member.profiles.angkatan}</span>
                 </div>
             </motion.div>
         </motion.div>
@@ -131,11 +131,11 @@ const MemberCard = ({ member, onClick, index, totalMembersInBidang }) => {
             <h3 className="text-xl font-bold text-white max-w-full text-wrap">
                 {member.profiles.nama_lengkap}
             </h3>
-            <p className="text-amber-400 font-semibold text-base max-w-full text-wrap">
+            <p className="battery-style-gradient font-semibold text-base max-w-full text-wrap">
                 {member.jabatan}
             </p>
             <div className="text-sm text-gray-400 mt-1 max-w-full text-wrap">
-                <span>{member.profiles.kelas}</span> | <span>Angkatan {member.profiles.angkatan}</span>
+                <span>{member.profiles.kelas}</span> | <span>{member.profiles.angkatan}</span>
             </div>
         </motion.div>
     );
@@ -375,7 +375,7 @@ export default function Pengurus() {
                             variants={titleVariants}
                             initial="hidden"
                             animate="visible"
-                            className="text-4xl md:text-7xl font-league font-semibold uppercase battery-style-gradient mb-2 drop-shadow-lg"
+                            className="text-4xl md:text-7xl font-league font-semibold uppercase text-accent mb-2 drop-shadow-lg"
                         >
                             Struktur Kepengurusan
                         </motion.h1>
