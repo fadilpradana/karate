@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, Edit, X, Check, PlusCircle, Power, ChevronLeft, Settings } from 'lucide-react';
+import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, Edit, X, Check, PlusCircle, Power, ChevronLeft, Settings, CalendarCheck } from 'lucide-react'; // Import CalendarCheck icon
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 
@@ -299,13 +299,13 @@ export default function ModerasiPengurus() {
                                 >
                                     <ChevronLeft size={20} />
                                 </Link>
-                                {/* Tombol Moderasi Pengurus (MOBILE) - tetap sebagai indikator halaman aktif */}
+                                {/* Tombol Admin Pendaftaran (MOBILE) */}
                                 <Link
-                                    to="/moderasi-pengurus"
-                                    className="p-1.5 rounded-full text-amber-400 bg-white/10 border-white/20"
-                                    title="Moderasi Pengurus (Halaman Saat Ini)"
+                                    to="/admin-pendaftaran"
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                    title="Admin Pendaftaran"
                                 >
-                                    <Settings size={20} />
+                                    <UserPlus size={20} /> {/* Menggunakan CalendarCheck untuk admin pendaftaran */}
                                 </Link>
                             </nav>
                         </motion.div>
@@ -328,13 +328,13 @@ export default function ModerasiPengurus() {
                                 >
                                     <ChevronLeft size={20} />
                                 </Link>
-                                {/* Tombol Moderasi Pengurus (DESKTOP) - tetap sebagai indikator halaman aktif */}
+                                {/* Tombol Admin Pendaftaran (DESKTOP) */}
                                 <Link
-                                    to="/moderasi-pengurus"
-                                    className="p-1.5 rounded-full text-amber-400 bg-white/10 border-white/20 block"
-                                    title="Moderasi Pengurus (Halaman Saat Ini)"
+                                    to="/admin-pendaftaran"
+                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                                    title="Admin Pendaftaran"
                                 >
-                                    <Settings size={20} />
+                                    <UserPlus size={20} /> {/* Menggunakan CalendarCheck untuk admin pendaftaran */}
                                 </Link>
                             </nav>
                         </motion.div>
@@ -490,7 +490,7 @@ export default function ModerasiPengurus() {
                                                     className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-700/50 p-2 rounded-md"
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ duration: 0.3, delay: 0.1 }} // Animasi untuk setiap item pengurus
+                                                    transition={{ duration: 0.3, delay: 0.1 }}
                                                 >
                                                     <div>
                                                         <p className="font-medium pl-2">{p.profiles.nama_lengkap}</p>

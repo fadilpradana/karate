@@ -1,7 +1,7 @@
 // src/pages/Pengurus.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
-import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings } from 'lucide-react';
+import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings, UserPlus } from 'lucide-react'; // Import UserPlus icon
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
@@ -409,6 +409,14 @@ export default function Pengurus() {
                                     >
                                         <Settings size={20} />
                                     </Link>
+                                    {/* Tombol Admin Pendaftaran untuk mobile */}
+                                    <Link
+                                        to="/admin-pendaftaran"
+                                        className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
+                                        title="Admin Pendaftaran"
+                                    >
+                                        <UserPlus size={20} />
+                                    </Link>
                                 </nav>
                             </motion.div>
                         )}
@@ -419,7 +427,7 @@ export default function Pengurus() {
                                 initial={{ x: -100, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
                                 transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }}
-                                className="fixed left-4 top-[43%] -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex"
+                                className="fixed left-4 top-[40%] -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex"
                             >
                                 <nav className="space-y-3">
                                     <Link
@@ -428,6 +436,14 @@ export default function Pengurus() {
                                         title="Moderasi Pengurus"
                                     >
                                         <Settings size={20} />
+                                    </Link>
+                                    {/* Tombol Admin Pendaftaran untuk desktop */}
+                                    <Link
+                                        to="/admin-pendaftaran"
+                                        className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
+                                        title="Admin Pendaftaran"
+                                    >
+                                        <UserPlus size={20} />
                                     </Link>
                                 </nav>
                             </motion.div>

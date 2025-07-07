@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 // Import aset dan ikon
 import Footer from '../components/Footer';
-import bg1 from '../assets/bg1.jpg'; 
+import bg1 from '../assets/bg2.jpg'; 
 import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, Settings, Megaphone } from 'lucide-react';
 
 // Helper function untuk membersihkan HTML dan memotong teks

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Impor Ikon dan Aset
 import { Edit, Trash2, Send, Settings, BookOpen, Search, RefreshCcw, Loader2, Save, X, ChevronLeft, ArrowLeft } from 'lucide-react';
 import Footer from '../components/Footer';
-import bg1 from '../assets/bg1.jpg';
+import bg1 from '../assets/bg2.jpg';
 
 // Impor Tiptap Editor
 import { useEditor, EditorContent } from '@tiptap/react';
