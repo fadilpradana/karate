@@ -281,7 +281,7 @@ export default function Pendaftaran() {
             
             <div className="relative z-10">
                 {/* Wrapper untuk memberi ruang scroll pada Hero Section */}
-                <div ref={heroRef} className="h-[250vh]"> {/* <-- Ruang scroll ditambah */}
+                <div ref={heroRef} className="h-[270vh]"> {/* <-- Ruang scroll ditambah */}
                     <header className="h-screen flex items-center justify-center text-center px-4 sticky top-0">
                         <motion.div style={{ x: heroContentX, opacity: heroContentOpacity }}>
                             <motion.h1 
