@@ -1,9 +1,8 @@
-// src/pages/ModerasiPengurus.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, Edit, X, Check, PlusCircle, Power, ChevronLeft, Settings, CalendarCheck } from 'lucide-react'; // Import CalendarCheck icon
+import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, Edit, X, Check, PlusCircle, Power, ChevronLeft, Settings, CalendarCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 
@@ -94,7 +93,7 @@ export default function ModerasiPengurus() {
             if (periodeSekarang) {
                 const { data: pengurusData, error: pengurusError } = await supabase
                     .from('jabatan_pengurus')
-                    .select(`id, jabatan, profiles (nama_lengkap), bidang_pengurus (nama_bidang)`)
+                    .select(`id, jabatan, id_pengguna, profiles (nama_lengkap), bidang_pengurus (nama_bidang)`)
                     .eq('id_periode', periodeSekarang.id);
 
                 if (pengurusError) throw pengurusError;
@@ -192,65 +191,13 @@ export default function ModerasiPengurus() {
     const handleUpdateNamaPeriode = async () => { if (!editedPeriodeName) { alert("Nama periode tidak boleh kosong."); return; } try { const { error } = await supabase.from('periode_kepengurusan').update({ nama_periode: editedPeriodeName }).eq('id', periodeAktif.id); if (error) throw error; setIsEditingPeriode(false); fetchData(); } catch (err) { alert(`Gagal mengubah nama periode: ${err.message}`); } };
     const handleBuatPeriodeBaru = async () => { if (!newPeriodeName.trim()) { alert("Nama periode baru tidak boleh kosong."); return; } setIsCreatingPeriode(true); try { if (periodeAktif) { const { error: updateError } = await supabase.from('periode_kepengurusan').update({ sedang_berjalan: false }).eq('id', periodeAktif.id); if (updateError) throw updateError; } const { error: insertError } = await supabase.from('periode_kepengurusan').insert({ nama_periode: newPeriodeName, sedang_berjalan: true }); if (insertError) throw insertError; setIsCreateModalOpen(false); setNewPeriodeName(''); fetchData(); } catch (err) { alert(`Gagal membuat periode baru: ${err.message}`); } finally { setIsCreatingPeriode(false); } };
 
-    // Base style untuk tombol glassmorphism
     const baseButtonClass = "flex items-center justify-center gap-2 font-bold py-2 px-3 rounded-md transition-colors duration-200 border bg-white/5 border-white/10 hover:border-white/20 shadow-lg disabled:bg-gray-800 disabled:border-gray-600 disabled:text-gray-500 disabled:cursor-not-allowed";
     const iconButtonClass = "p-2 transition-colors duration-200 border bg-white/5 border-white/10 hover:border-white/20 rounded-md shadow-lg";
 
-    // Varian animasi untuk judul halaman
-    const titleVariants = {
-        hidden: { opacity: 0, y: 10 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.8,
-                ease: "easeOut",
-                delay: 0.5
-            }
-        }
-    };
-    const subtitleVariants = {
-        hidden: { opacity: 0, y: 10 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.8,
-                ease: "easeOut",
-                delay: 0.7
-            }
-        }
-    };
-
-    // Varian untuk setiap section
-    const sectionVariants = {
-        hidden: { opacity: 0, y: 50 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                type: "spring",
-                stiffness: 100,
-                damping: 12,
-                delayChildren: 0.2,
-                staggerChildren: 0.05
-            }
-        }
-    };
-
-    // Varian untuk judul setiap bidang (dalam konteks ini, judul section)
-    const headingVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.6,
-                ease: "easeOut"
-            }
-        }
-    };
-
+    const titleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.5 } } };
+    const subtitleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.7 } } };
+    const sectionVariants = { hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12, delayChildren: 0.2, staggerChildren: 0.05 } } };
+    const headingVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } };
 
     if (authLoading || loading) {
         return (
@@ -271,19 +218,14 @@ export default function ModerasiPengurus() {
 
     return (
         <div className="relative min-h-screen text-white">
-            {/* Fixed Background */}
-            <div
-                className="fixed inset-0 z-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${heroBg})` }}
-            >
-                <div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div> {/* Overlay gelap */}
+            <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}>
+                <div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div>
             </div>
 
-            {/* Konten Utama dengan z-index agar di atas background */}
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow pt-24 pb-12">
-                    {/* Menu Manajemen Pengurus (Mobile) */}
                     {role === 'admin' && (
+                        <>
                         <motion.div
                             initial={{ y: -50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
@@ -291,28 +233,14 @@ export default function ModerasiPengurus() {
                             className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit"
                         >
                             <nav className="flex space-x-4 justify-center">
-                                {/* Tombol Kembali ke Struktur Pengurus (MOBILE) */}
-                                <Link
-                                    to="/pengurus"
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
-                                    title="Kembali ke Struktur Pengurus"
-                                >
+                                <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Kembali ke Struktur Pengurus">
                                     <ChevronLeft size={20} />
                                 </Link>
-                                {/* Tombol Admin Pendaftaran (MOBILE) */}
-                                <Link
-                                    to="/admin-pendaftaran"
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200"
-                                    title="Admin Pendaftaran"
-                                >
-                                    <UserPlus size={20} /> {/* Menggunakan CalendarCheck untuk admin pendaftaran */}
+                                <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Admin Pendaftaran">
+                                    <UserPlus size={20} />
                                 </Link>
                             </nav>
                         </motion.div>
-                    )}
-
-                    {/* Menu Manajemen Pengurus (Desktop) - fixed di kiri */}
-                    {role === 'admin' && (
                         <motion.div
                             initial={{ x: -100, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
@@ -320,66 +248,29 @@ export default function ModerasiPengurus() {
                             className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex"
                         >
                             <nav className="space-y-3">
-                                {/* Tombol Kembali ke Struktur Pengurus (DESKTOP) */}
-                                <Link
-                                    to="/pengurus"
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
-                                    title="Kembali ke Struktur Pengurus"
-                                >
+                                <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Kembali ke Struktur Pengurus">
                                     <ChevronLeft size={20} />
                                 </Link>
-                                {/* Tombol Admin Pendaftaran (DESKTOP) */}
-                                <Link
-                                    to="/admin-pendaftaran"
-                                    className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block"
-                                    title="Admin Pendaftaran"
-                                >
-                                    <UserPlus size={20} /> {/* Menggunakan CalendarCheck untuk admin pendaftaran */}
+                                <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran">
+                                    <UserPlus size={20} />
                                 </Link>
                             </nav>
                         </motion.div>
+                        </>
                     )}
-                    {/* End Menu Manajemen Pengurus */}
 
-                    {/* Konten Utama */}
-                    {/* Perubahan di sini: md:px-20 untuk padding simetris di desktop */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-20 space-y-12">
                         <div className="text-center">
-                            {/* Animasi untuk Judul Halaman */}
-                            <motion.h1
-                                variants={titleVariants}
-                                initial="hidden"
-                                animate="visible"
-                                className="text-4xl md:text-6xl font-league uppercase text-accent mb-2 drop-shadow-lg"
-                            >
+                            <motion.h1 variants={titleVariants} initial="hidden" animate="visible" className="text-4xl md:text-6xl font-league uppercase text-accent mb-2 drop-shadow-lg">
                                 Moderasi Pengurus
                             </motion.h1>
-                            <motion.p
-                                variants={subtitleVariants}
-                                initial="hidden"
-                                animate="visible"
-                                className="text-gray-300 drop-shadow-md"
-                            >
+                            <motion.p variants={subtitleVariants} initial="hidden" animate="visible" className="text-gray-300 drop-shadow-md">
                                 Kelola periode kepengurusan dan anggota tim.
                             </motion.p>
                         </div>
 
-                        {/* Animasi untuk setiap Section */}
-                        <motion.section
-                            className="p-6 shadow-lg"
-                            style={glassmorphismStyle}
-                            variants={sectionVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.1 }} // Animasi saat 10% section terlihat
-                        >
-                            <motion.h2
-                                variants={headingVariants}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.5 }}
-                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
-                            ><ShieldCheck className="text-amber-400"/>Panel Kontrol Periode</motion.h2>
+                        <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                            <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold mb-4 flex items-center gap-3"><ShieldCheck className="text-amber-400"/>Panel Kontrol Periode</motion.h2>
                             <div className="space-y-4">
                                 <div className="flex flex-wrap items-center gap-4">
                                     <span className="font-medium">Periode Aktif Saat Ini:</span>
@@ -392,21 +283,18 @@ export default function ModerasiPengurus() {
                                         <span className="text-gray-400">Tidak ada periode aktif.</span>
                                     )}
                                 </div>
-
                                 <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                                     <label htmlFor="periode-select" className="block text-sm font-medium text-gray-400 mb-2">Ubah atau Buat Periode Baru</label>
                                     <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3">
                                         <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full md:w-auto bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-amber-500 focus:border-amber-500">
                                             {semuaPeriode.map(p => (<option key={p.id} value={p.id}>{p.nama_periode}</option>))}
                                         </select>
-
                                         {selectedPeriodeId && periodeAktif && selectedPeriodeId !== periodeAktif.id && (
                                             <button onClick={() => handleSetPeriodeAktif(selectedPeriodeId)} className={`${baseButtonClass} w-full md:w-auto text-blue-400`}>
                                                 <Power size={18} />
                                                 <span>Jadikan Aktif</span>
                                             </button>
                                         )}
-
                                         <button onClick={() => setIsCreateModalOpen(true)} className={`${baseButtonClass} w-full md:w-auto text-green-400`}>
                                             <PlusCircle size={18}/>
                                             <span>Buat Periode Baru</span>
@@ -416,21 +304,8 @@ export default function ModerasiPengurus() {
                             </div>
                         </motion.section>
 
-                        <motion.section
-                            className="p-6 shadow-lg"
-                            style={glassmorphismStyle}
-                            variants={sectionVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.1 }}
-                        >
-                            <motion.h2
-                                variants={headingVariants}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.5 }}
-                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
-                            ><UserPlus className="text-amber-400"/>Angkat Pengurus Baru</motion.h2>
+                        <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                            <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold mb-4 flex items-center gap-3"><UserPlus className="text-amber-400"/>Angkat Pengurus Baru</motion.h2>
                             <form onSubmit={handleTambahPengurus} className="grid md:grid-cols-4 gap-4 items-end">
                                 <div className="md:col-span-1">
                                     <label htmlFor="user-select" className="block text-sm font-medium text-gray-400 mb-1">Pengguna</label>
@@ -458,45 +333,35 @@ export default function ModerasiPengurus() {
                             </form>
                         </motion.section>
 
-                        <motion.section
-                            variants={sectionVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.1 }}
-                        >
-                            <motion.h2
-                                variants={headingVariants}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.5 }}
-                                className="text-2xl font-semibold mb-4 flex items-center gap-3"
-                            ><Users className="text-amber-400"/>Struktur Kepengurusan Aktif</motion.h2>
+                        <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                            <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold mb-4 flex items-center gap-3"><Users className="text-amber-400"/>Struktur Kepengurusan Aktif</motion.h2>
                             <div className="space-y-6">
                                 {Object.keys(pengurus).length > 0 ? Object.keys(pengurus).map(bidang => (
-                                    <motion.div
-                                        key={bidang}
-                                        className="p-4"
-                                        style={glassmorphismStyle}
-                                        variants={{
-                                            hidden: { opacity: 0, y: 20 },
-                                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, type: "spring", stiffness: 150, damping: 20 } }
-                                        }}
-                                    >
+                                    <motion.div key={bidang} className="p-4" style={glassmorphismStyle} variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, type: "spring", stiffness: 150, damping: 20 } } }}>
                                         <h3 className="text-xl font-semibold text-amber-400 mb-3">{bidang}</h3>
                                         <ul className="space-y-2">
                                             {pengurus[bidang].map(p => (
+                                                // --- PERUBAHAN UTAMA DI SINI ---
                                                 <motion.li
                                                     key={p.id}
-                                                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-700/50 p-2 rounded-md"
+                                                    // Layout diubah agar selalu horizontal & item di tengah
+                                                    className="flex flex-row justify-between items-center bg-gray-700/50 p-2 rounded-md"
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ duration: 0.3, delay: 0.1 }}
                                                 >
-                                                    <div>
-                                                        <p className="font-medium pl-2">{p.profiles.nama_lengkap}</p>
-                                                        <p className="text-sm pl-2 text-gray-400">{p.jabatan}</p>
+                                                    {/* Container untuk teks dibuat fleksibel agar bisa memendek */}
+                                                    <div className="flex-grow min-w-0 mr-2"> 
+                                                        {/* Ukuran font responsif dan truncate untuk nama */}
+                                                        <p className="font-medium text-sm sm:text-base truncate">{p.profiles.nama_lengkap}</p>
+                                                        {/* Ukuran font responsif dan truncate untuk jabatan */}
+                                                        <p className="text-xs sm:text-sm text-gray-400 truncate">{p.jabatan}</p>
                                                     </div>
-                                                    <button onClick={() => handleHapusPengurus(p)} className={`${iconButtonClass} text-red-500 mt-2 sm:mt-0`}>
+                                                    {/* Tombol hapus dibuat agar tidak mengecil */}
+                                                    <button 
+                                                        onClick={() => handleHapusPengurus(p)} 
+                                                        className={`${iconButtonClass} text-red-500 flex-shrink-0`}
+                                                    >
                                                         <Trash2 size={18}/>
                                                     </button>
                                                 </motion.li>
@@ -512,7 +377,6 @@ export default function ModerasiPengurus() {
                 <Footer />
             </div>
 
-            {/* Modal Tambah Periode Baru */}
             <AnimatePresence>
                 {isCreateModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={() => setIsCreateModalOpen(false)}>
@@ -534,7 +398,6 @@ export default function ModerasiPengurus() {
                 )}
             </AnimatePresence>
 
-            {/* Modal Konfirmasi Hapus Pengurus */}
             <AnimatePresence>
                 {isDeleteConfirmModalOpen && pengurusToDelete && (
                     <motion.div
@@ -560,18 +423,10 @@ export default function ModerasiPengurus() {
                                 Tindakan ini tidak dapat dibatalkan.
                             </p>
                             <div className="flex flex-col sm:flex-row justify-center gap-3">
-                                <button
-                                    onClick={cancelDeletePengurus}
-                                    className={`${baseButtonClass} flex-1 text-gray-300`}
-                                    disabled={isSubmitting}
-                                >
+                                <button onClick={cancelDeletePengurus} className={`${baseButtonClass} flex-1 text-gray-300`} disabled={isSubmitting}>
                                     Batal
                                 </button>
-                                <button
-                                    onClick={confirmDeletePengurus}
-                                    className={`${baseButtonClass} flex-1 bg-red-600/50 hover:bg-red-700/50 text-white`}
-                                    disabled={isSubmitting}
-                                >
+                                <button onClick={confirmDeletePengurus} className={`${baseButtonClass} flex-1 bg-red-600/50 hover:bg-red-700/50 text-white`} disabled={isSubmitting}>
                                     {isSubmitting ? <LoaderCircle className="animate-spin" /> : <Check size={20} />} Ya, Hapus
                                 </button>
                             </div>

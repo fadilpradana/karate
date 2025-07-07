@@ -30,6 +30,7 @@ import TulisPengumumanBaru from './pages/TulisPengumumanBaru.jsx';
 import ModerasiPengumuman from './pages/ModerasiPengumuman.jsx';
 import AdminPendaftaran from './pages/AdminPendaftaran';
 import ModerasiPengurus from './pages/ModerasiPengurus';
+import DataPendaftar from './pages/DataPendaftar';
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -82,6 +83,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Pendaftaran />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'data-pendaftar',
+        element: (
+          <ProtectedRoute>
+            <DataPendaftar />
           </ProtectedRoute>
         ),
       },
