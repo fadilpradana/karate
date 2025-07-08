@@ -36,7 +36,15 @@ const ErrorModal = ({ message, onClose }) => {
                 <motion.div
                     initial={{ scale: 0, rotate: 0 }}
                     animate={{ scale: 1, rotate: [0, -10, 10, -10, 10, 0] }} // Animasi bergoyang untuk error
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 10, duration: 0.5 }}
+                    // --- PERBAIKAN DI SINI ---
+                    // Tipe transisi dipisah untuk setiap properti animasi.
+                    // 'rotate' menggunakan 'tween' yang mendukung banyak keyframe.
+                    // 'scale' tetap menggunakan 'spring'.
+                    transition={{
+                        delay: 0.2,
+                        scale: { type: 'spring', stiffness: 200, damping: 10 },
+                        rotate: { type: 'tween', duration: 0.5 }
+                    }}
                 >
                     <AlertTriangle className="text-red-500" size={64} strokeWidth={1.5} />
                 </motion.div>

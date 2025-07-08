@@ -57,10 +57,9 @@ export default function Kontak() {
 
     useEffect(() => {
         if (humasContacts.length > 1) {
-            // --- PERUBAHAN: Interval diubah menjadi 8 detik ---
             const timer = setInterval(() => {
                 setCurrentHumasIndex(prevIndex => (prevIndex + 1) % humasContacts.length);
-            }, 8000); // Berganti setiap 8 detik
+            }, 8000);
 
             return () => clearInterval(timer);
         }
@@ -148,14 +147,19 @@ export default function Kontak() {
                                 karate@stmkg.ac.id
                             </p>
                             
+                            {/* --- PERUBAHAN DI SINI --- */}
                             <div className="flex items-start gap-3 text-base md:text-lg min-h-[28px]">
                                 <Phone className="text-[#FF9F1C] w-5 h-5 flex-shrink-0 mt-1" />
                                 {loadingHumas ? (
                                     <span className="text-gray-400">Memuat kontak...</span>
                                 ) : humasContacts.length > 0 ? (
                                     <AnimatePresence mode="wait">
-                                        <motion.div
+                                        <motion.a
                                             key={currentHumasIndex}
+                                            href={`https://wa.me/${humasContacts[currentHumasIndex].telepon.replace(/^0/, '62')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:text-[#FF9F1C] transition-colors duration-200"
                                             variants={phoneVariants}
                                             initial="initial"
                                             animate="animate"
@@ -163,12 +167,11 @@ export default function Kontak() {
                                         >
                                             <p className="whitespace-nowrap">
                                                 {humasContacts[currentHumasIndex].telepon}
-                                                {/* --- PERUBAHAN: Tanda hubung (-) dihapus --- */}
                                                 <span className="text-gray-400 ml-2 text-xs">
                                                     {humasContacts[currentHumasIndex].nama}
                                                 </span>
                                             </p>
-                                        </motion.div>
+                                        </motion.a>
                                     </AnimatePresence>
                                 ) : (
                                     <span>Kontak Humas tidak tersedia</span>

@@ -14,6 +14,7 @@ function SignUp() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState(''); // State untuk konfirmasi password
     const [username, setUsername] = useState('');
     const [namaLengkap, setNamaLengkap] = useState('');
     const [nomorTelepon, setNomorTelepon] = useState('');
@@ -68,6 +69,13 @@ function SignUp() {
 
     const handleSignUp = async (e) => {
         e.preventDefault();
+
+        // Validasi konfirmasi password
+        if (password !== confirmPassword) {
+            setErrorMessage('Password dan konfirmasi password tidak cocok.');
+            return;
+        }
+
         setLoading(true);
         setSuccessMessage('');
         setErrorMessage('');
@@ -245,12 +253,12 @@ function SignUp() {
                             </div>
 
                             {/* Right Column for Username and Nama Lengkap */}
-                            <div className="flex flex-col justify-between w-full"> {/* Changed to flex-col and justify-between */}
+                            <div className="flex flex-col justify-between w-full">
                                 <div>
                                     <label className="block mb-1 text-sm text-gray-300">Username</label>
                                     <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className={inputStyle}/>
                                 </div>
-                                <div className="mt-4 sm:mt-auto"> {/* Added mt-4 for mobile, sm:mt-auto for desktop alignment */}
+                                <div className="mt-4 sm:mt-auto">
                                     <label className="block mb-1 text-sm text-gray-300">Nama Lengkap</label>
                                     <input type="text" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} required className={inputStyle}/>
                                 </div>
@@ -269,6 +277,8 @@ function SignUp() {
                         <div className="space-y-4">
                             <div><label className="block mb-1 text-sm text-gray-300">Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputStyle}/></div>
                             <div><label className="block mb-1 text-sm text-gray-300">Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputStyle}/></div>
+                            {/* Input untuk konfirmasi password */}
+                            <div><label className="block mb-1 text-sm text-gray-300">Konfirmasi Password</label><input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className={inputStyle}/></div>
                         </div>
                         <button type="submit" disabled={loading || isCompressingAvatar} className={glassButtonStyle}>
                             <span className="transition-colors duration-300 group-hover:battery-style-gradient">

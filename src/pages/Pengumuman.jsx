@@ -155,7 +155,7 @@ export default function Pengumuman() {
                     <div className="max-w-4xl mx-auto">
                         <motion.h1 
                             initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                            className="text-4xl sm:text-5xl font-bold text-center mb-4 text-[#FF9F1C]"
+                            className="text-5xl sm:text-7xl uppercase font-league text-center mb-4 text-accent"
                         >
                             PAPAN PENGUMUMAN
                         </motion.h1>

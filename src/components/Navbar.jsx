@@ -29,15 +29,10 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // 1. Mengambil data otentikasi langsung dari AuthContext
-  // Ini adalah sumber kebenaran tunggal untuk role dan status sesi.
   const { session, signOut, role, loading: authLoading } = useAuth();
   
-  // State untuk mengontrol visibilitas tombol "Daftar"
-  // Default `true` (tersembunyi) untuk keamanan.
   const [sudahMendaftar, setSudahMendaftar] = useState(true);
 
-  // State lainnya untuk fungsionalitas UI Navbar
   const [menuOpen, setMenuOpen] = useState(false);
   const [indicatorProps, setIndicatorProps] = useState({ left: 0, width: 0 });
   const navLinksRefs = useRef([]);
@@ -46,18 +41,12 @@ export default function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutFeedback, setLogoutFeedback] = useState({ message: '', type: null });
 
-  // 2. useEffect yang efisien untuk memeriksa status pendaftaran
-  // Hanya berjalan jika pengguna adalah 'anggota'.
   useEffect(() => {
-    // Tombol disembunyikan jika:
-    // - AuthContext masih loading.
-    // - Pengguna bukan 'anggota' (termasuk belum login atau role lain).
     if (authLoading || role?.toLowerCase() !== 'anggota') {
       setSudahMendaftar(true);
       return;
     }
 
-    // Fungsi ini hanya akan berjalan untuk pengguna dengan role 'anggota'.
     const checkRegistrationStatus = async () => {
       try {
         const { data: periodeAktif, error: periodeError } = await supabase
@@ -67,7 +56,7 @@ export default function Navbar() {
           .single();
 
         if (periodeError || !periodeAktif) {
-          setSudahMendaftar(true); // Sembunyikan jika tidak ada periode aktif
+          setSudahMendaftar(true);
           return;
         }
 
@@ -79,12 +68,11 @@ export default function Navbar() {
 
         if (pendaftaranError) throw pendaftaranError;
         
-        // Jika count > 0, pengguna sudah mendaftar.
         setSudahMendaftar(count > 0);
         
       } catch (error) {
         console.error('Gagal memeriksa status pendaftaran:', error.message);
-        setSudahMendaftar(true); // Sembunyikan tombol jika terjadi error
+        setSudahMendaftar(true);
       }
     };
 
@@ -93,7 +81,6 @@ export default function Navbar() {
   }, [session, role, authLoading, location.pathname]);
 
 
-  // --- Hooks untuk optimasi dan fungsionalitas UI ---
   const allMainLinks = useMemo(() => (
     session
       ? staticNavLinks
@@ -171,8 +158,7 @@ export default function Navbar() {
     }
   }, [location.pathname, allMainLinks, isArtikelActive, isPengumumanActive]);
 
-  // --- Style & Animasi ---
-  const baseRightNavLinkClass = "hidden md:flex items-center px-3 py-1 text-xs font-medium rounded-md border transition-all duration-300";
+  const baseRightNavLinkClass = "hidden lg:flex items-center px-3 py-1 text-xs font-medium rounded-md border transition-all duration-300";
   const getPengurusClass = () => location.pathname === pengurusLink.path ? `${baseRightNavLinkClass} border-[#FF9F1C] bg-transparent text-white hover:text-[#FF9F1C] hover:border-[#FF9F1C]` : `${baseRightNavLinkClass} text-white border-white bg-transparent hover:text-[#FF9F1C] hover:border-[#FF9F1C]`;
   const mainContainerVariants = { hidden: { opacity: 0, clipPath: 'inset(0% 100% 0% 0%)' }, visible: { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)', transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1], delay: 0.2, when: "beforeChildren", staggerChildren: 0.05 } } };
   const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } };
@@ -184,15 +170,14 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-2 left-2 w-full z-50 px-2 md:px-6">
-        <div ref={navInnerContainerRef} className="max-w-7xl mx-auto py-2 flex justify-between items-center relative md:px-0">
+      <nav className="fixed top-2 left-2 w-full z-50 px-2 lg:px-6">
+        <div ref={navInnerContainerRef} className="max-w-7xl mx-auto py-2 flex justify-between items-center relative lg:px-0">
           
-          {/* --- Sisi Kiri Navbar --- */}
-          <div className="flex items-center pl-1 md:pl-0 md:space-x-2">
+          <div className="flex items-center pl-1 lg:pl-0 lg:space-x-2">
             <Link to="/" className="relative z-10 flex-none"><img src={logo} alt="Logo Karate" className="w-9 h-9 rounded-full object-contain flex-shrink-0 hover:opacity-90 transition duration-200" /></Link>
-            <div className="flex flex-col ml-1 md:hidden"><span className="leading-none font-[Montserrat] font-thin" style={{ fontSize: '0.5rem', letterSpacing: '0.05em' }}>KARATE</span><span className="leading-none ml-[0.03rem] font-[Montserrat] font-thin" style={{ fontSize: '0.35rem', letterSpacing: '0.6em' }}>STMKG</span></div>
-            <div className="hidden md:block rounded-md">
-              <motion.div className="md:flex relative items-center gap-1 backdrop-blur-md bg-white/10 px-1 py-1 rounded-md shadow-sm" variants={mainContainerVariants} initial="hidden" animate="visible">
+            <div className="flex flex-col ml-1 lg:hidden"><span className="leading-none font-[Montserrat] font-thin" style={{ fontSize: '0.5rem', letterSpacing: '0.05em' }}>KARATE</span><span className="leading-none ml-[0.03rem] font-[Montserrat] font-thin" style={{ fontSize: '0.35rem', letterSpacing: '0.6em' }}>STMKG</span></div>
+            <div className="hidden lg:block rounded-md">
+              <motion.div className="lg:flex relative items-center gap-1 backdrop-blur-md bg-white/10 px-1 py-1 rounded-md shadow-sm" variants={mainContainerVariants} initial="hidden" animate="visible">
                 {indicatorProps.width > 0 && (<motion.div className="absolute top-1 bottom-1 rounded-md z-0" animate={{ left: indicatorProps.left, width: indicatorProps.width }} transition={{ duration: 0.3, ease: "easeInOut" }} style={glassFrameStyle} />)}
                 {staticNavLinks.map((link, index) => {
                   let isActive = false;
@@ -224,11 +209,9 @@ export default function Navbar() {
             </div>
           </div>
           
-          {/* --- Sisi Kanan Navbar --- */}
-          <div className="flex items-center pr-4 md:pr-0 space-x-2">
+          <div className="flex items-center pr-4 lg:pr-0 space-x-2">
             {session && (
               <>
-                {/* Menggunakan `role` dari context untuk menampilkan link admin */}
                 {role === 'admin' && (
                   <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
                     <Link to={kelolaPrestasiLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
@@ -238,7 +221,6 @@ export default function Navbar() {
                   </motion.div>
                 )}
                 
-                {/* 3. Kondisi render yang akurat untuk tombol "Daftar" */}
                 {role === 'anggota' && !sudahMendaftar && (
                   <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
                     <Link to={daftarLink.path} className={`${baseRightNavLinkClass} border-transparent relative`}>
@@ -259,52 +241,61 @@ export default function Navbar() {
             <motion.div variants={pengurusLinkVariants} initial="hidden" animate="visible">
               <Link to={pengurusLink.path} ref={pengurusRef} className={`${getPengurusClass()}`}>{pengurusLink.name}</Link>
             </motion.div>
-            <button className={`md:hidden transition-colors duration-300 text-white relative z-[60] ml-4`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+            <button className={`lg:hidden transition-colors duration-300 text-white relative z-[60] ml-4`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
           </div>
         </div>
 
         {/* --- Menu Mobile --- */}
         <AnimatePresence>
           {menuOpen && (
-            <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 md:hidden z-50" variants={mobileMenuVariants} initial="hidden" animate="visible" exit="exit">
-              {allMainLinks.map((link) => {
-                let isActive = false;
-                if (link.path === '/artikel') { isActive = isArtikelActive; } 
-                else if (link.path === '/pengumuman') { isActive = isPengumumanActive; } 
-                else { isActive = location.pathname === link.path; }
-                
-                return (
-                  <motion.div key={`mobile-${link.path}`} variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
-                    <Link to={link.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${isActive ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>
-                      {link.name}
-                    </Link>
-                  </motion.div>
-                );
-              })}
-              <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
-              {session && (<>
-                {role === 'admin' && (
+            // PERBAIKAN: Menggunakan wrapper untuk centering dan scrolling
+            <motion.div 
+              className="fixed inset-0 bg-black/80 backdrop-blur-lg flex flex-col items-center overflow-y-auto p-4 lg:hidden z-50" 
+              variants={mobileMenuVariants} 
+              initial="hidden" 
+              animate="visible" 
+              exit="exit"
+            >
+              <div className="flex flex-col items-center justify-center m-auto space-y-6">
+                {allMainLinks.map((link) => {
+                  let isActive = false;
+                  if (link.path === '/artikel') { isActive = isArtikelActive; } 
+                  else if (link.path === '/pengumuman') { isActive = isPengumumanActive; } 
+                  else { isActive = location.pathname === link.path; }
+                  
+                  return (
+                    <motion.div key={`mobile-${link.path}`} variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                      <Link to={link.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${isActive ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>
+                        {link.name}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+                <motion.div key="mobile-pengurus" variants={mobileMenuItemVariants} onClick={handleNavLinkClick}><Link to={pengurusLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === pengurusLink.path ? "text-[#FF9F1C]" : "text-white hover:text-[#FF9F1C]"}`}>{pengurusLink.name}</Link></motion.div>
+                {session && (<>
+                  {role === 'admin' && (
+                    <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                      <Link to={kelolaPrestasiLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === kelolaPrestasiLink.path ? "text-teal-300" : "text-white hover:text-teal-300"}`}>{kelolaPrestasiLink.name}</Link>
+                    </motion.div>
+                  )}
+
+                  {role === 'anggota' && !sudahMendaftar && (
+                    <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
+                      <Link to={daftarLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === daftarLink.path ? "text-amber-400" : "text-white hover:text-amber-400"}`}>
+                        {daftarLink.name}
+                      </Link>
+                    </motion.div>
+                  )}
+
                   <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
-                    <Link to={kelolaPrestasiLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === kelolaPrestasiLink.path ? "text-teal-300" : "text-white hover:text-teal-300"}`}>{kelolaPrestasiLink.name}</Link>
+                    <Link to={dashboardLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === dashboardLink.path ? "text-green-400" : "text-white hover:text-green-400"}`}>{dashboardLink.name}</Link>
                   </motion.div>
-                )}
 
-                {role === 'anggota' && !sudahMendaftar && (
-                  <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
-                    <Link to={daftarLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === daftarLink.path ? "text-amber-400" : "text-white hover:text-amber-400"}`}>
-                      {daftarLink.name}
-                    </Link>
+                  <motion.div variants={mobileMenuItemVariants}>
+                    <button onClick={handleLogout} className="text-2xl font-league uppercase text-white hover:text-red-400 transition-colors">Logout</button>
                   </motion.div>
-                )}
-
-                <motion.div variants={mobileMenuItemVariants} onClick={handleNavLinkClick}>
-                  <Link to={dashboardLink.path} className={`text-2xl font-league uppercase transition-colors duration-200 ${location.pathname === dashboardLink.path ? "text-green-400" : "text-white hover:text-green-400"}`}>{dashboardLink.name}</Link>
-                </motion.div>
-
-                <motion.div variants={mobileMenuItemVariants}>
-                  <button onClick={handleLogout} className="text-2xl font-league uppercase text-white hover:text-red-400 transition-colors">Logout</button>
-                </motion.div>
-              </>)}
+                </>)}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
