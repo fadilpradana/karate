@@ -10,6 +10,9 @@ import Footer from '../components/Footer';
 import { CheckCircle, AlertTriangle, Edit, ChevronDown, Trash2, Camera, Eye, X, Loader2, Replace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Path yang sudah dikonfirmasi: dari /src/pages/dashboard.jsx ke /src/assets/bg11.jpg
+import bgImage from '../assets/bg11.jpg';
+
 // Komponen Modal
 import Modal from '../components/Modal';
 
@@ -358,12 +361,10 @@ function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [updateStatus, setUpdateStatus] = useState({ message: '', type: null });
-    
     const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [viewerImageUrl, setViewerImageUrl] = useState(null);
     const [actionSheetActions, setActionSheetActions] = useState([]);
-
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [editFormData, setEditFormData] = useState({});
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
@@ -372,7 +373,7 @@ function Dashboard() {
     const [isUploadingAdminAvatar, setIsUploadingAdminAvatar] = useState(false);
     const [isAvatarRemovedByAdmin, setIsAvatarRemovedByAdmin] = useState(false);
     const adminFileInputRef = useRef(null);
-
+    
     useEffect(() => {
         const fetchInitialData = async () => {
             setLoading(true);
@@ -553,7 +554,8 @@ function Dashboard() {
             setAllProfiles(prev => prev.filter(p => p.id !== profileToDelete.id));
             showUpdateFeedback(`Profil ${profileToDelete.username} berhasil dihapus!`, 'success');
             setProfileToDelete(null);
-        } catch (err) {
+        } catch (err)
+ {
             showUpdateFeedback(`Gagal menghapus akun: ${err.message || 'Error tidak diketahui'}`, 'error');
         } finally {
             setLoading(false);
@@ -571,22 +573,153 @@ function Dashboard() {
 
     if (loading && !myProfile) return <div className="flex justify-center items-center min-h-screen text-white text-lg">Memuat data...</div>;
     if (error) return <div className="flex justify-center items-center min-h-screen text-red-500 text-lg">Error: {error}</div>;
-    
+
     const inputStyle = "w-full px-3 py-2 text-sm bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white";
     const labelStyle = "block mb-1 text-[10px] text-gray-400 uppercase";
-    const glassButtonStyle = "flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors";
 
     return (
-        <div className="flex flex-col min-h-screen pt-24">
-            <main className="flex-grow flex flex-col justify-start items-center pb-12 px-4">
-                {myProfile?.role === 'admin' ? (
-                    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-7xl">
-                        <motion.div variants={titleVariants} className="text-center mb-8">
-                            <h1 className="text-2xl font-bold text-white">Selamat Datang,</h1>
-                            <div className="text-4xl mt-1 font-bold battery-style-gradient">{myProfile.nama_lengkap}!</div>
-                        </motion.div>
-                        <motion.div variants={containerVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <motion.div variants={itemVariants} className="lg:col-span-1">
+        <div className="relative min-h-screen">
+            
+            <div className="fixed inset-0 z-0">
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bgImage})` }}
+                />
+                <div className="absolute inset-0 bg-black/70" />
+            </div>
+
+            <div className="relative z-10 flex flex-col min-h-screen">
+                 <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="flex flex-col flex-grow"
+                >
+                    <main className="flex-grow flex flex-col justify-start items-center pt-24 pb-12 px-4">
+                        {myProfile?.role === 'admin' ? (
+                            <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-7xl">
+                                <motion.div variants={titleVariants} className="text-center mb-8">
+                                    <h1 className="text-2xl font-bold text-white">Selamat Datang,</h1>
+                                    <div className="text-4xl mt-1 font-bold battery-style-gradient">{myProfile.nama_lengkap}!</div>
+                                </motion.div>
+                                <motion.div variants={containerVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <motion.div variants={itemVariants} className="lg:col-span-1">
+                                        <ProfileCard 
+                                            profileData={myProfile} 
+                                            session={session} 
+                                            onUpdate={handleUpdateMyProfile} 
+                                            isMyProfile={true} 
+                                            onLogout={handleLogout}
+                                            onViewAvatar={handleOpenImageViewer}
+                                            onEditAvatar={handleOpenActionSheet}
+                                        />
+                                    </motion.div>
+                                    <motion.div variants={itemVariants} className="lg:col-span-2">
+                                        <div className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
+                                            <h2 className="text-xl font-bold text-white mb-4">Manajemen Pengguna ({allProfiles.length})</h2>
+                                            
+                                            <div className="space-y-2">
+                                                {allProfiles.map(p => (
+                                                    <React.Fragment key={p.id}>
+                                                        {/* [DIKEMBALIKAN] Logika untuk menampilkan setiap pengguna */}
+                                                        <div className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
+                                                            <div className="flex items-center gap-3 flex-grow min-w-0">
+                                                                <div
+                                                                    className="relative group w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0 cursor-pointer"
+                                                                    onClick={() => handleOpenImageViewer(p.avatar_url)}
+                                                                >
+                                                                    {p.avatar_url ? (
+                                                                        <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover"/>
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                            <Camera size={20} className="text-gray-500"/>
+                                                                        </div>
+                                                                    )}
+                                                                    {p.avatar_url && (
+                                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                            <Eye size={20} className="text-white" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="font-bold text-white truncate">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400">({p.username})</span></p>
+                                                                    <p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                <button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20"><Edit size={16} className="text-white"/></button>
+                                                                <button onClick={() => confirmDeleteProfile(p)} className="p-2 rounded-md hover:bg-red-500/20"><Trash2 size={16} className="text-red-400"/></button>
+                                                            </div>
+                                                        </div>
+
+                                                        <AnimatePresence>
+                                                        {selectedProfile && selectedProfile.id === p.id && (
+                                                            <motion.div 
+                                                                initial={{opacity: 0, height: 0, marginTop: 0}} 
+                                                                animate={{opacity: 1, height: 'auto', marginTop: '0.5rem'}} 
+                                                                exit={{opacity: 0, height: 0, marginTop: 0}} 
+                                                                transition={{ ease: "easeInOut", duration: 0.3 }} 
+                                                                className="overflow-hidden"
+                                                            >
+                                                                <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
+                                                                    <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
+                                                                        <AvatarEditor 
+                                                                            initialUrl={editFormData.avatar_url}
+                                                                            isUploading={isUploadingAdminAvatar}
+                                                                            fileInputRef={adminFileInputRef}
+                                                                            onFileChange={handleAdminAvatarFileChange}
+                                                                            onView={handleOpenImageViewer}
+                                                                            onRemove={handleAdminRemoveAvatar}
+                                                                            onEdit={() => handleOpenActionSheet({
+                                                                                onShow: () => handleOpenImageViewer(editFormData.avatar_url),
+                                                                                onReplace: () => adminFileInputRef.current.click(),
+                                                                                onRemove: handleAdminRemoveAvatar,
+                                                                                avatarUrl: editFormData.avatar_url
+                                                                            })}
+                                                                        />
+                                                                        <div className="space-y-3 w-full">
+                                                                            <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                            <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div><label className={labelStyle}>Email</label><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
+                                                                    <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                                        <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                        <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                        <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className={labelStyle}>Role</label>
+                                                                        <div className="relative">
+                                                                            <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                                                                <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
+                                                                                <option value="calon pengurus" className="bg-gray-900 text-white">Calon Pengurus</option>
+                                                                                <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
+                                                                                <option value="admin" className="bg-gray-900 text-white">Admin</option>
+                                                                            </select>
+                                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex justify-end gap-3 pt-2">
+                                                                        <button type="button" onClick={() => setSelectedProfile(null)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white">Batal</button>
+                                                                        <button type="submit" disabled={loading || isUploadingAdminAvatar} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-md border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white hover:border-blue-400">{loading ? 'Menyimpan...' : 'Simpan'}</button>
+                                                                    </div>
+                                                                </form>
+                                                            </motion.div>
+                                                        )}
+                                                        </AnimatePresence>
+                                                    </React.Fragment>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            </motion.div>
+                        ) : (
+                            myProfile && <motion.div variants={itemVariants} initial="hidden" animate="visible">
                                 <ProfileCard 
                                     profileData={myProfile} 
                                     session={session} 
@@ -597,127 +730,12 @@ function Dashboard() {
                                     onEditAvatar={handleOpenActionSheet}
                                 />
                             </motion.div>
-                            <motion.div variants={itemVariants} className="lg:col-span-2">
-                                <div className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
-                                    <h2 className="text-xl font-bold text-white mb-4">Manajemen Pengguna ({allProfiles.length})</h2>
-                                    
-                                    <div className="space-y-2">
-                                        {allProfiles.map(p => (
-                                            <React.Fragment key={p.id}>
-                                                <div className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
-                                                    <div className="flex items-center gap-3 flex-grow min-w-0">
-                                                        <div
-                                                            className="relative group w-10 h-10 rounded-md overflow-hidden bg-black/30 flex-shrink-0 cursor-pointer"
-                                                            onClick={() => handleOpenImageViewer(p.avatar_url)}
-                                                        >
-                                                            {p.avatar_url ? (
-                                                                <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover"/>
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center">
-                                                                    <Camera size={20} className="text-gray-500"/>
-                                                                </div>
-                                                            )}
-                                                            {p.avatar_url && (
-                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                    <Eye size={20} className="text-white" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-bold text-white truncate">{p.nama_lengkap} <span className="text-xs font-normal text-gray-400">({p.username})</span></p>
-                                                            <p className="text-xs text-gray-400 capitalize">{p.angkatan} &middot; {p.role}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                                        <button onClick={() => handleSelectProfileToEdit(p)} className="p-2 rounded-md hover:bg-white/20"><Edit size={16} className="text-white"/></button>
-                                                        <button onClick={() => confirmDeleteProfile(p)} className="p-2 rounded-md hover:bg-red-500/20"><Trash2 size={16} className="text-red-400"/></button>
-                                                    </div>
-                                                </div>
+                        )}
+                    </main>
+                    <Footer />
+                </motion.div>
+            </div>
 
-                                                <AnimatePresence>
-                                                {selectedProfile && selectedProfile.id === p.id && (
-                                                    <motion.div 
-                                                        initial={{opacity: 0, height: 0, marginTop: 0}} 
-                                                        animate={{opacity: 1, height: 'auto', marginTop: '0.5rem'}} 
-                                                        exit={{opacity: 0, height: 0, marginTop: 0}} 
-                                                        transition={{ ease: "easeInOut", duration: 0.3 }} 
-                                                        className="overflow-hidden"
-                                                    >
-                                                        <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
-                                                            <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
-                                                            <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
-                                                                <AvatarEditor 
-                                                                    initialUrl={editFormData.avatar_url}
-                                                                    isUploading={isUploadingAdminAvatar}
-                                                                    fileInputRef={adminFileInputRef}
-                                                                    onFileChange={handleAdminAvatarFileChange}
-                                                                    onView={handleOpenImageViewer}
-                                                                    onRemove={handleAdminRemoveAvatar}
-                                                                    onEdit={() => handleOpenActionSheet({
-                                                                        onShow: () => handleOpenImageViewer(editFormData.avatar_url),
-                                                                        onReplace: () => adminFileInputRef.current.click(),
-                                                                        onRemove: handleAdminRemoveAvatar,
-                                                                        avatarUrl: editFormData.avatar_url
-                                                                    })}
-                                                                />
-                                                                <div className="space-y-3 w-full">
-                                                                    <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                    <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <div><label className={labelStyle}>Email</label><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
-                                                            <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                            </div>
-                                                            <div>
-                                                                <label className={labelStyle}>Role</label>
-                                                                <div className="relative">
-                                                                    {/* [PERBAIKAN] Tambahkan 'calon pengurus' di sini */}
-                                                                    <select name="role" value={editFormData.role || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
-                                                                        <option value="anggota" className="bg-gray-900 text-white">Anggota</option>
-                                                                        <option value="calon pengurus" className="bg-gray-900 text-white">Calon Pengurus</option>
-                                                                        <option value="pengurus" className="bg-gray-900 text-white">Pengurus</option>
-                                                                        <option value="admin" className="bg-gray-900 text-white">Admin</option>
-                                                                    </select>
-                                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-end gap-3 pt-2">
-                                                                <button type="button" onClick={() => setSelectedProfile(null)} className={`${glassButtonStyle} text-white`}>Batal</button>
-                                                                <button type="submit" disabled={loading || isUploadingAdminAvatar} className={`${glassButtonStyle} text-white hover:border-blue-400`}>{loading ? 'Menyimpan...' : 'Simpan'}</button>
-                                                            </div>
-                                                        </form>
-                                                    </motion.div>
-                                                )}
-                                                </AnimatePresence>
-                                            </React.Fragment>
-                                        ))}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </motion.div>
-                ) : (
-                    myProfile && <motion.div variants={itemVariants} initial="hidden" animate="visible">
-                        <ProfileCard 
-                            profileData={myProfile} 
-                            session={session} 
-                            onUpdate={handleUpdateMyProfile} 
-                            isMyProfile={true} 
-                            onLogout={handleLogout}
-                            onViewAvatar={handleOpenImageViewer}
-                            onEditAvatar={handleOpenActionSheet}
-                        />
-                    </motion.div>
-                )}
-            </main>
-
-            <Footer />
-            
             <AnimatePresence>
                 {updateStatus.type && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.3 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.5 }} transition={{ ease: "easeOut", duration: 0.4 }} className={`fixed bottom-5 right-5 z-[100] flex items-center gap-4 p-4 rounded-lg border bg-white/10 backdrop-blur-md ${updateStatus.type === 'success' ? 'border-green-500/50' : 'border-red-500/50'}`}>{updateStatus.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-400" /> : <AlertTriangle className="h-6 w-6 text-red-400" />}<p className="text-white">{updateStatus.message}</p></motion.div>)}
             </AnimatePresence>

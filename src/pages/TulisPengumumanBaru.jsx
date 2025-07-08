@@ -153,7 +153,7 @@ export default function TulisPengumumanBaru() {
                         className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 w-full max-w-3xl"
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                     >
-                        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-6 text-[#FF9F1C]">Tulis Pengumuman Baru</h1>
+                        <h1 className="text-4xl sm:text-6xl font-league text-center mb-6 text-accent uppercase">Tulis Pengumuman Baru</h1>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
                                 <label htmlFor="judul" className="block text-gray-300 text-sm font-medium mb-2">Judul Pengumuman</label>

@@ -306,7 +306,7 @@ export default function ModerasiPengumuman() {
                         </nav>
                     </motion.div>
                     
-                    <h1 className="text-3xl sm:text-5xl font-bold text-center mb-10 text-[#FF9F1C]">
+                    <h1 className="text-4xl sm:text-6xl uppercase font-league text-center mb-10 text-accent">
                         Moderasi Pengumuman
                     </h1>
                     

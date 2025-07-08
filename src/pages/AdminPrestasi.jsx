@@ -5,6 +5,9 @@ import { X, Plus, Edit, Trash, Loader2, UploadCloud, ArrowLeft, AlertTriangle } 
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; 
 
+// Import gambar background
+import bg10 from '../assets/bg10.jpg';
+
 import Footer from '../components/Footer';
 
 const glassButtonClasses = "flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
@@ -48,15 +51,13 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
     );
 };
 
-const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompressing }) => {
+const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompressing, style }) => {
     const [formData, setFormData] = useState(currentPrestasi);
     const [imagePreview, setImagePreview] = useState(currentPrestasi.gambar || null);
     const [internalCompressing, setInternalCompressing] = useState(isCompressing);
     
-    // [PERUBAHAN 1] Buat ref untuk textarea deskripsi
     const deskripsiRef = useRef(null);
 
-    // [PERUBAHAN 2] Gunakan useEffect untuk menyesuaikan tinggi textarea
     useEffect(() => {
         if (deskripsiRef.current) {
             const textarea = deskripsiRef.current;
@@ -89,13 +90,12 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
     };
     
     const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
-    const glassFormStyle = { backgroundColor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)'};
     const glassInputStyle = { backgroundColor: 'rgba(0, 0, 0, 0.2)', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white', borderRadius: '0.5rem', outline: 'none', width: '100%', transition: 'all 0.2s ease' };
 
     return (
         <motion.div 
             key="form-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}
-            className="w-full max-w-3xl mx-auto p-6 rounded-2xl" style={glassFormStyle} >
+            className="w-full max-w-3xl mx-auto p-6 rounded-2xl" style={style} >
             <div className="flex justify-between items-center mb-5">
                 <h2 className="text-xl md:text-4xl font-league uppercase text-accent">{formData.id ? "Edit Prestasi" : "Tambah Prestasi Baru"}</h2>
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onCancel} className={`${glassButtonClasses} px-3 py-1.5 text-xs`}>
@@ -127,7 +127,6 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
                         </div>
                         <div>
                             <label htmlFor="deskripsi" className="block text-sm font-semibold mb-1.5">Deskripsi</label>
-                            {/* [PERUBAHAN 3] Tambahkan ref, hapus 'resize-y' dan 'rows' */}
                             <textarea 
                                 id="deskripsi" 
                                 name="deskripsi" 
@@ -170,6 +169,14 @@ export default function AdminPrestasi() {
     const [userRole, setUserRole] = useState(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+
+    // --- PERUBAHAN ---
+    // Definisikan style di sini agar bisa digunakan kembali
+    const glassCardStyle = { 
+        backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+        backdropFilter: 'blur(10px)', 
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+    };
 
     useEffect(() => { const checkUser = async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) { navigate('/login'); return; } const { data: profileData, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single(); if (profileError || profileData?.role !== 'admin') { navigate('/'); } else { setUserRole(profileData.role); fetchPrestasi(); }}; checkUser(); }, [navigate]);
     
@@ -254,7 +261,7 @@ export default function AdminPrestasi() {
             const { error: dbError } = await supabase.from('prestasi').delete().eq('id', itemToDelete.id);
             if (dbError) throw dbError;
 
-            if (itemToDelete.gambar_url) { // Menggunakan gambar_url (path asli) untuk hapus
+            if (itemToDelete.gambar_url) { 
                 const { error: storageError } = await supabase.storage.from('gambarprestasi').remove([itemToDelete.gambar_url]);
                 if (storageError) console.error("Gagal hapus file dari storage:", storageError);
             }
@@ -269,7 +276,6 @@ export default function AdminPrestasi() {
     };
     
     const promptDelete = (item) => {
-        // Saat akan menghapus, kita butuh path asli (gambar_url), bukan URL publik (gambar)
         const itemWithOriginalPath = prestasiList.find(p => p.id === item.id);
         setItemToDelete(itemWithOriginalPath);
         setIsConfirmModalOpen(true);
@@ -281,56 +287,108 @@ export default function AdminPrestasi() {
         const originalItem = prestasiList.find(p => p.id === prestasi.id);
         setCurrentPrestasi({ 
             ...prestasi, 
-            gambar_url: originalItem.gambar_url // Pastikan kita membawa path asli, bukan URL publik
+            gambar_url: originalItem.gambar_url 
         });
     };
 
     const showListView = () => setCurrentPrestasi(null);
     
-    if (userRole === null || loading) { return <div className="flex items-center justify-center min-h-screen bg-[#0E0004] text-white"><Loader2 className="animate-spin mr-2" /> Memuat...</div>; }
+    if (userRole === null || loading) { 
+        return (
+            <div className="relative min-h-screen text-white">
+                <motion.div
+                    className="fixed inset-0 z-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.2, ease: "easeInOut" }}
+                >
+                    <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${bg10})` }}
+                    />
+                    <div className="absolute inset-0 bg-black/60" />
+                </motion.div>
+                
+                <div className="relative z-10 flex items-center justify-center min-h-screen">
+                    <Loader2 className="animate-spin mr-2 text-accent" />
+                </div>
+            </div>
+        ); 
+    }
 
     return (
-        <div className="bg-[#0E0004] min-h-screen text-white flex flex-col">
-            <main className="flex-grow pt-28 pb-10 px-4 md:px-12 relative z-10 flex justify-center items-start">
-                <AnimatePresence mode="wait">
-                    {currentPrestasi ? (
-                        <PrestasiForm key="form" currentPrestasi={currentPrestasi} onSave={handleSave} onCancel={showListView} uploading={uploading} />
-                    ) : (
-                        <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="w-full">
-                            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                                <h1 className="text-4xl md:text-5xl font-league uppercase text-accent text-center md:text-left">Kelola Prestasi</h1>
-                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400`}>
-                                    + Tambah Prestasi
-                                </motion.button>
-                            </div>
-                            {error && <div className="text-red-400 p-3 bg-red-500/10 rounded-md mb-4">{error}</div>}
-                            {prestasiList.length === 0 ? (
-                                <p className="text-center text-xl text-gray-500 mt-16">Belum ada prestasi yang ditambahkan.</p>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {prestasiList.map((item) => (
-                                        <motion.div key={item.id} className="p-5 rounded-xl relative bg-white/5 border border-white/10 flex flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                            {item.gambar && <img src={item.gambar} alt={item.judul} className="w-full h-40 object-cover rounded-md mb-4" />}
-                                            <h3 className="text-xl font-league uppercase text-accent mb-2">{item.judul}</h3>
-                                            <p className="text-sm font-[Montserrat] text-gray-300 mb-4 line-clamp-3 flex-grow">{item.deskripsi}</p>
-                                            <div className="flex justify-end gap-2 mt-4">
-                                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => showEditForm(item)} className={`${glassButtonClasses} p-2 text-blue-400 hover:text-blue-300`}>
-                                                    <Edit size={16} />
-                                                </motion.button>
-                                                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => promptDelete(item)} className={`${glassButtonClasses} p-2 text-red-500 hover:text-red-400`}>
-                                                    <Trash size={16} />
-                                                </motion.button>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+        <div className="min-h-screen text-white">
+            <motion.div
+                className="fixed inset-0 z-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1.2, ease: "easeInOut" }}
+            >
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bg10})` }}
+                />
+                <div className="absolute inset-0 bg-black/70" /> 
+            </motion.div>
+
+            <div className="relative z-10 flex flex-col min-h-screen">
+                <main className="flex-grow pt-28 pb-10 px-4 md:px-12 flex justify-center items-start">
+                    <AnimatePresence mode="wait">
+                        {currentPrestasi ? (
+                            <PrestasiForm 
+                                key="form" 
+                                currentPrestasi={currentPrestasi} 
+                                onSave={handleSave} 
+                                onCancel={showListView} 
+                                uploading={uploading} 
+                                style={glassCardStyle} // Menggunakan style yang sama
+                            />
+                        ) : (
+                            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="w-full">
+                                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                                    <h1 className="text-4xl md:text-5xl font-league uppercase text-accent text-center md:text-left">Kelola Prestasi</h1>
+                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400`}>
+                                        + Tambah Prestasi
+                                    </motion.button>
                                 </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </main>
+                                {error && <div className="text-red-400 p-3 bg-red-500/10 rounded-md mb-4">{error}</div>}
+                                {prestasiList.length === 0 ? (
+                                    <p className="text-center text-xl text-gray-500 mt-16">Belum ada prestasi yang ditambahkan.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {prestasiList.map((item) => (
+                                            <motion.div 
+                                                key={item.id} 
+                                                // --- PERUBAHAN ---
+                                                // Menggunakan style yang sama dan menyesuaikan padding/rounding
+                                                className="p-6 rounded-2xl relative flex flex-col"
+                                                style={glassCardStyle} 
+                                                initial={{ opacity: 0, y: 20 }} 
+                                                animate={{ opacity: 1, y: 0 }}
+                                            >
+                                                {item.gambar && <img src={item.gambar} alt={item.judul} className="w-full h-40 object-cover rounded-md mb-4" />}
+                                                <h3 className="text-xl font-league uppercase text-accent mb-2">{item.judul}</h3>
+                                                <p className="text-sm font-[Montserrat] text-gray-300 mb-4 line-clamp-3 flex-grow">{item.deskripsi}</p>
+                                                <div className="flex justify-end gap-2 mt-4">
+                                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => showEditForm(item)} className={`${glassButtonClasses} p-2 text-blue-400 hover:text-blue-300`}>
+                                                        <Edit size={16} />
+                                                    </motion.button>
+                                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => promptDelete(item)} className={`${glassButtonClasses} p-2 text-red-500 hover:text-red-400`}>
+                                                        <Trash size={16} />
+                                                    </motion.button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </main>
+                
+                <Footer />
+            </div>
             
-            <Footer />
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}

@@ -6,6 +6,9 @@ import { supabase } from '../supabaseClient';
 import Footer from '../components/Footer';
 import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace, Loader2, ArrowLeft } from 'lucide-react';
 
+// Impor background baru
+import bg1 from '../assets/bg1.jpg';
+
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import Modal from '../components/Modal';
 import ImageBrowserModal from '../components/ImageBrowserModal';
@@ -747,127 +750,132 @@ export default function ModerasiArtikel() {
     const confirmModalProps = getConfirmModalContent();
     
     return (
-        <div className="relative min-h-screen flex flex-col justify-between bg-gray-900 text-white">
-            <motion.div variants={sidebarVariants} initial="hidden" animate="visible" className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
-                <nav className="space-y-3">
-                    <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Tulis Artikel Baru"><Edit size={20} /></Link>
-                    <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Lihat Artikel"><BookOpen size={20} /></Link>
-                    <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Moderasi Artikel"><Settings size={20} /></Link>
-                </nav>
-            </motion.div>
-            <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
-                <motion.div variants={menuVariants} initial="hidden" animate="visible" className="block md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg z-10 w-fit">
-                    <nav className="flex space-x-4 justify-center">
-                        <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Tulis Artikel Baru"><Edit size={20} /></Link>
-                        <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Lihat Artikel"><BookOpen size={20} /></Link>
-                        <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Moderasi Artikel"><Settings size={20} /></Link>
+        <div className="relative min-h-screen text-white">
+            <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bg1})` }} />
+            <div className="absolute inset-0 bg-black/70 z-0" />
+            
+            <div className="relative z-10 flex flex-col min-h-screen justify-between">
+                <motion.div variants={sidebarVariants} initial="hidden" animate="visible" className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
+                    <nav className="space-y-3">
+                        <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Tulis Artikel Baru"><Edit size={20} /></Link>
+                        <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Lihat Artikel"><BookOpen size={20} /></Link>
+                        <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Moderasi Artikel"><Settings size={20} /></Link>
                     </nav>
                 </motion.div>
-                <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
-                <div className="max-w-6xl mx-auto space-y-10">
-                    <AnimatePresence mode="wait">
-                        {currentArticle ? (
-                            <ArticleForm
-                                key="article-edit-form"
-                                currentArticle={currentArticle}
-                                onSave={handleSaveArticle}
-                                onCancel={handleCancelEdit}
-                                isSaving={isSaving}
-                                isCompressingImage={isCompressingImage}
-                                setIsFormDirty={setIsFormDirty}
-                                setIsCompressingImageParent={setIsCompressingImage}
-                            />
-                        ) : (
-                            <>
-                                <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
-                                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                                        <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Draft</h2>
-                                        <div className="relative flex-grow max-w-sm sm:max-w-xs">
-                                            <input type="text" placeholder="Cari draft..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={draftSearchTerm} onChange={(e) => setDraftSearchTerm(e.target.value)} />
-                                            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            {draftSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setDraftSearchTerm('')} />)}
+                <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
+                    <motion.div variants={menuVariants} initial="hidden" animate="visible" className="block md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg z-10 w-fit">
+                        <nav className="flex space-x-4 justify-center">
+                            <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Tulis Artikel Baru"><Edit size={20} /></Link>
+                            <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Lihat Artikel"><BookOpen size={20} /></Link>
+                            <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Moderasi Artikel"><Settings size={20} /></Link>
+                        </nav>
+                    </motion.div>
+                    <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>
+                    <div className="max-w-6xl mx-auto space-y-10">
+                        <AnimatePresence mode="wait">
+                            {currentArticle ? (
+                                <ArticleForm
+                                    key="article-edit-form"
+                                    currentArticle={currentArticle}
+                                    onSave={handleSaveArticle}
+                                    onCancel={handleCancelEdit}
+                                    isSaving={isSaving}
+                                    isCompressingImage={isCompressingImage}
+                                    setIsFormDirty={setIsFormDirty}
+                                    setIsCompressingImageParent={setIsCompressingImage}
+                                />
+                            ) : (
+                                <>
+                                    <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
+                                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                                            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Draft</h2>
+                                            <div className="relative flex-grow max-w-sm sm:max-w-xs">
+                                                <input type="text" placeholder="Cari draft..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={draftSearchTerm} onChange={(e) => setDraftSearchTerm(e.target.value)} />
+                                                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                {draftSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setDraftSearchTerm('')} />)}
+                                            </div>
                                         </div>
-                                    </div>
-                                    {loadingDrafts ? (<p className="text-center text-gray-400">Memuat artikel draft...</p>) : errorDrafts ? (<p className="text-center text-red-400">{errorDrafts}</p>) : filteredDraftArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel draft yang ditemukan.</p>) : (
-                                        <AnimatePresence>
-                                            {filteredDraftArticles.map((artikel) => (
-                                                <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
-                                                    <div className="flex-grow">
-                                                        <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
-                                                        <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
-                                                        <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                        {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2 md:ml-4">
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'draft')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('publish', artikel)} className={`${glassButtonClasses} text-green-400 hover:text-green-400`}><Send size={16} /> Publikasi</motion.button>
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'draft')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </AnimatePresence>
-                                    )}
-                                </motion.div>
-                                <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
-                                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                                        <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Publikasi</h2>
-                                        <div className="relative flex-grow max-w-sm sm:max-w-xs">
-                                            <input type="text" placeholder="Cari publikasi..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={publishedSearchTerm} onChange={(e) => setPublishedSearchTerm(e.target.value)} />
-                                            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            {publishedSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setPublishedSearchTerm('')} />)}
+                                        {loadingDrafts ? (<p className="text-center text-gray-400">Memuat artikel draft...</p>) : errorDrafts ? (<p className="text-center text-red-400">{errorDrafts}</p>) : filteredDraftArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel draft yang ditemukan.</p>) : (
+                                            <AnimatePresence>
+                                                {filteredDraftArticles.map((artikel) => (
+                                                    <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
+                                                        <div className="flex-grow">
+                                                            <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
+                                                            <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
+                                                            <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                            {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2 md:ml-4">
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'draft')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('publish', artikel)} className={`${glassButtonClasses} text-green-400 hover:text-green-400`}><Send size={16} /> Publikasi</motion.button>
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'draft')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </AnimatePresence>
+                                        )}
+                                    </motion.div>
+                                    <motion.div initial="hidden" animate="visible" variants={itemVariants} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg p-6 sm:p-8">
+                                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                                            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF9F1C] flex-shrink-0">Artikel Publikasi</h2>
+                                            <div className="relative flex-grow max-w-sm sm:max-w-xs">
+                                                <input type="text" placeholder="Cari publikasi..." className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C]" value={publishedSearchTerm} onChange={(e) => setPublishedSearchTerm(e.target.value)} />
+                                                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                {publishedSearchTerm && (<RefreshCcw size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" onClick={() => setPublishedSearchTerm('')} />)}
+                                            </div>
                                         </div>
-                                    </div>
-                                    {loadingPublished ? (<p className="text-center text-gray-400">Memuat artikel publikasi...</p>) : errorPublished ? (<p className="text-center text-red-400">{errorPublished}</p>) : filteredPublishedArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel publikasi yang ditemukan.</p>) : (
-                                        <AnimatePresence>
-                                            {filteredPublishedArticles.map((artikel) => (
-                                                <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
-                                                    <div className="flex-grow">
-                                                        <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
-                                                        <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
-                                                        <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                        {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
-                                                        <p className={`text-xs font-semibold mt-1 ${artikel.published ? 'text-green-400' : 'text-red-400'}`}>Status: {artikel.published ? 'Dipublikasi' : 'Tidak Dipublikasi'}</p>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2 md:ml-4">
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'published')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('unpublish', artikel)} className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}><ChevronLeft size={16} /> Unpublish</motion.button>
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'published')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </AnimatePresence>
-                                    )}
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </main>
-
-            <Modal isOpen={showUnsavedChangesModal} onClose={() => setShowUnsavedChangesModal(false)} title="Perubahan Belum Disimpan" contentClassName="pt-6 pb-8" className="w-full max-w-sm mx-auto">
-                <div className="flex flex-col justify-center">
-                    <p className="text-gray-300 text-sm text-center mt-2">Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin menutup editor?</p>
-                    <div className="flex justify-center gap-4 mt-6">
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowUnsavedChangesModal(false)} className={`${glassButtonClasses} text-gray-300 hover:text-white`}>Lanjutkan Mengedit</motion.button>
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={discardChangesAndClose} className={`${glassButtonClasses} text-red-400 hover:text-red-300`}>Tutup & Buang</motion.button>
+                                        {loadingPublished ? (<p className="text-center text-gray-400">Memuat artikel publikasi...</p>) : errorPublished ? (<p className="text-center text-red-400">{errorPublished}</p>) : filteredPublishedArticles.length === 0 ? (<p className="text-center text-gray-400">Tidak ada artikel publikasi yang ditemukan.</p>) : (
+                                            <AnimatePresence>
+                                                {filteredPublishedArticles.map((artikel) => (
+                                                    <motion.div key={artikel.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-lg mb-4 last:mb-0 gap-4 border border-white/10">
+                                                        <div className="flex-grow">
+                                                            <h3 className="text-lg sm:text-xl font-semibold mb-1">{artikel.judul}</h3>
+                                                            <p className="text-sm text-gray-300">Oleh: {artikel.profiles?.username || 'Anonim'}</p>
+                                                            <p className="text-xs text-gray-400">Dibuat: {new Date(artikel.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                            {artikel.deskripsi && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{stripHtml(artikel.deskripsi)}</p>}
+                                                            <p className={`text-xs font-semibold mt-1 ${artikel.published ? 'text-green-400' : 'text-red-400'}`}>Status: {artikel.published ? 'Dipublikasi' : 'Tidak Dipublikasi'}</p>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2 md:ml-4">
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleEditClick(artikel, 'published')} className={`${glassButtonClasses} text-[#FF9F1C] hover:text-[#FF9F1C]`}><Edit size={16} /> Edit</motion.button>
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('unpublish', artikel)} className={`${glassButtonClasses} text-purple-400 hover:text-purple-400`}><ChevronLeft size={16} /> Unpublish</motion.button>
+                                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleConfirmActionClick('delete', artikel, 'published')} className={`${glassButtonClasses} text-red-400 hover:text-red-400`}><Trash2 size={16} /> Hapus</motion.button>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </AnimatePresence>
+                                        )}
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
                     </div>
-                </div>
-            </Modal>
+                </main>
 
-            <Modal isOpen={showConfirmModal} onClose={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} title={confirmModalProps.title} statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null} actions={
-                <>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleConfirmAction} className={`${glassButtonClasses} ${confirmModalProps.buttonClass}`} disabled={isProcessingAction}>
-                        {confirmModalProps.isProcessing ? <><Loader2 size={16} className="animate-spin" /> {confirmModalProps.processingText}</> : <>{confirmModalProps.buttonIcon} {confirmModalProps.buttonText}</>}
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`} disabled={isProcessingAction}>
-                        <X size={16} /> Batal
-                    </motion.button>
-                </>
-            }>
-                {confirmModalProps.message}
-            </Modal>
-           
-            <Footer />
+                <Modal isOpen={showUnsavedChangesModal} onClose={() => setShowUnsavedChangesModal(false)} title="Perubahan Belum Disimpan" contentClassName="pt-6 pb-8" className="w-full max-w-sm mx-auto">
+                    <div className="flex flex-col justify-center">
+                        <p className="text-gray-300 text-sm text-center mt-2">Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin menutup editor?</p>
+                        <div className="flex justify-center gap-4 mt-6">
+                            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowUnsavedChangesModal(false)} className={`${glassButtonClasses} text-gray-300 hover:text-white`}>Lanjutkan Mengedit</motion.button>
+                            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={discardChangesAndClose} className={`${glassButtonClasses} text-red-400 hover:text-red-300`}>Tutup & Buang</motion.button>
+                        </div>
+                    </div>
+                </Modal>
+
+                <Modal isOpen={showConfirmModal} onClose={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} title={confirmModalProps.title} statusMessage={actionStatus.error ? { type: 'error', message: actionStatus.message } : actionStatus.success ? { type: 'success', message: actionStatus.message } : null} actions={
+                    <>
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleConfirmAction} className={`${glassButtonClasses} ${confirmModalProps.buttonClass}`} disabled={isProcessingAction}>
+                            {confirmModalProps.isProcessing ? <><Loader2 size={16} className="animate-spin" /> {confirmModalProps.processingText}</> : <>{confirmModalProps.buttonIcon} {confirmModalProps.buttonText}</>}
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { if (!isProcessingAction) { setShowConfirmModal(false); setActionStatus({ success: null, error: null, message: '' }); } }} className={`${glassButtonClasses} text-gray-400 hover:text-gray-400`} disabled={isProcessingAction}>
+                            <X size={16} /> Batal
+                        </motion.button>
+                    </>
+                }>
+                    {confirmModalProps.message}
+                </Modal>
+                
+                <Footer />
+            </div>
         </div>
     );
 }

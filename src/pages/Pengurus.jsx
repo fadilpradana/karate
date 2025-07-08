@@ -203,11 +203,26 @@ export default function Pengurus() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-                <div className="flex-grow flex justify-center items-center">
-                    <LoaderCircle className="animate-spin h-10 w-10 text-amber-400" />
+            <div className="relative min-h-screen text-white">
+                <motion.div
+                    className="fixed inset-0 z-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.2, ease: "easeInOut" }}
+                >
+                    <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${heroBg})` }}
+                    />
+                    <div className="absolute inset-0 bg-black/50 backdrop-brightness-30" />
+                </motion.div>
+                
+                <div className="relative z-10 flex flex-col min-h-screen">
+                    <div className="flex-grow flex justify-center items-center">
+                        <LoaderCircle className="animate-spin h-10 w-10 text-amber-400" />
+                    </div>
+                    <Footer />
                 </div>
-                <Footer />
             </div>
         );
     }
@@ -262,9 +277,18 @@ export default function Pengurus() {
 
     return (
         <div className="relative min-h-screen text-white">
-            <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }} >
-                <div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div>
-            </div>
+            <motion.div
+                className="fixed inset-0 z-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1.2, ease: "easeInOut" }}
+            >
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${heroBg})` }}
+                />
+                <div className="absolute inset-0 bg-black/50 backdrop-brightness-30" />
+            </motion.div>
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <section className="min-h-screen flex items-center justify-center text-center p-4">
@@ -331,7 +355,6 @@ export default function Pengurus() {
                                             </Link>
                                             <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran" >
                                                 <UserPlus size={20} />
-                                                {/* DIPERBAIKI: Tag penutup yang salah </A Link> diubah menjadi </Link> */}
                                             </Link>
                                         </>
                                     )}

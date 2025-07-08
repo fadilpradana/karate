@@ -341,7 +341,7 @@ export default function TulisArtikelBaru() {
                             initial="hidden"
                             animate="visible"
                         >
-                            <motion.h1 variants={formItemVariants} className="text-2xl sm:text-4xl font-league font-bold uppercase text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</motion.h1>
+                            <motion.h1 variants={formItemVariants} className="text-2xl sm:text-5xl font-league font-bold uppercase text-center mb-6 text-[#FF9F1C]">Tulis Artikel Baru</motion.h1>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <motion.div variants={formItemVariants}>
                                     <label htmlFor="judul" className="block text-gray-300 text-sm font-medium mb-2">Judul Artikel</label>

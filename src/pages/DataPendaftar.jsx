@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, Settings, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle } from 'lucide-react';
+import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, Settings, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 
@@ -355,10 +355,9 @@ const CvModal = ({ cvUrl, onClose, modalGlassmorphismStyle }) => {
     );
 };
 
-// Komponen untuk teks yang bisa diperluas
 const ExpandableText = ({ text, isExpanded }) => {
     const textClasses = isExpanded ? "" : "line-clamp-3";
-    return <p className={textClasses}>{text || 'N/A'}</p>;
+    return <p className={textClasses} style={{ whiteSpace: 'pre-line' }}>{text || 'N/A'}</p>;
 };
 
 export default function DataPendaftar() {
@@ -376,6 +375,7 @@ export default function DataPendaftar() {
     const [expandedRows, setExpandedRows] = useState(new Set());
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendaftarToDelete, setPendaftarToDelete] = useState(null);
+    const [isSortedByMinat, setIsSortedByMinat] = useState(false);
 
     const titleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.5 } } };
     const subtitleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.7 } } };
@@ -395,7 +395,8 @@ export default function DataPendaftar() {
     };
 
     const fetchDaftarPeriode = useCallback(async () => {
-        setLoading(true); setError(null);
+        // setLoading(true); // Dihapus karena loading utama sudah ada
+        setError(null);
         try {
             const { data, error } = await supabase.from('periode_pendaftaran').select('id, nama_periode, tahun_angkatan').order('tahun_angkatan', { ascending: false });
             if (error) throw error;
@@ -407,7 +408,7 @@ export default function DataPendaftar() {
             console.error("Error fetching periods:", err.message);
             setError("Gagal memuat daftar periode.");
         } finally {
-            setLoading(false);
+            // setLoading(false); // Dihapus karena loading utama sudah ada
         }
     }, []);
 
@@ -437,59 +438,33 @@ export default function DataPendaftar() {
         setIsConfirmModalOpen(true);
     };
 
-    // --- FUNGSI HAPUS YANG DIPERBARUI ---
     const executeDelete = async () => {
         if (!pendaftarToDelete) return;
-
-        // **PENTING**: Sesuaikan nama bucket dengan yang ada di Supabase Anda
         const BUCKET_NAME = 'cvpendaftar';
-
         const pendaftarData = dataPendaftar.find(p => p.id === pendaftarToDelete);
         const cvUrl = pendaftarData?.cv_url;
-
         let filePath = null;
         if (cvUrl && cvUrl !== 'N/A' && cvUrl.includes(`/${BUCKET_NAME}/`)) {
             filePath = cvUrl.split(`/${BUCKET_NAME}/`)[1];
         }
-
-        console.log("Mencoba menghapus pendaftar ID:", pendaftarToDelete);
-        console.log("URL CV:", cvUrl);
-        console.log("Path file yang diekstrak:", filePath);
-
         try {
-            // Hapus data dari database
             const { error: dbError } = await supabase
                 .from('data_pendaftar')
                 .delete()
                 .eq('id', pendaftarToDelete);
-
-            if (dbError) {
-                throw new Error(`Gagal menghapus data dari database: ${dbError.message}`);
-            }
-
-            console.log("Data pendaftar berhasil dihapus dari database.");
-
-            // Jika ada path file, hapus dari storage
+            if (dbError) throw new Error(`Gagal menghapus data dari database: ${dbError.message}`);
             if (filePath) {
                 const { error: storageError } = await supabase.storage
                     .from(BUCKET_NAME)
                     .remove([filePath]);
-
                 if (storageError) {
-                    // Meskipun file gagal dihapus, data di database sudah terhapus.
-                    // Ini tetap dianggap "berhasil" dari sisi data, namun kita beri peringatan.
                     console.warn(`Data pendaftar terhapus, tetapi gagal menghapus file dari storage: ${storageError.message}`);
                     alert(`Peringatan: Gagal menghapus file CV dari storage. Error: ${storageError.message}. Silakan cek RLS Storage Anda.`);
-                } else {
-                    console.log("File CV berhasil dihapus dari storage.");
                 }
             }
-            
-            // Update UI
             setDataPendaftar(currentPendaftar =>
                 currentPendaftar.filter(p => p.id !== pendaftarToDelete)
             );
-
         } catch (err) {
             console.error("Terjadi kesalahan saat proses penghapusan:", err);
             alert(`Operasi hapus gagal. Silakan cek console untuk detail error.`);
@@ -499,13 +474,12 @@ export default function DataPendaftar() {
         }
     };
 
-
     useEffect(() => {
         if (!authLoading) {
             if (!['admin', 'pengurus'].includes(role)) {
                 navigate('/dashboard', { replace: true });
             } else {
-                fetchDaftarPeriode();
+                fetchDaftarPeriode().finally(() => setLoading(false));
             }
         }
     }, [authLoading, role, navigate, fetchDaftarPeriode]);
@@ -523,141 +497,182 @@ export default function DataPendaftar() {
     };
     const handleCloseCvModal = () => { setIsCvModalOpen(false); setCurrentCvUrl(''); };
 
+    const sortedData = useMemo(() => {
+        if (isSortedByMinat) {
+            return [...dataPendaftar].sort((a, b) => {
+                const minatA = Number(a.persentase_minat) || 0;
+                const minatB = Number(b.persentase_minat) || 0;
+                return minatB - minatA;
+            });
+        }
+        return dataPendaftar;
+    }, [dataPendaftar, isSortedByMinat]);
+
     const filteredPendaftar = useMemo(() => {
-        if (!searchQuery) return dataPendaftar;
+        if (!searchQuery) return sortedData;
         const lowerCaseQuery = searchQuery.toLowerCase();
-        return dataPendaftar.filter(pendaftar => {
+        return sortedData.filter(pendaftar => {
             const profile = pendaftar.profiles || {};
             const cvData = pendaftar;
             const searchableFields = [profile.nama_lengkap, profile.npt, profile.kelas, profile.angkatan, profile.nomor_telepon, cvData.alasan_minat, cvData.pengalaman_organisasi, cvData.pengalaman_kepanitiaan, cvData.sepuluh_calon, String(new Date(pendaftar.tanggal_daftar).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }))];
             return searchableFields.some(field => field && String(field).toLowerCase().includes(lowerCaseQuery));
         });
-    }, [dataPendaftar, searchQuery]);
-
-    if (authLoading || loading) {
-        return <div className="min-h-screen bg-gray-900 flex justify-center items-center"><LoaderCircle className="animate-spin h-10 w-10 text-amber-400" /></div>;
-    }
-    if (error) {
-        return <div className="min-h-screen bg-gray-900 flex flex-col justify-center items-center text-center p-4"><ServerCrash className="h-16 w-16 text-red-500" /><h1 className="text-3xl font-bold text-red-400 mt-4">Terjadi Kesalahan</h1><p className="text-gray-300 mt-2">{error}</p></div>;
-    }
-
+    }, [sortedData, searchQuery]);
+    
     return (
         <div className="relative min-h-screen text-white">
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
-            <div className="relative z-10 flex flex-col min-h-screen">
-                <main className="flex-grow pt-24 pb-12">
+            
+            {(authLoading || loading) ? (
+                <div className="relative z-10 flex h-screen justify-center items-center">
+                    <LoaderCircle className="animate-spin h-10 w-10 text-amber-400" />
+                </div>
+            ) : error ? (
+                <div className="relative z-10 flex h-screen flex-col justify-center items-center text-center p-4">
+                    <ServerCrash className="h-16 w-16 text-red-500" />
+                    <h1 className="text-3xl font-bold text-red-400 mt-4">Terjadi Kesalahan</h1>
+                    <p className="text-gray-300 mt-2">{error}</p>
+                </div>
+            ) : (
+                <div className="relative z-10 flex flex-col min-h-screen">
+                    <main className="flex-grow pt-24 pb-12">
+                        {role && ['admin', 'pengurus'].includes(role) && (
+                            <>
+                                <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit">
+                                    <nav className="flex space-x-4 justify-center">
+                                        <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
+                                        {role === 'admin' && (
+                                            <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
+                                        )}
+                                    </nav>
+                                </motion.div>
+                                <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="fixed left-4 top-1/2 -translate-y-1/2 flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
+                                    <nav className="space-y-3">
+                                        <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
+                                        {role === 'admin' && (
+                                            <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
+                                        )}
+                                    </nav>
+                                </motion.div>
+                            </>
+                        )}
 
-                    {role && ['admin', 'pengurus'].includes(role) && (
-                        <>
-                            <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit">
-                                <nav className="flex space-x-4 justify-center">
-                                    <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
-
-                                    {role === 'admin' && (
-                                        <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
-                                    )}
-                                </nav>
-                            </motion.div>
-                            <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="fixed left-4 top-1/2 -translate-y-1/2 flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
-                                <nav className="space-y-3">
-                                    <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
-
-                                    {role === 'admin' && (
-                                        <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
-                                    )}
-                                </nav>
-                            </motion.div>
-                        </>
-                    )}
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24 space-y-8">
-                        <div className="text-center">
-                            <motion.h1 variants={titleVariants} initial="hidden" animate="visible" className="text-4xl md:text-6xl font-league uppercase text-amber-400 mb-2 drop-shadow-lg">Data Pendaftar</motion.h1>
-                            <motion.p variants={subtitleVariants} initial="hidden" animate="visible" className="text-gray-300 drop-shadow-md">Lihat dan kelola data pendaftar berdasarkan periode.</motion.p>
-                        </div>
-                        <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
-                            <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold mb-4 flex items-center gap-3"><CalendarCheck className="text-amber-400" />Pilih Periode Pendaftaran</motion.h2>
-                            <div className="flex flex-col gap-4">
-                                <label htmlFor="periode-select" className="block text-sm font-medium text-gray-300">Periode Tahun Angkatan:</label>
-                                <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2.5 text-white focus:ring-amber-500 focus:border-amber-500 transition-colors">
-                                    {daftarPeriode.length > 0 ? (
-                                        daftarPeriode.map((periode) => (<option key={periode.id} value={periode.id}>{periode.nama_periode} (Angkatan Tahun: {periode.tahun_angkatan})</option>))
-                                    ) : (<option value="" disabled>Tidak ada periode pendaftaran tersedia</option>)}
-                                </select>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24 space-y-8">
+                            <div className="text-center">
+                                <motion.h1 variants={titleVariants} initial="hidden" animate="visible" className="text-4xl md:text-6xl font-league uppercase text-accent mb-2 drop-shadow-lg">Data Pendaftar</motion.h1>
+                                <motion.p variants={subtitleVariants} initial="hidden" animate="visible" className="text-gray-300 drop-shadow-md">Lihat dan kelola data pendaftar berdasarkan periode.</motion.p>
                             </div>
-                        </motion.section>
-                        <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
-                                <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3 mb-4 sm:mb-0"><UserRoundCheck className="text-amber-400" />Daftar Pendaftar</motion.h2>
-                                <div className="relative w-full sm:w-2/3 md:w-1/2 lg:w-1/3 rounded-full" style={{...glassmorphismStyle, borderRadius: '9999px'}}>
-                                    <input type="text" placeholder="Cari pendaftar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors border-none rounded-full" />
-                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                            <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                                <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold mb-4 flex items-center gap-3"><CalendarCheck className="text-amber-400" />Pilih Periode Pendaftaran</motion.h2>
+                                <div className="flex flex-col gap-4">
+                                    <label htmlFor="periode-select" className="block text-sm font-medium text-gray-300">Periode Tahun Angkatan:</label>
+                                    <div className="relative w-full" style={glassmorphismStyle}>
+                                        <select 
+                                            id="periode-select" 
+                                            value={selectedPeriodeId} 
+                                            onChange={(e) => setSelectedPeriodeId(e.target.value)} 
+                                            className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer"
+                                        >
+                                            {daftarPeriode.length > 0 ? (
+                                                daftarPeriode.map((periode) => (
+                                                    <option key={periode.id} value={periode.id} className="bg-gray-800 text-white">
+                                                        {periode.nama_periode} (Angkatan Tahun: {periode.tahun_angkatan})
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <option value="" disabled className="bg-gray-800 text-white">
+                                                    Tidak ada periode pendaftaran tersedia
+                                                </option>
+                                            )}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m6 9 6 6 6-6"/></svg>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            {loadingPendaftar ? (
-                                <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /><span className="ml-3 text-gray-300">Memuat data pendaftar...</span></div>
-                            ) : filteredPendaftar.length > 0 ? (
-                                <div className="overflow-x-auto rounded-lg border border-gray-700 shadow-inner">
-                                    <table className="min-w-full divide-y divide-gray-700">
-                                        <thead className="bg-gray-700/50">
-                                            <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Nama Lengkap</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">NPT</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Kelas / Angkatan</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">No. Telepon</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">CV</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Minat (%)</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Alasan Minat</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Organisasi</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Kepanitiaan</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">10 Calon</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tanggal Daftar</th>
-                                                {role === 'admin' && (
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Aksi</th>
-                                                )}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-800">
-                                            {filteredPendaftar.map((pendaftar) => (
-                                                <tr key={pendaftar.id} className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => toggleRowExpansion(pendaftar.id)}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{pendaftar.profiles?.nama_lengkap || 'N/A'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{pendaftar.profiles?.npt || 'N/A'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{`${pendaftar.profiles?.kelas || 'N/A'} / ${pendaftar.profiles?.angkatan || 'N/A'}`}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{pendaftar.profiles?.nomor_telepon || 'N/A'}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        {pendaftar.cv_url && pendaftar.cv_url !== 'N/A' ? (<button onClick={(e) => handleLihatCv(e, pendaftar.cv_url)} className="text-blue-300 hover:text-blue-200 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">Lihat CV</button>) : 'N/A'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{`${pendaftar.persentase_minat || 'N/A'}%`}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal"><ExpandableText text={pendaftar.alasan_minat} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                    <td className="px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal"><ExpandableText text={pendaftar.pengalaman_organisasi} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                    <td className="px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal"><ExpandableText text={pendaftar.pengalaman_kepanitiaan} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                    <td className="px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal"><ExpandableText text={pendaftar.sepuluh_calon} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{new Date(pendaftar.tanggal_daftar).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                            </motion.section>
+                            <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                                    <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3"><UserRoundCheck className="text-amber-400" />Daftar Pendaftar</motion.h2>
+                                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                                        <button
+                                            onClick={() => setIsSortedByMinat(prev => !prev)}
+                                            title="Urutkan berdasarkan minat"
+                                            className={`p-2.5 rounded-full transition-colors duration-200 ${isSortedByMinat ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                        >
+                                            <Filter size={18} />
+                                        </button>
+                                        <div className="relative w-full sm:w-auto flex-grow" style={{...glassmorphismStyle, borderRadius: '9999px'}}>
+                                            <input type="text" placeholder="Cari pendaftar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors border-none rounded-full" />
+                                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                        </div>
+                                    </div>
+                                </div>
+                                {loadingPendaftar ? (
+                                    <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /><span className="ml-3 text-gray-300">Memuat data pendaftar...</span></div>
+                                ) : filteredPendaftar.length > 0 ? (
+                                    <div className="overflow-x-auto rounded-lg border border-gray-700 shadow-inner">
+                                        <table className="min-w-full divide-y divide-gray-700">
+                                            <thead className="bg-gray-700/50">
+                                                <tr>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Nama Lengkap</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">NPT</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Kelas / Angkatan</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">No. Telepon</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">CV</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Minat (%)</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Alasan Minat</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Organisasi</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Kepanitiaan</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">10 Calon</th>
+                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tanggal Daftar</th>
                                                     {role === 'admin' && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleHapusPendaftar(pendaftar.id);
-                                                                }}
-                                                                className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors duration-200"
-                                                                title="Hapus Pendaftar"
-                                                            >
-                                                                <Trash2 size={18} />
-                                                            </button>
-                                                        </td>
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Aksi</th>
                                                     )}
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (<p className="text-center text-gray-400 py-8">{searchQuery ? "Tidak ada pendaftar yang cocok dengan pencarian Anda." : "Tidak ada data pendaftar untuk periode ini."}</p>)}
-                        </motion.section>
-                    </div>
-                </main>
-                <Footer />
-            </div>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-800">
+                                                {filteredPendaftar.map((pendaftar) => (
+                                                    <tr key={pendaftar.id} className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => toggleRowExpansion(pendaftar.id)}>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-white ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.nama_lengkap || 'N/A'}</td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.npt || 'N/A'}</td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{`${pendaftar.profiles?.kelas || 'N/A'} / ${pendaftar.profiles?.angkatan || 'N/A'}`}</td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.nomor_telepon || 'N/A'}</td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>
+                                                            {pendaftar.cv_url && pendaftar.cv_url !== 'N/A' ? (<button onClick={(e) => handleLihatCv(e, pendaftar.cv_url)} className="text-blue-300 hover:text-blue-200 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">Lihat CV</button>) : 'N/A'}
+                                                        </td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{`${pendaftar.persentase_minat || 'N/A'}%`}</td>
+                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.alasan_minat} isExpanded={expandedRows.has(pendaftar.id)} /></td>
+                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.pengalaman_organisasi} isExpanded={expandedRows.has(pendaftar.id)} /></td>
+                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.pengalaman_kepanitiaan} isExpanded={expandedRows.has(pendaftar.id)} /></td>
+                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.sepuluh_calon} isExpanded={expandedRows.has(pendaftar.id)} /></td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{new Date(pendaftar.tanggal_daftar).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                                                        {role === 'admin' && (
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleHapusPendaftar(pendaftar.id);
+                                                                    }}
+                                                                    className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors duration-200"
+                                                                    title="Hapus Pendaftar"
+                                                                >
+                                                                    <Trash2 size={18} />
+                                                                </button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (<p className="text-center text-gray-400 py-8">{searchQuery ? "Tidak ada pendaftar yang cocok dengan pencarian Anda." : "Tidak ada data pendaftar untuk periode ini."}</p>)}
+                            </motion.section>
+                        </div>
+                    </main>
+                    <Footer />
+                </div>
+            )}
             
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}

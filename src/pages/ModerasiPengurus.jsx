@@ -45,7 +45,7 @@ export default function ModerasiPengurus() {
     const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
     const [pengurusToDelete, setPengurusToDelete] = useState(null); // Menyimpan data pengurus yang akan dihapus
 
-    // Gaya untuk efek glassmorphism pada card, disalin dari Pengurus.jsx
+    // Gaya untuk efek glassmorphism pada card
     const glassmorphismStyle = {
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         backdropFilter: 'blur(10px)',
@@ -56,6 +56,15 @@ export default function ModerasiPengurus() {
             inset 0 0 0 1px rgba(255, 255, 255, 0.2)
         `,
         borderRadius: '0.8rem',
+    };
+
+    // Gaya glassmorphism untuk form input/select agar konsisten
+    const glassFormStyle = {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.3)',
+        borderRadius: '0.5rem', // Sedikit lebih kecil untuk form
     };
 
     // Fungsi untuk mengambil semua data yang dibutuhkan
@@ -201,8 +210,16 @@ export default function ModerasiPengurus() {
 
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen bg-gray-900 flex justify-center items-center">
-                <LoaderCircle className="animate-spin h-10 w-10 text-white" />
+            <div className="relative min-h-screen text-white">
+                <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}>
+                    <div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div>
+                </div>
+                <div className="relative z-10 flex flex-col min-h-screen">
+                    <div className="flex-grow flex justify-center items-center">
+                        <LoaderCircle className="animate-spin h-10 w-10 text-amber-400" />
+                    </div>
+                    <Footer />
+                </div>
             </div>
         );
     }
@@ -286,8 +303,8 @@ export default function ModerasiPengurus() {
                                 <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                                     <label htmlFor="periode-select" className="block text-sm font-medium text-gray-400 mb-2">Ubah atau Buat Periode Baru</label>
                                     <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3">
-                                        <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full md:w-auto bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:ring-amber-500 focus:border-amber-500">
-                                            {semuaPeriode.map(p => (<option key={p.id} value={p.id}>{p.nama_periode}</option>))}
+                                        <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} style={glassFormStyle} className="w-full md:w-auto px-3 py-2 focus:ring-amber-500 focus:border-amber-500">
+                                            {semuaPeriode.map(p => (<option key={p.id} value={p.id} className="bg-gray-800 text-white">{p.nama_periode}</option>))}
                                         </select>
                                         {selectedPeriodeId && periodeAktif && selectedPeriodeId !== periodeAktif.id && (
                                             <button onClick={() => handleSetPeriodeAktif(selectedPeriodeId)} className={`${baseButtonClass} w-full md:w-auto text-blue-400`}>
@@ -309,21 +326,21 @@ export default function ModerasiPengurus() {
                             <form onSubmit={handleTambahPengurus} className="grid md:grid-cols-4 gap-4 items-end">
                                 <div className="md:col-span-1">
                                     <label htmlFor="user-select" className="block text-sm font-medium text-gray-400 mb-1">Pengguna</label>
-                                    <select id="user-select" value={selectedUser} onChange={e => setSelectedUser(e.target.value)} required className="w-full bg-gray-700 rounded-md p-2">
-                                        <option value="" disabled>Pilih Pengguna</option>
-                                        {semuaPengguna.map(u => <option key={u.id} value={u.id}>{u.nama_lengkap}</option>)}
+                                    <select id="user-select" value={selectedUser} onChange={e => setSelectedUser(e.target.value)} required style={glassFormStyle} className="w-full p-2.5">
+                                        <option value="" disabled className="bg-gray-800 text-white">Pilih Pengguna</option>
+                                        {semuaPengguna.map(u => <option key={u.id} value={u.id} className="bg-gray-800 text-white">{u.nama_lengkap}</option>)}
                                     </select>
                                 </div>
                                 <div className="md:col-span-1">
                                     <label htmlFor="bidang-select" className="block text-sm font-medium text-gray-400 mb-1">Bidang</label>
-                                    <select id="bidang-select" value={selectedBidang} onChange={e => setSelectedBidang(e.target.value)} required className="w-full bg-gray-700 rounded-md p-2">
-                                        <option value="" disabled>Pilih Bidang</option>
-                                        {semuaBidang.map(b => <option key={b.id} value={b.id}>{b.nama_bidang}</option>)}
+                                    <select id="bidang-select" value={selectedBidang} onChange={e => setSelectedBidang(e.target.value)} required style={glassFormStyle} className="w-full p-2.5">
+                                        <option value="" disabled className="bg-gray-800 text-white">Pilih Bidang</option>
+                                        {semuaBidang.map(b => <option key={b.id} value={b.id} className="bg-gray-800 text-white">{b.nama_bidang}</option>)}
                                     </select>
                                 </div>
                                 <div className="md:col-span-1">
                                     <label htmlFor="jabatan-input" className="block text-sm font-medium text-gray-400 mb-1">Jabatan Spesifik</label>
-                                    <input id="jabatan-input" type="text" value={jabatan} onChange={e => setJabatan(e.target.value)} required placeholder="Contoh: Ketua, Anggota" className="w-full bg-gray-700 rounded-md p-2"/>
+                                    <input id="jabatan-input" type="text" value={jabatan} onChange={e => setJabatan(e.target.value)} required placeholder="Contoh: Ketua, Anggota" style={glassFormStyle} className="w-full p-2.5 placeholder-gray-400"/>
                                 </div>
                                 <div className="md:col-span-1">
                                     <button type="submit" disabled={isSubmitting || !periodeAktif} className={`${baseButtonClass} w-full text-amber-400`}>
@@ -341,23 +358,17 @@ export default function ModerasiPengurus() {
                                         <h3 className="text-xl font-semibold text-amber-400 mb-3">{bidang}</h3>
                                         <ul className="space-y-2">
                                             {pengurus[bidang].map(p => (
-                                                // --- PERUBAHAN UTAMA DI SINI ---
                                                 <motion.li
                                                     key={p.id}
-                                                    // Layout diubah agar selalu horizontal & item di tengah
                                                     className="flex flex-row justify-between items-center bg-gray-700/50 p-2 rounded-md"
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ duration: 0.3, delay: 0.1 }}
                                                 >
-                                                    {/* Container untuk teks dibuat fleksibel agar bisa memendek */}
                                                     <div className="flex-grow min-w-0 mr-2"> 
-                                                        {/* Ukuran font responsif dan truncate untuk nama */}
                                                         <p className="font-medium text-sm sm:text-base truncate">{p.profiles.nama_lengkap}</p>
-                                                        {/* Ukuran font responsif dan truncate untuk jabatan */}
                                                         <p className="text-xs sm:text-sm text-gray-400 truncate">{p.jabatan}</p>
                                                     </div>
-                                                    {/* Tombol hapus dibuat agar tidak mengecil */}
                                                     <button 
                                                         onClick={() => handleHapusPengurus(p)} 
                                                         className={`${iconButtonClass} text-red-500 flex-shrink-0`}
@@ -386,7 +397,7 @@ export default function ModerasiPengurus() {
                             <div className="space-y-4">
                                 <div>
                                     <label htmlFor="new-periode-name" className="block text-sm font-medium text-gray-300 mb-1">Nama Periode Baru</label>
-                                    <input id="new-periode-name" type="text" value={newPeriodeName} onChange={(e) => setNewPeriodeName(e.target.value)} placeholder="Contoh: Kepengurusan 2025/2026" className="w-full bg-gray-700 rounded-md p-2 border border-gray-600 focus:ring-amber-500 focus:border-amber-500"/>
+                                    <input id="new-periode-name" type="text" value={newPeriodeName} onChange={(e) => setNewPeriodeName(e.target.value)} placeholder="Contoh: Kepengurusan 2025/2026" style={glassFormStyle} className="w-full p-2.5 placeholder-gray-400 focus:ring-amber-500 focus:border-amber-500"/>
                                 </div>
                                 <div className="flex justify-end gap-3 pt-4">
                                     <button onClick={() => setIsCreateModalOpen(false)} className={`${baseButtonClass} text-gray-300`}>Batal</button>

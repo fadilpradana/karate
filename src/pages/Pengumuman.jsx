@@ -113,11 +113,20 @@ export default function Pengumuman() {
     };
 
     return (
-        <div
-            className="relative min-h-screen text-white bg-cover bg-center bg-fixed"
-            style={{ backgroundImage: `url(${bg1})` }}
-        >
-            <div className="absolute inset-0 bg-black opacity-70"></div>
+        <div className="relative min-h-screen text-white">
+            {/* Latar Belakang dengan Animasi */}
+            <motion.div
+                className="fixed inset-0 z-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1.2, ease: "easeInOut" }}
+            >
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bg1})` }}
+                />
+                <div className="absolute inset-0 bg-black/70" />
+            </motion.div>
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">

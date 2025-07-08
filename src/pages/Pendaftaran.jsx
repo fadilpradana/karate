@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import Footer from '../components/Footer';
-import heroBg from '../assets/bg9.jpg';
+import heroVideo from '../assets/daftar.mp4';
 
 // Variabel cache
 let pendaftaranDataCache = null;
@@ -88,6 +88,63 @@ const InfoModal = ({ isOpen, onClose, title, message }) => {
     );
 };
 
+// Komponen Modal Terima Kasih
+const ThankYouModal = ({ isOpen, onClose, periodeName }) => {
+    const modalVariants = {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 25 } },
+        exit: { opacity: 0, scale: 0.8, transition: { type: "spring", stiffness: 300, damping: 20 } }
+    };
+
+    const overlayVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { duration: 0.2 } },
+        exit: { opacity: 0, transition: { duration: 0.3 } }
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    key="thank-you-modal-overlay"
+                    initial="hidden" animate="visible" exit="exit" variants={overlayVariants}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                >
+                    <motion.div
+                        key="thank-you-modal-content" variants={modalVariants}
+                        className="relative p-6 text-center text-white max-w-sm w-full"
+                        style={{
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(34, 197, 94, 0.4)', borderRadius: '0.8rem'
+                        }}
+                    >
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-500/20 mb-4 border border-green-500/50">
+                                <CheckCircle size={40} className="text-green-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-2">Terima Kasih!</h3>
+                            <p className="text-gray-300 mb-6 text-base">
+                                Anda sudah terdaftar pada <span className="font-semibold">{periodeName || "periode ini"}</span>.
+                            </p>
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    backgroundColor: 'transparent', border: '1px solid rgba(34, 197, 94, 0.5)',
+                                    borderRadius: '0.5rem'
+                                }}
+                                className="w-full py-2.5 px-4 font-semibold text-green-300 hover:bg-green-500/10 transition-colors"
+                            >
+                                Kembali ke Dashboard
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
 
 export default function Pendaftaran() {
     const navigate = useNavigate();
@@ -112,7 +169,14 @@ export default function Pendaftaran() {
         setIsModalOpen(true);
     };
 
-    // --- LOGIKA ANIMASI SCROLL ---
+    const glassFormStyle = {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '0.75rem',
+    };
+    
     const heroRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: heroRef,
@@ -121,26 +185,21 @@ export default function Pendaftaran() {
     const heroContentX = useTransform(scrollYProgress, [0, 0.5], ["0%", "-150%"]);
     const heroContentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-    // Logika scroll untuk kartu "Data Diri"
     const formDataDiriRef = useRef(null);
     const { scrollYProgress: scrollDataDiri } = useScroll({
         target: formDataDiriRef,
         offset: ["start end", "end end"]
     });
-    // PERUBAHAN: Rentang dipercepat menjadi [0, 0.3]
     const opacityDataDiri = useTransform(scrollDataDiri, [0, 0.3], [0, 1]);
     const yDataDiri = useTransform(scrollDataDiri, [0, 0.3], [50, 0]);
 
-    // Logika scroll untuk kartu "Formulir Peminatan"
     const formPeminatanRef = useRef(null);
     const { scrollYProgress: scrollPeminatan } = useScroll({
         target: formPeminatanRef,
         offset: ["start end", "end end"]
     });
-    // PERUBAHAN: Rentang dipercepat dan disamakan menjadi [0, 0.3]
     const opacityPeminatan = useTransform(scrollPeminatan, [0, 0.3], [0, 1]);
     const yPeminatan = useTransform(scrollPeminatan, [0, 0.3], [50, 0]);
-
 
     useEffect(() => {
         if (authLoading) return;
@@ -181,10 +240,8 @@ export default function Pendaftaran() {
                     setProfile(profileData);
                     setSudahKirim(isAlreadySubmitted);
                     pendaftaranDataCache = {
-                        periodeAktif: periodeData,
-                        profile: profileData,
-                        sudahKirim: isAlreadySubmitted,
-                        userId: session.user.id
+                        periodeAktif: periodeData, profile: profileData,
+                        sudahKirim: isAlreadySubmitted, userId: session.user.id
                     };
                 } catch (error) {
                     console.error('Gagal mengambil data awal pendaftaran:', error);
@@ -249,41 +306,47 @@ export default function Pendaftaran() {
 
     if (authLoading || isFetchingData) { return ( <div className="min-h-screen bg-gray-900 text-white flex flex-col"> <div className="flex-grow flex justify-center items-center"> <LoaderCircle className="animate-spin h-8 w-8 text-white" /> </div> <Footer /> </div> ); }
     if (!session) { navigate('/login', { replace: true }); return null; }
-    if (sudahKirim) { return ( <div className="min-h-screen bg-gray-900 text-white flex flex-col"> <main className="flex-grow flex justify-center items-center text-center p-4"> <div> <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" /> <h1 className="text-3xl font-bold text-accent">Terima Kasih!</h1> <p className="mt-2 text-gray-300">Anda sudah terdaftar pada {periodeAktif?.nama_periode || "periode ini"}.</p> </div> </main> <Footer /> </div> ); }
     if (!periodeAktif || !periodeAktif.telah_dibuka) { return ( <div className="min-h-screen bg-gray-900 text-white flex flex-col"> <main className="flex-grow flex justify-center items-center text-center p-4"> <div> <Lock className="h-16 w-16 text-red-500 mx-auto mb-4" /> <h1 className="text-3xl font-bold text-accent">{periodeAktif?.nama_periode || 'Pendaftaran'}</h1> <p className="mt-2 text-gray-300">Saat ini pendaftaran sedang ditutup atau belum ada periode yang dibuka.</p> </div> </main> <Footer /> </div> ); }
 
     return (
-        <div className="text-white">
-            <div 
-                className="fixed inset-0 z-0 bg-cover bg-center" 
-                style={{ backgroundImage: `url(${heroBg})` }}
+        <div className="relative text-white h-full">
+            <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="fixed inset-0 z-0 w-full h-full object-cover"
             >
-                <div className="absolute inset-0 bg-black/60"></div>
-            </div>
-
-            <InfoModal 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title={modalContent.title}
-                message={modalContent.message}
+                <source src={heroVideo} type="video/mp4" />
+                Browser Anda tidak mendukung tag video.
+            </video>
+            <div className="fixed inset-0 bg-black/60 z-10"></div>
+            
+            <ThankYouModal
+                isOpen={sudahKirim}
+                onClose={() => navigate('/dashboard')}
+                periodeName={periodeAktif?.nama_periode}
             />
             
-            <div className="relative z-10">
+            <div className="relative z-20">
+                <InfoModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    title={modalContent.title}
+                    message={modalContent.message}
+                />
+                
                 <div ref={heroRef} className="h-[270vh]">
                     <header className="h-screen flex items-center justify-center text-center px-4 sticky top-0">
                         <motion.div style={{ x: heroContentX, opacity: heroContentOpacity }}>
                             <motion.h1 
-                                variants={heroVariants}
-                                initial="hidden"
-                                animate="visible"
+                                variants={heroVariants} initial="hidden" animate="visible"
                                 className="text-4xl sm:text-5xl md:text-6xl font-league uppercase font-bold text-accent mb-4 drop-shadow-lg"
                             >
                                 {periodeAktif.nama_periode}
                             </motion.h1>
                             <motion.p 
-                                variants={heroVariants}
-                                initial="hidden"
-                                animate="visible"
+                                variants={heroVariants} initial="hidden" animate="visible"
                                 transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
                                 className="text-base sm:text-lg md:text-xl text-gray-200 max-w-3xl mx-auto drop-shadow-md"
                             >
@@ -298,10 +361,13 @@ export default function Pendaftaran() {
                         <form onSubmit={handleSubmit} className="space-y-8">
                             <motion.div
                                 ref={formDataDiriRef}
-                                style={{ opacity: opacityDataDiri, y: yDataDiri }}
-                                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg"
+                                style={{ opacity: opacityDataDiri, y: yDataDiri, ...glassFormStyle }}
+                                className="p-6 shadow-lg"
                             >
-                                <h2 className="text-2xl font-semibold text-white mb-5 flex items-center gap-3"><UserCircle className="text-accent"/>Data Diri Peserta</h2>
+                                <h2 className="text-2xl font-semibold text-white mb-5 flex items-center gap-3">
+                                    <UserCircle className="text-accent"/>
+                                    <span className="battery-style-gradient">Data Diri Peserta</span>
+                                </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                                     <div><p className="text-gray-400">Nama Lengkap</p><p className="font-medium text-base">{profile?.nama_lengkap}</p></div>
                                     <div><p className="text-gray-400">NPT</p><p className="font-medium text-base">{profile?.npt}</p></div>
@@ -312,25 +378,28 @@ export default function Pendaftaran() {
                             
                             <motion.div
                                 ref={formPeminatanRef}
-                                style={{ opacity: opacityPeminatan, y: yPeminatan }}
-                                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 shadow-lg space-y-8"
+                                style={{ opacity: opacityPeminatan, y: yPeminatan, ...glassFormStyle }}
+                                className="p-6 shadow-lg space-y-8"
                             >
-                                <h2 className="text-2xl font-semibold text-white flex items-center gap-3"><FilePenLine className="text-accent"/>Formulir Peminatan</h2>
-                                <div className="flex flex-col"><label htmlFor="persentaseMinat" className="mb-3 font-medium flex items-center gap-2"><Heart size={16}/> Seberapa besar minat Anda untuk menjadi pengurus?</label><div className="flex items-center gap-4"><input id="persentaseMinat" type="range" min="0" max="100" step="5" value={persentaseMinat} onChange={(e) => setPersentaseMinat(e.target.value)} className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent" /><span className="bg-accent text-gray-900 text-xs font-bold px-3 py-1 rounded-full w-16 text-center">{persentaseMinat}%</span></div></div>
-                                <div className="flex flex-col"><label htmlFor="alasanMinat" className="mb-2 font-medium flex items-center gap-2"><Sparkles size={16}/> Alasan Minat</label><textarea id="alasanMinat" value={alasanMinat} onChange={(e) => setAlasanMinat(e.target.value)} required rows="4" className="bg-gray-700/80 p-3 rounded-md focus:ring-2 focus:ring-accent focus:border-accent transition w-full" placeholder="Jelaskan motivasi utama Anda..."></textarea></div>
-                                <div className="flex flex-col"><label htmlFor="pengalamanOrganisasi" className="mb-2 font-medium flex items-center gap-2"><Star size={16}/> Pengalaman Organisasi</label><textarea id="pengalamanOrganisasi" value={pengalamanOrganisasi} onChange={(e) => setPengalamanOrganisasi(e.target.value)} required rows="4" className="bg-gray-700/80 p-3 rounded-md focus:ring-2 focus:ring-accent focus:border-accent transition w-full" placeholder="Sebutkan organisasi yang pernah diikuti beserta jabatan dan tahunnya..."></textarea></div>
-                                <div className="flex flex-col"><label htmlFor="pengalamanKepanitiaan" className="mb-2 font-medium flex items-center gap-2"><Star size={16}/> Pengalaman Kepanitiaan</label><textarea id="pengalamanKepanitiaan" value={pengalamanKepanitiaan} onChange={(e) => setPengalamanKepanitiaan(e.target.value)} required rows="4" className="bg-gray-700/80 p-3 rounded-md focus:ring-2 focus:ring-accent focus:border-accent transition w-full" placeholder="Sebutkan kepanitiaan yang pernah diikuti beserta jabatan dan tahunnya..."></textarea></div>
-                                <div className="flex flex-col"><label htmlFor="sepuluhCalon" className="mb-2 font-medium flex items-center gap-2"><Users size={16}/> 10 Nama Calon Pengurus</label><textarea id="sepuluhCalon" value={sepuluhCalon} onChange={(e) => setSepuluhCalon(e.target.value)} required rows="5" className="bg-gray-700/80 p-3 rounded-md focus:ring-2 focus:ring-accent focus:border-accent transition w-full" placeholder="Tuliskan 10 nama yang menurut Anda pantas menjadi pengurus selanjutnya, pisahkan dengan koma atau baris baru..."></textarea></div>
+                                <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
+                                    <FilePenLine className="text-accent"/>
+                                    <span className="battery-style-gradient">Formulir Peminatan</span>
+                                </h2>
+                                <div className="flex flex-col"><label htmlFor="persentaseMinat" className="mb-3 font-medium flex items-center gap-2"><Heart size={16}/> Seberapa besar minat Anda?</label><div className="flex items-center gap-4"><input id="persentaseMinat" type="range" min="0" max="100" step="5" value={persentaseMinat} onChange={(e) => setPersentaseMinat(e.target.value)} disabled={sudahKirim} className="w-full h-2 bg-gray-700/50 rounded-lg appearance-none cursor-pointer accent-accent" /><span className="bg-accent text-gray-900 text-xs font-bold px-3 py-1 rounded-full w-16 text-center">{persentaseMinat}%</span></div></div>
+                                <div className="flex flex-col"><label htmlFor="alasanMinat" className="mb-2 font-medium flex items-center gap-2"><Sparkles size={16}/> Alasan Minat</label><textarea id="alasanMinat" value={alasanMinat} onChange={(e) => setAlasanMinat(e.target.value)} required rows="4" style={glassFormStyle} disabled={sudahKirim} className="p-3 focus:ring-2 focus:ring-accent focus:border-accent transition w-full placeholder-gray-400" placeholder="Jelaskan motivasi utama Anda..."></textarea></div>
+                                <div className="flex flex-col"><label htmlFor="pengalamanOrganisasi" className="mb-2 font-medium flex items-center gap-2"><Star size={16}/> Pengalaman Organisasi</label><textarea id="pengalamanOrganisasi" value={pengalamanOrganisasi} onChange={(e) => setPengalamanOrganisasi(e.target.value)} required rows="4" style={glassFormStyle} disabled={sudahKirim} className="p-3 focus:ring-2 focus:ring-accent focus:border-accent transition w-full placeholder-gray-400" placeholder="Sebutkan organisasi yang pernah diikuti..."></textarea></div>
+                                <div className="flex flex-col"><label htmlFor="pengalamanKepanitiaan" className="mb-2 font-medium flex items-center gap-2"><Star size={16}/> Pengalaman Kepanitiaan</label><textarea id="pengalamanKepanitiaan" value={pengalamanKepanitiaan} onChange={(e) => setPengalamanKepanitiaan(e.target.value)} required rows="4" style={glassFormStyle} disabled={sudahKirim} className="p-3 focus:ring-2 focus:ring-accent focus:border-accent transition w-full placeholder-gray-400" placeholder="Sebutkan kepanitiaan yang pernah diikuti..."></textarea></div>
+                                <div className="flex flex-col"><label htmlFor="sepuluhCalon" className="mb-2 font-medium flex items-center gap-2"><Users size={16}/> 10 Nama Calon Pengurus</label><textarea id="sepuluhCalon" value={sepuluhCalon} onChange={(e) => setSepuluhCalon(e.target.value)} required rows="5" style={glassFormStyle} disabled={sudahKirim} className="p-3 focus:ring-2 focus:ring-accent focus:border-accent transition w-full placeholder-gray-400" placeholder="Tuliskan 10 nama, pisahkan dengan koma..."></textarea></div>
                                 <div className="flex flex-col">
                                     <label className="mb-2 font-medium flex items-center gap-2"><UploadCloud size={16}/> Unggah Curriculum Vitae (CV)</label>
-                                    <p className="text-xs text-gray-400 mb-3">Format: PDF. Maksimal 1MB. (Harap sertakan: TTL, Alamat Kos, dll. dalam 1 halaman A4).</p>
+                                    <p className="text-xs text-gray-400 mb-3">Format: PDF. Maksimal 1MB. (Sertakan: TTL, Alamat Kos, dll).</p>
                                     <div className="mt-2">
-                                        <label htmlFor="cv-upload" className="relative cursor-pointer bg-gray-700/80 rounded-lg border-2 border-dashed border-gray-500 hover:border-accent transition-colors flex justify-center items-center p-6 text-center">
+                                        <label htmlFor="cv-upload" style={{ ...glassFormStyle, borderStyle: 'dashed', borderWidth: '2px' }} className={`relative cursor-pointer hover:border-accent transition-colors flex justify-center items-center p-6 text-center ${sudahKirim ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                             <div className="flex flex-col items-center">
                                                 <UploadCloud className="h-10 w-10 text-gray-400 mb-2"/>
                                                 <span className="text-sm text-gray-300">Klik untuk memilih file</span>
                                             </div>
-                                            <input id="cv-upload" name="cv-upload" type="file" className="sr-only" onChange={handleCvFileChange} accept="application/pdf" />
+                                            <input id="cv-upload" name="cv-upload" type="file" className="sr-only" onChange={handleCvFileChange} accept="application/pdf" disabled={sudahKirim} />
                                         </label>
                                     </div>
                                     {cvFile && (
@@ -339,7 +408,7 @@ export default function Pendaftaran() {
                                                 <FileIcon className="h-5 w-5 text-green-400 flex-shrink-0" />
                                                 <span className="truncate">{cvFile.name}</span>
                                             </div>
-                                            <button type="button" onClick={() => setCvFile(null)} className="p-1 rounded-full hover:bg-red-500/50 transition-colors">
+                                            <button type="button" onClick={() => setCvFile(null)} className="p-1 rounded-full hover:bg-red-500/50 transition-colors" disabled={sudahKirim}>
                                                 <X className="h-4 w-4"/>
                                             </button>
                                         </div>
@@ -353,7 +422,12 @@ export default function Pendaftaran() {
                                 transition={{ duration: 0.7, delay: 0.2 }}
                                 className="pt-4"
                             >
-                                <button type="submit" disabled={mengirim || !cvFile} className="w-full bg-accent hover:opacity-90 disabled:bg-gray-600 disabled:cursor-not-allowed text-gray-900 font-bold py-4 px-4 rounded-lg transition-all duration-300 flex items-center justify-center text-lg shadow-lg shadow-accent/10 hover:shadow-xl hover:shadow-accent/20">
+                                <button 
+                                    type="submit" 
+                                    disabled={mengirim || !cvFile || sudahKirim} 
+                                    style={glassFormStyle}
+                                    className="w-full text-accent font-bold py-4 px-4 transition-all duration-300 flex items-center justify-center text-lg hover:bg-accent/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                     {mengirim ? <LoaderCircle className="animate-spin h-6 w-6" /> : 'Kirim Pendaftaran Saya'}
                                 </button>
                             </motion.div>
