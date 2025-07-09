@@ -1,0 +1,647 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { LoaderCircle, User, Award, ClipboardEdit, Save, ChevronLeft, Lock, ChevronDown, Pencil, XCircle, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Footer from '../components/Footer';
+import heroBg from '../assets/bg9.jpg';
+
+// Gaya untuk efek glassmorphism
+const glassmorphismStyle = {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    boxShadow: `0px 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)`,
+    borderRadius: '0.8rem',
+};
+
+// --- Komponen Accordion ---
+const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
+    return (
+        <motion.div initial={false} className="p-6" style={glassmorphismStyle}>
+            <motion.header
+                initial={false}
+                onClick={onToggle}
+                className="flex justify-between items-center cursor-pointer"
+            >
+                <h2 className="text-2xl font-semibold flex items-center gap-3">{icon}{title}</h2>
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <ChevronDown size={24} />
+                </motion.div>
+            </motion.header>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.section
+                        key="content"
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                            open: { opacity: 1, height: 'auto', marginTop: '1rem' },
+                            collapsed: { opacity: 0, height: 0, marginTop: '0rem' },
+                        }}
+                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                        className="overflow-hidden"
+                    >
+                        {children}
+                    </motion.section>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+};
+
+
+// --- Helper & Kalkulasi Nilai ---
+const BEEP_TEST_SHUTTLE_MAP = {
+    1: 7, 2: 15, 3: 23, 4: 32, 5: 41, 6: 51, 7: 61, 8: 72, 9: 83, 10: 94, 11: 106, 12: 117, 13: 129, 14: 141, 15: 153, 16: 165,
+};
+
+const BEEP_LEVEL_MAX_SHUTTLE = {
+    1: 7, 2: 8, 3: 8, 4: 9, 5: 9, 6: 10, 7: 10, 8: 11, 9: 11, 10: 12, 11: 12, 12: 13, 13: 13, 14: 14, 15: 14, 16: 15,
+};
+
+const calculateTotalShuttles = (level, shuttle) => {
+    if (!level || level < 1) return 0;
+    const baseShuttles = level > 1 ? BEEP_TEST_SHUTTLE_MAP[level - 1] || 0 : 0;
+    return baseShuttles + (shuttle || 0);
+};
+
+const STANDARDS = {
+    'lakilaki': {
+        beepShuttles: calculateTotalShuttles(9, 1),
+        pushUp: 42,
+        sitUp: 40,
+        plankSeconds: 180,
+    },
+    'perempuan': {
+        beepShuttles: calculateTotalShuttles(7, 1),
+        pushUp: 37,
+        sitUp: 50,
+        plankSeconds: 120,
+    },
+};
+
+const calculateScore = (value, target) => {
+    if (!value || !target || value <= 0 || target <= 0) return 0;
+    const score = (value / target) * 100;
+    return Math.min(Math.round(score), 100);
+};
+
+const ScoreDisplay = ({ label, value }) => (
+    <div className="text-sm mt-1">
+        <span className="font-semibold text-gray-300">{label}: </span>
+        <span className="font-bold text-amber-400">{value}</span>
+        <span className="text-gray-400"> / 100</span>
+    </div>
+);
+
+
+export default function PenilaianPendaftar() {
+    const { user, role, loading: authLoading } = useAuth();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    const [daftarPeriode, setDaftarPeriode] = useState([]);
+    const [selectedPeriodeId, setSelectedPeriodeId] = useState('');
+    const [pendaftarList, setPendaftarList] = useState([]);
+    const [selectedPendaftarId, setSelectedPendaftarId] = useState('');
+    const [selectedPendaftar, setSelectedPendaftar] = useState(null);
+
+    const [jasmaniInput, setJasmaniInput] = useState({ beep_level: '', beep_shuttle: '', push_up: '', sit_up: '', plank_minutes: '', plank_seconds: '', keterangan: '' });
+    const [materiInput, setMateriInput] = useState({ nilai: '', keterangan: '' });
+    const [wawancaraInput, setWawancaraInput] = useState({ nilai: '', keterangan: '' });
+
+    const [existingWawancara, setExistingWawancara] = useState([]);
+    const [existingMateri, setExistingMateri] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const [jasmaniAssessment, setJasmaniAssessment] = useState(null);
+    const [canEditJasmani, setCanEditJasmani] = useState(false);
+    const [isJasmaniFormActive, setIsJasmaniFormActive] = useState(false);
+
+    const [currentUserMateri, setCurrentUserMateri] = useState(null);
+    const [isMateriFormActive, setIsMateriFormActive] = useState(false);
+    
+    const [currentUserWawancara, setCurrentUserWawancara] = useState(null);
+    const [isWawancaraFormActive, setIsWawancaraFormActive] = useState(false);
+
+    const [openSection, setOpenSection] = useState('jasmani');
+
+    useEffect(() => {
+        const fetchPeriode = async () => {
+            const { data, error } = await supabase.from('periode_pendaftaran').select('id, nama_periode').order('dibuat_pada', { ascending: false });
+            if (error) throw error;
+            setDaftarPeriode(data);
+            if (data.length > 0) setSelectedPeriodeId(data[0].id);
+        };
+
+        if (role === 'admin' || role === 'pengurus') {
+            fetchPeriode().catch(err => setError(err.message));
+        }
+    }, [role]);
+
+    useEffect(() => {
+        if (!selectedPeriodeId) return;
+        const fetchPendaftar = async () => {
+            setLoading(true);
+            const { data, error } = await supabase.from('data_pendaftar')
+                .select('id, profiles:id_pengguna (nama_lengkap, npt, jenis_kelamin)')
+                .eq('id_periode', selectedPeriodeId);
+            
+            if (error) {
+                setError(error.message);
+            } else {
+                setPendaftarList(data);
+                setSelectedPendaftarId('');
+                setSelectedPendaftar(null);
+                setExistingWawancara([]);
+                setExistingMateri([]);
+            }
+            setLoading(false);
+        };
+        fetchPendaftar();
+    }, [selectedPeriodeId]);
+
+    const fetchDetails = useCallback(async (pendaftarId) => {
+        if (!pendaftarId) return;
+        setLoading(true);
+        setError(null);
+        setJasmaniAssessment(null);
+        setCanEditJasmani(false);
+        setIsJasmaniFormActive(false);
+        setCurrentUserMateri(null);
+        setIsMateriFormActive(false);
+        setCurrentUserWawancara(null);
+        setIsWawancaraFormActive(false);
+        
+        const pendaftarData = pendaftarList.find(p => p.id === parseInt(pendaftarId));
+        setSelectedPendaftar(pendaftarData);
+
+        try {
+            // Penilaian Jasmani
+            const { data: jasmaniData, error: jasmaniError } = await supabase.from('penilaian_jasmani').select('*, penilai:id_penilai (id, nama_lengkap)').eq('id_pendaftar', pendaftarId).maybeSingle();
+            if (jasmaniError) throw jasmaniError;
+            if (jasmaniData) {
+                setJasmaniAssessment(jasmaniData);
+                const plankMinutes = Math.floor((jasmaniData.plank_seconds || 0) / 60);
+                const plankSeconds = (jasmaniData.plank_seconds || 0) % 60;
+                setJasmaniInput({ beep_level: jasmaniData.beep_level || '', beep_shuttle: jasmaniData.beep_shuttle || '', push_up: jasmaniData.push_up || '', sit_up: jasmaniData.sit_up || '', plank_minutes: plankMinutes || '', plank_seconds: plankSeconds || '', keterangan: jasmaniData.keterangan || '' });
+                if (jasmaniData.id_penilai === user.id) setCanEditJasmani(true);
+                setIsJasmaniFormActive(false);
+            } else {
+                setCanEditJasmani(true);
+                setIsJasmaniFormActive(true);
+                setJasmaniInput({ beep_level: '', beep_shuttle: '', push_up: '', sit_up: '', plank_minutes: '', plank_seconds: '', keterangan: '' });
+            }
+
+            // Penilaian Materi Karate
+            const { data: materiData, error: materiError } = await supabase.from('penilaian_materi').select('*, penilai:id_penilai(nama_lengkap)').eq('id_pendaftar', pendaftarId);
+            if (materiError) throw materiError;
+            setExistingMateri(materiData || []);
+            const userMateri = materiData.find(p => p.id_penilai === user.id);
+            if (userMateri) {
+                setCurrentUserMateri(userMateri);
+                setMateriInput({ nilai: userMateri.nilai || '', keterangan: userMateri.keterangan || '' });
+                setIsMateriFormActive(false);
+            } else {
+                setMateriInput({ nilai: '', keterangan: '' });
+                setIsMateriFormActive(true);
+            }
+
+            // Penilaian Wawancara
+            const { data: wawancaraData, error: wawancaraError } = await supabase.from('penilaian_wawancara').select('*, penilai:id_penilai(nama_lengkap)').eq('id_pendaftar', pendaftarId);
+            if (wawancaraError) throw wawancaraError;
+            setExistingWawancara(wawancaraData || []);
+            const userWawancara = wawancaraData.find(p => p.id_penilai === user.id);
+            if (userWawancara) {
+                setCurrentUserWawancara(userWawancara);
+                setWawancaraInput({ nilai: userWawancara.nilai || '', keterangan: userWawancara.keterangan || '' });
+                setIsWawancaraFormActive(false);
+            } else {
+                setWawancaraInput({ nilai: '', keterangan: '' });
+                setIsWawancaraFormActive(true);
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [pendaftarList, user]);
+
+    useEffect(() => {
+        if (selectedPendaftarId) {
+            fetchDetails(selectedPendaftarId);
+        } else {
+            setSelectedPendaftar(null);
+            setExistingMateri([]);
+            setExistingWawancara([]);
+            setJasmaniAssessment(null);
+            setCurrentUserMateri(null);
+            setCurrentUserWawancara(null);
+        }
+    }, [selectedPendaftarId, fetchDetails]);
+
+    const isJasmaniDirty = useMemo(() => {
+        if (!isJasmaniFormActive) return false;
+        if (!jasmaniAssessment) return Object.values(jasmaniInput).some(v => v !== '');
+        
+        const originalPlankMinutes = (Math.floor((jasmaniAssessment.plank_seconds || 0) / 60)).toString();
+        const originalPlankSeconds = ((jasmaniAssessment.plank_seconds || 0) % 60).toString();
+
+        return (
+            jasmaniInput.beep_level != (jasmaniAssessment.beep_level || '') ||
+            jasmaniInput.beep_shuttle != (jasmaniAssessment.beep_shuttle || '') ||
+            jasmaniInput.push_up != (jasmaniAssessment.push_up || '') ||
+            jasmaniInput.sit_up != (jasmaniAssessment.sit_up || '') ||
+            jasmaniInput.plank_minutes != originalPlankMinutes ||
+            jasmaniInput.plank_seconds != originalPlankSeconds ||
+            jasmaniInput.keterangan != (jasmaniAssessment.keterangan || '')
+        );
+    }, [jasmaniInput, jasmaniAssessment, isJasmaniFormActive]);
+
+    const isMateriDirty = useMemo(() => {
+        if (!isMateriFormActive) return false;
+        if (!currentUserMateri) return materiInput.nilai !== '' || materiInput.keterangan !== '';
+
+        return (
+            materiInput.nilai != (currentUserMateri.nilai || '') ||
+            materiInput.keterangan != (currentUserMateri.keterangan || '')
+        );
+    }, [materiInput, currentUserMateri, isMateriFormActive]);
+
+    const isWawancaraDirty = useMemo(() => {
+        if (!isWawancaraFormActive) return false;
+        if (!currentUserWawancara) return wawancaraInput.nilai !== '' || wawancaraInput.keterangan !== '';
+
+        return (
+            wawancaraInput.nilai != (currentUserWawancara.nilai || '') ||
+            wawancaraInput.keterangan != (currentUserWawancara.keterangan || '')
+        );
+    }, [wawancaraInput, currentUserWawancara, isWawancaraFormActive]);
+
+    const hasUnsavedChanges = (isJasmaniFormActive && isJasmaniDirty) || (isMateriFormActive && isMateriDirty) || (isWawancaraFormActive && isWawancaraDirty);
+
+    const calculatedScores = useMemo(() => {
+        if (!selectedPendaftar || !selectedPendaftar.profiles?.jenis_kelamin) return {};
+        const standard = STANDARDS[selectedPendaftar.profiles.jenis_kelamin];
+        if (!standard) return {};
+
+        const totalShuttles = calculateTotalShuttles(parseInt(jasmaniInput.beep_level), parseInt(jasmaniInput.beep_shuttle));
+        const plankTotalSeconds = (parseInt(jasmaniInput.plank_minutes || 0) * 60) + parseInt(jasmaniInput.plank_seconds || 0);
+        const beepScore = calculateScore(totalShuttles, standard.beepShuttles);
+        const pushUpScore = calculateScore(parseInt(jasmaniInput.push_up), standard.pushUp);
+        const sitUpScore = calculateScore(parseInt(jasmaniInput.sit_up), standard.sitUp);
+        const plankScore = calculateScore(plankTotalSeconds, standard.plankSeconds);
+        const avgJasmani = Math.round((beepScore + pushUpScore + sitUpScore + plankScore) / 4);
+        
+        return { beepScore, pushUpScore, sitUpScore, plankScore, avgJasmani };
+    }, [jasmaniInput, selectedPendaftar]);
+
+    const finalScores = useMemo(() => {
+        if (!selectedPendaftar || !selectedPendaftar.profiles?.jenis_kelamin) return { jasmani: 0, materi: 0, wawancara: 0 };
+        const standard = STANDARDS[selectedPendaftar.profiles.jenis_kelamin];
+        if (!standard) return { jasmani: 0, materi: 0, wawancara: 0 };
+
+        let jasmaniFinalScore = 0;
+        if (jasmaniAssessment) {
+            const p = jasmaniAssessment;
+            const totalShuttles = calculateTotalShuttles(Number(p.beep_level), Number(p.beep_shuttle));
+            const beepScore = calculateScore(totalShuttles, standard.beepShuttles);
+            const pushUpScore = calculateScore(Number(p.push_up), standard.pushUp);
+            const sitUpScore = calculateScore(Number(p.sit_up), standard.sitUp);
+            const plankScore = calculateScore(Number(p.plank_seconds), standard.plankSeconds);
+            jasmaniFinalScore = Math.round((beepScore + pushUpScore + sitUpScore + plankScore) / 4);
+        }
+
+        const calculateAverage = (assessments) => {
+            const validAssessments = assessments.filter(p => p.nilai > 0);
+            if (validAssessments.length === 0) return 0;
+            const total = validAssessments.reduce((sum, p) => sum + (Number(p.nilai) || 0), 0);
+            return Math.round(total / validAssessments.length);
+        };
+
+        return { 
+            jasmani: jasmaniFinalScore, 
+            materi: calculateAverage(existingMateri),
+            wawancara: calculateAverage(existingWawancara) 
+        };
+    }, [existingMateri, existingWawancara, jasmaniAssessment, selectedPendaftar]);
+
+    const handleCancelJasmaniEdit = () => {
+        setIsJasmaniFormActive(false);
+        if (jasmaniAssessment) {
+            const plankMinutes = Math.floor((jasmaniAssessment.plank_seconds || 0) / 60);
+            const plankSeconds = (jasmaniAssessment.plank_seconds || 0) % 60;
+            setJasmaniInput({ beep_level: jasmaniAssessment.beep_level || '', beep_shuttle: jasmaniAssessment.beep_shuttle || '', push_up: jasmaniAssessment.push_up || '', sit_up: jasmaniAssessment.sit_up || '', plank_minutes: plankMinutes || '', plank_seconds: plankSeconds || '', keterangan: jasmaniAssessment.keterangan || '' });
+        }
+    };
+
+    const handleCancelMateriEdit = () => {
+        setIsMateriFormActive(false);
+        if (currentUserMateri) {
+            setMateriInput({ nilai: currentUserMateri.nilai || '', keterangan: currentUserMateri.keterangan || '' });
+        }
+    };
+
+    const handleCancelWawancaraEdit = () => {
+        setIsWawancaraFormActive(false);
+        if (currentUserWawancara) {
+            setWawancaraInput({ nilai: currentUserWawancara.nilai || '', keterangan: currentUserWawancara.keterangan || '' });
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedPendaftarId || !user) {
+            alert("Pilih pendaftar terlebih dahulu.");
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            if (isJasmaniFormActive && isJasmaniDirty) {
+                const plankTotalSeconds = (parseInt(jasmaniInput.plank_minutes || 0) * 60) + parseInt(jasmaniInput.plank_seconds || 0);
+                const { error } = await supabase.from('penilaian_jasmani').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, beep_level: parseInt(jasmaniInput.beep_level) || null, beep_shuttle: parseInt(jasmaniInput.beep_shuttle) || null, push_up: parseInt(jasmaniInput.push_up) || null, sit_up: parseInt(jasmaniInput.sit_up) || null, plank_seconds: plankTotalSeconds || null, keterangan: jasmaniInput.keterangan }, { onConflict: 'id_pendaftar' });
+                if (error) throw error;
+            }
+
+            if (isMateriFormActive && isMateriDirty && materiInput.nilai && parseInt(materiInput.nilai, 10) > 0) {
+                const { error } = await supabase.from('penilaian_materi').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, nilai: parseInt(materiInput.nilai), keterangan: materiInput.keterangan }, { onConflict: 'id_pendaftar, id_penilai' });
+                if (error) throw error;
+            }
+
+            if (isWawancaraFormActive && isWawancaraDirty && wawancaraInput.nilai && parseInt(wawancaraInput.nilai, 10) > 0) {
+                const { error } = await supabase.from('penilaian_wawancara').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, nilai: parseInt(wawancaraInput.nilai), keterangan: wawancaraInput.keterangan }, { onConflict: 'id_pendaftar, id_penilai' });
+                if (error) throw error;
+            }
+            alert(`Penilaian berhasil disimpan/diperbarui!`);
+            await fetchDetails(selectedPendaftarId);
+        } catch (error) {
+            console.error("Error submitting assessment:", error);
+            alert(`Gagal menyimpan penilaian: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const isButtonDisabled = isSubmitting || !hasUnsavedChanges;
+
+    if (authLoading) return <div className="relative z-10 flex h-screen justify-center items-center"><LoaderCircle className="animate-spin h-10 w-10 text-amber-400" /></div>;
+    
+    return (
+        <div className="relative min-h-screen text-white">
+            <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
+            <div className="relative z-10 flex flex-col min-h-screen">
+                <main className="flex-grow pt-24 pb-12 px-12 md:px-24">
+                    <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="max-w-7xl mx-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <h1 className="text-4xl md:text-5xl font-league uppercase text-accent drop-shadow-lg">Penilaian Pendaftar</h1>
+                            <button onClick={() => navigate('/data-pendaftar')} className="flex items-center gap-2 px-4 py-2 text-white transition-colors hover:bg-white/20" style={glassmorphismStyle}>
+                                <ChevronLeft size={20} /> Kembali
+                            </button>
+                        </div>
+
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="p-6 mb-8" style={glassmorphismStyle}>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label htmlFor="periode-select" className="block text-sm font-medium text-gray-300 mb-2">Pilih Periode</label>
+                                    <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer border border-gray-600 rounded-lg">
+                                        <option value="" disabled className="bg-gray-800">-- Pilih Periode --</option>
+                                        {daftarPeriode.map(p => <option key={p.id} value={p.id} className="bg-gray-800">{p.nama_periode}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="pendaftar-select" className="block text-sm font-medium text-gray-300 mb-2">Pilih Pendaftar</label>
+                                    <select id="pendaftar-select" value={selectedPendaftarId} onChange={(e) => setSelectedPendaftarId(e.target.value)} disabled={!selectedPeriodeId || loading} className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer border border-gray-600 rounded-lg disabled:opacity-50">
+                                        <option value="" disabled className="bg-gray-800">-- Pilih Pendaftar --</option>
+                                        {pendaftarList.map(p => <option key={p.id} value={p.id} className="bg-gray-800">{p.profiles?.nama_lengkap || `Pendaftar ID ${p.id}`} ({p.profiles?.npt || 'N/A'})</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {loading && <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /></div>}
+                        {error && <p className="text-center text-red-400">{error}</p>}
+                        
+                        {selectedPendaftar && selectedPendaftar.profiles && (
+                            <form onSubmit={handleSubmit}>
+                                <div className="flex flex-col lg:flex-row lg:gap-8">
+                                    {/* Kolom Kiri - Forms */}
+                                    <div className="lg:w-2/5 space-y-8 order-2 lg:order-1 mt-8 lg:mt-0">
+                                        {/* Penilaian Jasmani */}
+                                        <AccordionSection title="Penilaian Jasmani" icon={<Award className="text-amber-400" />} isOpen={openSection === 'jasmani'} onToggle={() => setOpenSection(openSection === 'jasmani' ? null : 'jasmani')}>
+                                            <div className="space-y-4 pt-4 border-t border-gray-700/50">
+                                                {jasmaniAssessment && !canEditJasmani && <div className="mb-4 p-3 bg-red-900/30 rounded-lg text-center text-sm border border-red-500"><p className="font-semibold text-white">Telah dinilai oleh: {jasmaniAssessment.penilai.nama_lengkap}</p><p className="text-red-300 mt-1">Hanya penilai yang bersangkutan yang dapat mengedit.</p></div>}
+                                                <div className="mb-4">
+                                                    {jasmaniAssessment && canEditJasmani && !isJasmaniFormActive && <button type="button" onClick={() => setIsJasmaniFormActive(true)} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"><Pencil size={18}/> Aktifkan Mode Edit</button>}
+                                                    {isJasmaniFormActive && jasmaniAssessment && <button type="button" onClick={handleCancelJasmaniEdit} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-red-400 hover:bg-red-500/20 font-bold transition-colors"><XCircle size={18}/> Batal Edit</button>}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300">Beep Test</label>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <input type="number" placeholder="Level" disabled={!isJasmaniFormActive} value={jasmaniInput.beep_level} onChange={e => { const newLevel = e.target.value; const currentShuttle = parseInt(jasmaniInput.beep_shuttle, 10); const maxShuttle = BEEP_LEVEL_MAX_SHUTTLE[newLevel]; if (maxShuttle && currentShuttle > maxShuttle) { setJasmaniInput({ ...jasmaniInput, beep_level: newLevel, beep_shuttle: maxShuttle.toString() }); } else { setJasmaniInput({ ...jasmaniInput, beep_level: newLevel }); } }} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                        <input type="number" placeholder="Shuttle" disabled={!isJasmaniFormActive} value={jasmaniInput.beep_shuttle} onChange={e => { const newShuttle = parseInt(e.target.value, 10); const currentLevel = parseInt(jasmaniInput.beep_level, 10); const maxShuttle = BEEP_LEVEL_MAX_SHUTTLE[currentLevel]; if (maxShuttle && newShuttle > maxShuttle) { setJasmaniInput({ ...jasmaniInput, beep_shuttle: maxShuttle.toString() }); } else { setJasmaniInput({ ...jasmaniInput, beep_shuttle: e.target.value }); } }} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                    </div>
+                                                    <ScoreDisplay label="Skor" value={calculatedScores.beepScore || 0} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300">Push Up</label>
+                                                    <input type="number" placeholder="Jumlah" disabled={!isJasmaniFormActive} value={jasmaniInput.push_up} onChange={e => setJasmaniInput({...jasmaniInput, push_up: e.target.value})} className="w-full bg-white/10 p-2 rounded-md mt-1 disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                    <ScoreDisplay label="Skor" value={calculatedScores.pushUpScore || 0} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300">Sit Up</label>
+                                                    <input type="number" placeholder="Jumlah" disabled={!isJasmaniFormActive} value={jasmaniInput.sit_up} onChange={e => setJasmaniInput({...jasmaniInput, sit_up: e.target.value})} className="w-full bg-white/10 p-2 rounded-md mt-1 disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                    <ScoreDisplay label="Skor" value={calculatedScores.sitUpScore || 0} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300">Plank</label>
+                                                    <div className="flex gap-2 mt-1">
+                                                        <input type="number" placeholder="Menit" disabled={!isJasmaniFormActive} value={jasmaniInput.plank_minutes} onChange={e => setJasmaniInput({...jasmaniInput, plank_minutes: e.target.value})} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                        <input type="number" placeholder="Detik" disabled={!isJasmaniFormActive} value={jasmaniInput.plank_seconds} onChange={e => setJasmaniInput({...jasmaniInput, plank_seconds: e.target.value})} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                    </div>
+                                                    <ScoreDisplay label="Skor" value={calculatedScores.plankScore || 0} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300">Keterangan Jasmani</label>
+                                                    <textarea placeholder="Catatan tambahan (opsional)" disabled={!isJasmaniFormActive} value={jasmaniInput.keterangan} onChange={e => setJasmaniInput({...jasmaniInput, keterangan: e.target.value})} rows="2" className="w-full bg-white/10 p-2 rounded-md mt-1 disabled:opacity-60 disabled:cursor-not-allowed"></textarea>
+                                                </div>
+                                                <div className="pt-4 mt-2 border-t border-gray-700/50 text-lg font-bold text-center">Rata-rata Jasmani: <span className="text-amber-400">{calculatedScores.avgJasmani || 0}</span></div>
+                                            </div>
+                                        </AccordionSection>
+
+                                        {/* Penilaian Materi Karate */}
+                                        <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
+                                            <div className="space-y-4 pt-4 border-t border-gray-700/50">
+                                                <div className="mb-4">
+                                                    {currentUserMateri && !isMateriFormActive && <button type="button" onClick={() => setIsMateriFormActive(true)} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"><Pencil size={18}/> Aktifkan Mode Edit</button>}
+                                                    {isMateriFormActive && currentUserMateri && <button type="button" onClick={handleCancelMateriEdit} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-red-400 hover:bg-red-500/20 font-bold transition-colors"><XCircle size={18}/> Batal Edit</button>}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-1">Nilai Materi (1-100)</label>
+                                                    <input type="number" min="1" max="100" placeholder="Nilai pemahaman materi" disabled={!isMateriFormActive} value={materiInput.nilai} onChange={e => setMateriInput({...materiInput, nilai: e.target.value})} className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-1">Keterangan Materi</label>
+                                                    <textarea placeholder="Catatan tambahan (opsional)" disabled={!isMateriFormActive} value={materiInput.keterangan} onChange={e => setMateriInput({...materiInput, keterangan: e.target.value})} rows="2" className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"></textarea>
+                                                </div>
+                                            </div>
+                                        </AccordionSection>
+
+                                        {/* Penilaian Wawancara */}
+                                        <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
+                                            <div className="space-y-4 pt-4 border-t border-gray-700/50">
+                                                <div className="mb-4">
+                                                    {currentUserWawancara && !isWawancaraFormActive && <button type="button" onClick={() => setIsWawancaraFormActive(true)} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"><Pencil size={18}/> Aktifkan Mode Edit</button>}
+                                                    {isWawancaraFormActive && currentUserWawancara && <button type="button" onClick={handleCancelWawancaraEdit} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-red-400 hover:bg-red-500/20 font-bold transition-colors"><XCircle size={18}/> Batal Edit</button>}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-1">Nilai Wawancara (1-100)</label>
+                                                    <input type="number" min="1" max="100" placeholder="Nilai sikap dan jawaban" disabled={!isWawancaraFormActive} value={wawancaraInput.nilai} onChange={e => setWawancaraInput({...wawancaraInput, nilai: e.target.value})} className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-1">Keterangan Wawancara</label>
+                                                    <textarea placeholder="Catatan tambahan (opsional)" disabled={!isWawancaraFormActive} value={wawancaraInput.keterangan} onChange={e => setWawancaraInput({...wawancaraInput, keterangan: e.target.value})} rows="2" className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"></textarea>
+                                                </div>
+                                            </div>
+                                        </AccordionSection>
+
+                                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                                            <button
+                                                type="submit"
+                                                disabled={isButtonDisabled}
+                                                style={glassmorphismStyle}
+                                                className="w-full flex items-center justify-center gap-2 py-3 px-4 font-bold transition-all duration-300 disabled:cursor-not-allowed hover:enabled:bg-green-500/20 hover:enabled:scale-[1.02]"
+                                            >
+                                                {isSubmitting ? (
+                                                    <span className="flex items-center gap-2 text-gray-400">
+                                                        <LoaderCircle className="animate-spin" />
+                                                        Menyimpan...
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        <Save className={`transition-colors duration-300 ${isButtonDisabled ? 'text-gray-500' : 'text-[#A8EB4B]'}`} />
+                                                        <span className={`transition-colors duration-300 ${isButtonDisabled ? 'text-gray-500' : 'battery-style-gradient'}`}>
+                                                            Simpan Penilaian Saya
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </motion.div>
+                                    </div>
+                                    
+                                    {/* Kolom Kanan - Hasil Penilaian */}
+                                    <div className="lg:w-3/5 order-1 lg:order-2">
+                                        <div className="p-6" style={glassmorphismStyle}>
+                                            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3"><User className="text-amber-400" />Hasil Penilaian: {selectedPendaftar.profiles.nama_lengkap}</h2>
+                                            <p className="mb-4 text-gray-400">
+                                                Jenis Kelamin: {selectedPendaftar.profiles.jenis_kelamin === 'lakilaki' ? 'Laki-laki' : selectedPendaftar.profiles.jenis_kelamin === 'perempuan' ? 'Perempuan' : 'N/A'}
+                                            </p>
+                                            
+                                            <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
+                                                {/* Hasil Penilaian Jasmani */}
+                                                <div className="p-3 rounded-lg bg-white/5">
+                                                    <div className='flex justify-between items-center'>
+                                                        <h3 className="font-bold text-lg">Penilaian Jasmani</h3>
+                                                        <div className="font-bold text-amber-300 text-lg">{finalScores.jasmani}</div>
+                                                    </div>
+                                                    {jasmaniAssessment ? (
+                                                        <div className='mt-2 pt-2 border-t border-white/10'>
+                                                            <p className="text-sm text-gray-400">Dinilai oleh: {jasmaniAssessment.penilai.nama_lengkap}</p>
+                                                            <div className="text-xs text-gray-400 mt-1">
+                                                                Beep: {jasmaniAssessment.beep_level || 'N/A'}-{jasmaniAssessment.beep_shuttle || 'N/A'} | Push Up: {jasmaniAssessment.push_up || 'N/A'} | Sit Up: {jasmaniAssessment.sit_up || 'N/A'} | Plank: {jasmaniAssessment.plank_seconds ? `${Math.floor(jasmaniAssessment.plank_seconds/60)}m ${jasmaniAssessment.plank_seconds%60}s` : 'N/A'}
+                                                            </div>
+                                                            {jasmaniAssessment.keterangan && <p className="text-xs text-gray-400 mt-1 italic">Ket: {jasmaniAssessment.keterangan}</p>}
+                                                        </div>
+                                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                                </div>
+
+                                                {/* Hasil Penilaian Materi */}
+                                                <div className="p-3 rounded-lg bg-white/5">
+                                                    <div className='flex justify-between items-center'>
+                                                        <h3 className="font-bold text-lg">Penilaian Materi</h3>
+                                                        <div className="font-bold text-amber-300 text-lg">{finalScores.materi}</div>
+                                                    </div>
+                                                    {existingMateri.length > 0 ? (
+                                                        <div className='mt-2 pt-2 border-t border-white/10'>
+                                                             <p className="text-sm text-gray-400">Telah dinilai oleh: {existingMateri.length} penilai</p>
+                                                            <div className="space-y-2 mt-1">
+                                                                {existingMateri.map(p => (
+                                                                    <div key={p.id_penilai} className="text-xs text-gray-400">
+                                                                        <div className="flex justify-between items-center">
+                                                                            <span>{p.penilai.nama_lengkap}</span>
+                                                                            <span className="font-bold text-white text-sm">{p.nilai || 'N/A'}</span>
+                                                                        </div>
+                                                                        {p.keterangan && <p className="italic pl-2">- {p.keterangan}</p>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                                </div>
+                                                
+                                                {/* Hasil Penilaian Wawancara */}
+                                                <div className="p-3 rounded-lg bg-white/5">
+                                                    <div className='flex justify-between items-center'>
+                                                        <h3 className="font-bold text-lg">Penilaian Wawancara</h3>
+                                                        <div className="font-bold text-amber-300 text-lg">{finalScores.wawancara}</div>
+                                                    </div>
+                                                    {existingWawancara.length > 0 ? (
+                                                        <div className='mt-2 pt-2 border-t border-white/10'>
+                                                            <p className="text-sm text-gray-400">Telah dinilai oleh: {existingWawancara.length} penilai</p>
+                                                            <div className="space-y-2 mt-1">
+                                                                {existingWawancara.map(p => (
+                                                                    <div key={p.id_penilai} className="text-xs text-gray-400">
+                                                                        <div className="flex justify-between items-center">
+                                                                            <span>{p.penilai.nama_lengkap}</span>
+                                                                            <span className="font-bold text-white text-sm">{p.nilai || 'N/A'}</span>
+                                                                        </div>
+                                                                        {p.keterangan && <p className="italic pl-2">- {p.keterangan}</p>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-6 pt-4 border-t border-gray-600 text-center">
+                                                <h3 className="text-xl font-bold">Nilai Akhir Rata-rata</h3>
+                                                <div className="flex justify-around items-start mt-2">
+                                                    <div>
+                                                        <div className="text-3xl font-bold text-amber-400">{finalScores.jasmani}</div>
+                                                        <div className="text-sm text-gray-300">Jasmani</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-3xl font-bold text-amber-400">{finalScores.materi}</div>
+                                                        <div className="text-sm text-gray-300">Materi</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-3xl font-bold text-amber-400">{finalScores.wawancara}</div>
+                                                        <div className="text-sm text-gray-300">Wawancara</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        )}
+                        {selectedPendaftar && !selectedPendaftar.profiles && (
+                             <div className="p-6 text-center" style={glassmorphismStyle}>
+                                <p className="text-amber-400">Data profil untuk pendaftar ini tidak ditemukan. Penilaian tidak dapat dilakukan.</p>
+                             </div>
+                        )}
+                    </motion.div>
+                </main>
+                <Footer />
+            </div>
+        </div>
+    );
+}

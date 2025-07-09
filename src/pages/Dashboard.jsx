@@ -16,6 +16,14 @@ import bgImage from '../assets/bg11.jpg';
 // Komponen Modal
 import Modal from '../components/Modal';
 
+// --- [DITAMBAHKAN] Helper function untuk format tampilan Jenis Kelamin ---
+const formatJenisKelamin = (value) => {
+    if (value === 'lakilaki') return 'Laki-laki';
+    if (value === 'perempuan') return 'Perempuan';
+    return '-'; // Tampilan default jika data kosong atau tidak dikenali
+};
+
+
 const ActionSheetModal = ({ isOpen, onClose, title, actions }) => {
     useEffect(() => {
         if (isOpen) {
@@ -200,8 +208,8 @@ function ProfileCard({
         setIsUploading(true);
         try {
              if (profileData?.avatar_url) {
-                const oldFileName = profileData.avatar_url.split('/').pop();
-                await supabase.storage.from('avatars').remove([oldFileName]);
+                 const oldFileName = profileData.avatar_url.split('/').pop();
+                 await supabase.storage.from('avatars').remove([oldFileName]);
              }
              await supabase.from('profiles').update({ avatar_url: null }).eq('id', profileData.id);
              setAvatarFile(null);
@@ -292,7 +300,21 @@ function ProfileCard({
                     </div>
 
                     <div className={dataDisplayStyle}><p className={labelStyle}>Email</p><p className="text-sm text-gray-400 break-words">{session.user.email} (tidak bisa diubah)</p></div>
-                    <div className={dataDisplayStyle}><p className={labelStyle}>Nomor Telepon</p><input type="tel" name="nomor_telepon" value={formData.nomor_telepon || ''} onChange={handleInputChange} className={inputStyle} /></div>
+                    <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={formData.nomor_telepon || ''} onChange={handleInputChange} className={inputStyle} /></div>
+                    
+                    {/* --- [DIUBAH] Input Jenis Kelamin menjadi dropdown --- */}
+                    <div>
+                        <label className={labelStyle}>Jenis Kelamin</label>
+                        <div className="relative">
+                            <select name="jenis_kelamin" value={formData.jenis_kelamin || ''} onChange={handleInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                <option value="" disabled className="bg-gray-800 text-gray-500">Pilih Jenis Kelamin</option>
+                                <option value="lakilaki" className="bg-gray-900 text-white">Laki-laki</option>
+                                <option value="perempuan" className="bg-gray-900 text-white">Perempuan</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                          <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={formData.npt || ''} onChange={handleInputChange} className={inputStyle} /></div>
                          <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={formData.kelas || ''} onChange={handleInputChange} className={inputStyle} /></div>
@@ -332,11 +354,15 @@ function ProfileCard({
                      </div>
                     
                     <div className={dataDisplayStyle}><p className={labelStyle}>Email</p><p className={textDataStyle}>{session.user.email}</p></div>
-                    <div className={dataDisplayStyle}><p className={labelStyle}>Nomor Telepon</p><p className={textDataStyle}>{profileData.nomor_telepon}</p></div>
+                    <div className={dataDisplayStyle}><p className={labelStyle}>Nomor Telepon</p><p className={textDataStyle}>{profileData.nomor_telepon || '-'}</p></div>
+                    
+                    {/* --- [DIUBAH] Tampilan Jenis Kelamin menggunakan helper function --- */}
+                    <div className={dataDisplayStyle}><p className={labelStyle}>Jenis Kelamin</p><p className={textDataStyle}>{formatJenisKelamin(profileData.jenis_kelamin)}</p></div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                         <div className={dataDisplayStyle}><p className={labelStyle}>NPT</p><p className={textDataStyle}>{profileData.npt}</p></div>
-                         <div className={dataDisplayStyle}><p className={labelStyle}>Kelas</p><p className={textDataStyle}>{profileData.kelas}</p></div>
-                         <div className={dataDisplayStyle}><p className={labelStyle}>Angkatan</p><p className={textDataStyle}>{profileData.angkatan}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>NPT</p><p className={textDataStyle}>{profileData.npt || '-'}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>Kelas</p><p className={textDataStyle}>{profileData.kelas || '-'}</p></div>
+                         <div className={dataDisplayStyle}><p className={labelStyle}>Angkatan</p><p className={textDataStyle}>{profileData.angkatan || '-'}</p></div>
                     </div>
                     <div className={dataDisplayStyle}><p className={labelStyle}>Role</p><p className={`${textDataStyle} capitalize`}>{profileData.role}</p></div>
                     
@@ -621,7 +647,6 @@ function Dashboard() {
                                             <div className="space-y-2">
                                                 {allProfiles.map(p => (
                                                     <React.Fragment key={p.id}>
-                                                        {/* [DIKEMBALIKAN] Logika untuk menampilkan setiap pengguna */}
                                                         <div className="flex justify-between items-center p-3 bg-black/20 rounded-md gap-3">
                                                             <div className="flex items-center gap-3 flex-grow min-w-0">
                                                                 <div
@@ -664,7 +689,7 @@ function Dashboard() {
                                                                 <form onSubmit={handleUpdateOtherProfileByAdmin} className="p-4 border border-blue-500/30 rounded-lg bg-black/20 space-y-3">
                                                                     <h3 className="font-regular text-lg text-white">Edit Profil: <span className="font-semibold">{selectedProfile.username}</span></h3>
                                                                     <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 sm:gap-6 items-start">
-                                                                        <AvatarEditor 
+                                                                         <AvatarEditor 
                                                                             initialUrl={editFormData.avatar_url}
                                                                             isUploading={isUploadingAdminAvatar}
                                                                             fileInputRef={adminFileInputRef}
@@ -677,19 +702,33 @@ function Dashboard() {
                                                                                 onRemove: handleAdminRemoveAvatar,
                                                                                 avatarUrl: editFormData.avatar_url
                                                                             })}
-                                                                        />
-                                                                        <div className="space-y-3 w-full">
-                                                                            <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                            <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                        </div>
+                                                                         />
+                                                                         <div className="space-y-3 w-full">
+                                                                             <div><label className={labelStyle}>Username</label><input type="text" name="username" value={editFormData.username || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                             <div><label className={labelStyle}>Nama Lengkap</label><input type="text" name="nama_lengkap" value={editFormData.nama_lengkap || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                         </div>
                                                                     </div>
                                                                     
                                                                     <div><label className={labelStyle}>Email</label><p className="text-sm text-gray-400 break-words">{selectedProfile.email} (tidak bisa diubah)</p></div>
                                                                     <div><label className={labelStyle}>Nomor Telepon</label><input type="tel" name="nomor_telepon" value={editFormData.nomor_telepon || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                    
+                                                                    {/* --- [DIUBAH] Nilai value pada option di dropdown --- */}
+                                                                    <div>
+                                                                        <label className={labelStyle}>Jenis Kelamin</label>
+                                                                        <div className="relative">
+                                                                            <select name="jenis_kelamin" value={editFormData.jenis_kelamin || ''} onChange={handleAdminEditInputChange} className={`${inputStyle} appearance-none pr-8`}>
+                                                                                <option value="" disabled className="bg-gray-800 text-gray-500">Pilih Jenis Kelamin</option>
+                                                                                <option value="lakilaki" className="bg-gray-900 text-white">Laki-laki</option>
+                                                                                <option value="perempuan" className="bg-gray-900 text-white">Perempuan</option>
+                                                                            </select>
+                                                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><ChevronDown size={16} /></div>
+                                                                        </div>
+                                                                    </div>
+
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                        <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                        <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
-                                                                        <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                         <div><label className={labelStyle}>NPT</label><input type="text" name="npt" value={editFormData.npt || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                         <div><label className={labelStyle}>Kelas</label><input type="text" name="kelas" value={editFormData.kelas || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
+                                                                         <div><label className={labelStyle}>Angkatan</label><input type="text" name="angkatan" value={editFormData.angkatan || ''} onChange={handleAdminEditInputChange} className={inputStyle} /></div>
                                                                     </div>
                                                                     <div>
                                                                         <label className={labelStyle}>Role</label>

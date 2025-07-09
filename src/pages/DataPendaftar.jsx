@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, Settings, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, Filter } from 'lucide-react';
+import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, Filter, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
+
+// [BARU] Impor dari TanStack Table
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
 // Impor PDF.js Library
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
@@ -39,6 +42,184 @@ const confirmationModalStyle = {
         inset 0 0 0 1px rgba(255, 255, 255, 0.2)
     `,
     borderRadius: '0.8rem',
+};
+
+// --- Helper & Kalkulasi Nilai ---
+const BEEP_TEST_SHUTTLE_MAP = { 1: 7, 2: 15, 3: 23, 4: 32, 5: 41, 6: 51, 7: 61, 8: 72, 9: 83, 10: 94, 11: 106, 12: 117, 13: 129, 14: 141, 15: 153, 16: 165 };
+const calculateTotalShuttles = (level, shuttle) => {
+    if (!level || level < 1) return 0;
+    const baseShuttles = level > 1 ? BEEP_TEST_SHUTTLE_MAP[level - 1] || 0 : 0;
+    return baseShuttles + (shuttle || 0);
+};
+const STANDARDS = {
+    'lakilaki': { beepShuttles: calculateTotalShuttles(9, 1), pushUp: 42, sitUp: 40, plankSeconds: 180 },
+    'perempuan': { beepShuttles: calculateTotalShuttles(7, 1), pushUp: 37, sitUp: 50, plankSeconds: 120 },
+};
+const calculateScore = (value, target) => {
+    if (!value || !target || value <= 0 || target <= 0) return 0;
+    return Math.min(Math.round((value / target) * 100), 100);
+};
+
+// --- Komponen Modal Penilaian ---
+const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
+    const [openSection, setOpenSection] = useState('jasmani');
+
+    if (!isOpen || !pendaftar) return null;
+
+    const { profiles, penilaian_jasmani, penilaian_materi, penilaian_wawancara, avg_jasmani, avg_materi, avg_wawancara, total_avg } = pendaftar;
+    const standard = profiles ? STANDARDS[profiles.jenis_kelamin] : null;
+
+    const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
+        <motion.div initial={false} className="p-4 rounded-lg bg-white/5">
+            <motion.header initial={false} onClick={onToggle} className="flex justify-between items-center cursor-pointer">
+                <h3 className="font-bold text-lg flex items-center gap-3">{icon}{title}</h3>
+                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronDown size={24} />
+                </motion.div>
+            </motion.header>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.section
+                        key="content"
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                            open: { opacity: 1, height: 'auto', marginTop: '1rem' },
+                            collapsed: { opacity: 0, height: 0, marginTop: '0rem' },
+                        }}
+                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                        className="overflow-hidden"
+                    >
+                        {children}
+                    </motion.section>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+
+    // [MODIFIKASI] Ubah cara kita mengakses data penilaian jasmani dari array menjadi object
+    const jasmaniDisplayData = (penilaian_jasmani && !Array.isArray(penilaian_jasmani)) ? [penilaian_jasmani] : (penilaian_jasmani || []);
+
+    return (
+       <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        className="relative p-6 shadow-lg max-w-3xl w-full"
+                        style={glassmorphismStyle}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-amber-400 transition-colors"><X size={24} /></button>
+                        <div className="flex items-center gap-4 mb-4">
+                            <img 
+                                src={profiles.avatar_url || `https://placehold.co/80x80/1a202c/FFFFFF?text=${profiles.nama_lengkap.charAt(0)}`} 
+                                alt="Foto Profil" 
+                                className="w-20 h-20 rounded-lg object-cover border-2 border-white/30"
+                                onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/80x80/1a202c/FFFFFF?text=${profiles.nama_lengkap.charAt(0)}`; }}
+                            />
+                            <div>
+                                <h2 className="text-2xl font-semibold flex items-center gap-3"><User className="text-amber-400" />{profiles.nama_lengkap}</h2>
+                                <p className="text-gray-400">NPT: {profiles.npt || 'N/A'} | {profiles.jenis_kelamin === 'lakilaki' ? 'Laki-laki' : 'Perempuan'}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                            <AccordionSection title="Penilaian Jasmani" icon={<Award className="text-amber-400" />} isOpen={openSection === 'jasmani'} onToggle={() => setOpenSection(openSection === 'jasmani' ? null : 'jasmani')}>
+                                <div className='mt-2 pt-2 border-t border-white/10'>
+                                    {jasmaniDisplayData.length > 0 && standard ? (
+                                        jasmaniDisplayData.map(p => (
+                                            <div key={p.id}>
+                                                <p className="text-sm text-gray-400">Dinilai oleh: {p.penilai?.nama_lengkap || 'N/A'}</p>
+                                                <div className="text-xs text-gray-400 mt-1 grid grid-cols-2 gap-1">
+                                                      <span>Beep Test: {p.beep_level || '0'}-{p.beep_shuttle || '0'}</span>
+                                                      <span>Skor: {calculateScore(calculateTotalShuttles(Number(p.beep_level), Number(p.beep_shuttle)), standard.beepShuttles)}</span>
+                                                      <span>Push Up: {p.push_up || '0'}</span>
+                                                      <span>Skor: {calculateScore(Number(p.push_up), standard.pushUp)}</span>
+                                                      <span>Sit Up: {p.sit_up || '0'}</span>
+                                                      <span>Skor: {calculateScore(Number(p.sit_up), standard.sitUp)}</span>
+                                                      <span>Plank: {p.plank_seconds ? `${Math.floor(p.plank_seconds/60)}m ${p.plank_seconds%60}s` : '0m 0s'}</span>
+                                                      <span>Skor: {calculateScore(Number(p.plank_seconds), standard.plankSeconds)}</span>
+                                                </div>
+                                                {p.keterangan && <p className="text-xs text-gray-400 mt-2 italic">Ket: {p.keterangan}</p>}
+                                            </div>
+                                        ))
+                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                </div>
+                            </AccordionSection>
+
+                            <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
+                                   <div className='mt-2 pt-2 border-t border-white/10'>
+                                       {penilaian_materi.length > 0 ? (
+                                           <div className="space-y-2 mt-1">
+                                               {penilaian_materi.map(p => (
+                                                   <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                       <div className="flex justify-between items-center">
+                                                           <span>{p.penilai.nama_lengkap}</span>
+                                                           <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                       </div>
+                                                       {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                   </div>
+                                               ))}
+                                           </div>
+                                       ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                   </div>
+                            </AccordionSection>
+                            
+                            <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
+                                   <div className='mt-2 pt-2 border-t border-white/10'>
+                                       {penilaian_wawancara.length > 0 ? (
+                                           <div className="space-y-2 mt-1">
+                                               {penilaian_wawancara.map(p => (
+                                                   <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                       <div className="flex justify-between items-center">
+                                                           <span>{p.penilai.nama_lengkap}</span>
+                                                           <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                       </div>
+                                                       {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                   </div>
+                                               ))}
+                                           </div>
+                                       ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                   </div>
+                            </AccordionSection>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-gray-600 text-center">
+                            <h3 className="text-xl font-bold">Nilai Akhir Rata-rata</h3>
+                            <div className="flex justify-around items-start mt-2">
+                                <div>
+                                    <div className="text-3xl font-bold text-amber-400">{avg_jasmani}</div>
+                                    <div className="text-sm text-gray-300">Jasmani</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-amber-400">{avg_materi}</div>
+                                    <div className="text-sm text-gray-300">Materi</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-amber-400">{avg_wawancara}</div>
+                                    <div className="text-sm text-gray-300">Wawancara</div>
+                                </div>
+                                 <div>
+                                    <div className="text-3xl font-bold battery-style-gradient">{total_avg}</div>
+                                    <div className="text-sm text-gray-300">Total</div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
 
 
@@ -82,7 +263,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
                             <h3 className="text-2xl font-bold mb-2">{title}</h3>
                             <div className="text-gray-300 mb-6">{children}</div>
                             <div className="flex justify-center items-center gap-4 w-full">
-                                 <button
+                                <button
                                     onClick={onClose}
                                     style={{ ...confirmationModalStyle, backgroundColor: 'transparent' }}
                                     className="flex-1 py-2.5 px-4 rounded-lg font-semibold text-gray-300 hover:text-white transition-colors"
@@ -376,6 +557,8 @@ export default function DataPendaftar() {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendaftarToDelete, setPendaftarToDelete] = useState(null);
     const [isSortedByMinat, setIsSortedByMinat] = useState(false);
+    const [isPenilaianModalOpen, setIsPenilaianModalOpen] = useState(false);
+    const [selectedPendaftarForNilai, setSelectedPendaftarForNilai] = useState(null);
 
     const titleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.5 } } };
     const subtitleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.7 } } };
@@ -394,8 +577,136 @@ export default function DataPendaftar() {
         });
     };
 
+    const handleLihatCv = (e, url) => {
+        e.stopPropagation();
+        setCurrentCvUrl(url);
+        setIsCvModalOpen(true);
+    };
+    const handleCloseCvModal = () => { setIsCvModalOpen(false); setCurrentCvUrl(''); };
+    
+    const handleLihatNilai = (e, pendaftar) => {
+        e.stopPropagation();
+        setSelectedPendaftarForNilai(pendaftar);
+        setIsPenilaianModalOpen(true);
+    };
+    const handleClosePenilaianModal = () => {
+        setIsPenilaianModalOpen(false);
+        setSelectedPendaftarForNilai(null);
+    };
+
+
+    const handleHapusPendaftar = (pendaftarId) => {
+        setPendaftarToDelete(pendaftarId);
+        setIsConfirmModalOpen(true);
+    };
+    
+    const columns = useMemo(() => [
+        {
+            accessorKey: 'profiles.nama_lengkap',
+            header: 'Nama Lengkap',
+            size: 220,
+            cell: ({ row }) => <div className="font-medium text-white">{row.original.profiles?.nama_lengkap || 'N/A'}</div>
+        },
+        {
+            accessorKey: 'profiles.npt',
+            header: 'NPT',
+            size: 120,
+        },
+        {
+            header: 'Kelas / Angkatan',
+            size: 150,
+            cell: ({ row }) => `${row.original.profiles?.kelas || 'N/A'} / ${row.original.profiles?.angkatan || 'N/A'}`
+        },
+        {
+            accessorKey: 'profiles.nomor_telepon',
+            header: 'No. Telepon',
+            size: 150,
+        },
+        {
+            accessorKey: 'cv_url',
+            header: 'CV',
+            size: 100,
+            cell: ({ row }) => {
+                const cvUrl = row.original.cv_url;
+                return cvUrl && cvUrl !== 'N/A' ? (
+                    <button onClick={(e) => handleLihatCv(e, cvUrl)} className="text-blue-300 hover:text-blue-200 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded whitespace-nowrap">
+                        Lihat CV
+                    </button>
+                ) : 'N/A';
+            }
+        },
+        {
+            accessorKey: 'persentase_minat',
+            header: 'Minat (%)',
+            size: 100,
+            cell: info => `${info.getValue() || 'N/A'}%`
+        },
+        {
+            accessorKey: 'alasan_minat',
+            header: 'Alasan Minat',
+            size: 350,
+            cell: ({ row }) => <ExpandableText text={row.original.alasan_minat} isExpanded={expandedRows.has(row.original.id)} />
+        },
+        {
+            accessorKey: 'pengalaman_organisasi',
+            header: 'Pengalaman Organisasi',
+            size: 350,
+            cell: ({ row }) => <ExpandableText text={row.original.pengalaman_organisasi} isExpanded={expandedRows.has(row.original.id)} />
+        },
+        {
+            accessorKey: 'pengalaman_kepanitiaan',
+            header: 'Pengalaman Kepanitiaan',
+            size: 350,
+            cell: ({ row }) => <ExpandableText text={row.original.pengalaman_kepanitiaan} isExpanded={expandedRows.has(row.original.id)} />
+        },
+        {
+            accessorKey: 'sepuluh_calon',
+            header: '10 Calon',
+            size: 350,
+            cell: ({ row }) => <ExpandableText text={row.original.sepuluh_calon} isExpanded={expandedRows.has(row.original.id)} />
+        },
+        {
+            accessorKey: 'tanggal_daftar',
+            header: 'Tanggal Daftar',
+            size: 180,
+            cell: info => new Date(info.getValue()).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
+        },
+        { accessorKey: 'avg_jasmani', header: 'Jasmani', size: 150, cell: info => info.getValue() || 0 },
+        { accessorKey: 'avg_materi', header: 'Materi Karate', size: 150, cell: info => info.getValue() || 0 },
+        { accessorKey: 'avg_wawancara', header: 'Wawancara', size: 170, cell: info => info.getValue() || 0 },
+        { accessorKey: 'total_avg', header: 'Rata-rata', size: 150, cell: info => <span className="font-bold">{info.getValue() || 0}</span> },
+        {
+            id: 'detail_nilai',
+            header: 'Detail Nilai',
+            size: 120,
+            cell: ({ row }) => (
+                <button onClick={(e) => handleLihatNilai(e, row.original)} className="text-amber-400 hover:text-amber-300 underline focus:outline-none focus:ring-2 focus:ring-amber-500 rounded whitespace-nowrap">
+                    Lihat Detail
+                </button>
+            )
+        },
+        ...(role === 'admin' ? [{
+            id: 'aksi',
+            header: 'Aksi',
+            size: 80,
+            cell: ({ row }) => (
+                <div className="text-center">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleHapusPendaftar(row.original.id);
+                        }}
+                        className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors duration-200"
+                        title="Hapus Pendaftar"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            )
+        }] : [])
+    ], [role, expandedRows]);
+    
     const fetchDaftarPeriode = useCallback(async () => {
-        // setLoading(true); // Dihapus karena loading utama sudah ada
         setError(null);
         try {
             const { data, error } = await supabase.from('periode_pendaftaran').select('id, nama_periode, tahun_angkatan').order('tahun_angkatan', { ascending: false });
@@ -407,8 +718,6 @@ export default function DataPendaftar() {
         } catch (err) {
             console.error("Error fetching periods:", err.message);
             setError("Gagal memuat daftar periode.");
-        } finally {
-            // setLoading(false); // Dihapus karena loading utama sudah ada
         }
     }, []);
 
@@ -416,12 +725,80 @@ export default function DataPendaftar() {
         if (!periodeId) { setDataPendaftar([]); return; }
         setLoadingPendaftar(true); setError(null);
         try {
-            const { data, error } = await supabase.from('data_pendaftar').select(`id, id_pengguna, dibuat_pada, data_isian, profiles:id_pengguna (nama_lengkap, npt, kelas, angkatan, nomor_telepon)`).eq('id_periode', periodeId).order('dibuat_pada', { ascending: true });
+            // [MODIFIKASI] Query diubah untuk mengambil relasi one-to-one (penilaian_jasmani) dan one-to-many (materi, wawancara)
+            const { data, error } = await supabase
+                .from('data_pendaftar')
+                .select(`
+                    id, 
+                    id_pengguna, 
+                    dibuat_pada, 
+                    data_isian, 
+                    profiles:id_pengguna (nama_lengkap, npt, kelas, angkatan, nomor_telepon, jenis_kelamin, avatar_url),
+                    penilaian_jasmani:penilaian_jasmani!id_pendaftar(id, beep_level, beep_shuttle, push_up, sit_up, plank_seconds, keterangan, penilai:id_penilai(nama_lengkap)),
+                    penilaian_materi:penilaian_materi!id_pendaftar(id, nilai, keterangan, penilai:id_penilai(nama_lengkap)),
+                    penilaian_wawancara:penilaian_wawancara!id_pendaftar(id, nilai, keterangan, penilai:id_penilai(nama_lengkap))
+                `)
+                .eq('id_periode', periodeId)
+                .order('dibuat_pada', { ascending: true });
+
             if (error) throw error;
+            
             if (data) {
                 const processedData = data.map(pendaftar => {
                     const isian = pendaftar.data_isian && typeof pendaftar.data_isian === 'object' ? pendaftar.data_isian : {};
-                    return { ...pendaftar, tanggal_daftar: pendaftar.dibuat_pada, cv_url: isian.cv_url || 'N/A', alasan_minat: isian.alasan_minat || 'N/A', sepuluh_calon: isian.sepuluh_calon || 'N/A', persentase_minat: isian.persentase_minat || 'N/A', pengalaman_organisasi: isian.pengalaman_organisasi || 'N/A', pengalaman_kepanitiaan: isian.pengalaman_kepanitiaan || 'N/A' };
+                    
+                    // ===================================
+                    // [PERBAIKAN UTAMA DI SINI]
+                    // ===================================
+                    let avg_jasmani = 0;
+                    // Cek jika penilaian_jasmani adalah sebuah OBJECT (bukan array)
+                    if (pendaftar.penilaian_jasmani && typeof pendaftar.penilaian_jasmani === 'object' && !Array.isArray(pendaftar.penilaian_jasmani)) {
+                        const jasmani = pendaftar.penilaian_jasmani; // Gunakan object langsung
+                        const standard = STANDARDS[pendaftar.profiles?.jenis_kelamin];
+                        
+                        if(standard) {
+                            const totalShuttles = calculateTotalShuttles(Number(jasmani.beep_level), Number(jasmani.beep_shuttle));
+                            const beepScore = calculateScore(totalShuttles, standard.beepShuttles);
+                            const pushUpScore = calculateScore(Number(jasmani.push_up), standard.pushUp);
+                            const sitUpScore = calculateScore(Number(jasmani.sit_up), standard.sitUp);
+                            const plankScore = calculateScore(Number(jasmani.plank_seconds), standard.plankSeconds);
+                            avg_jasmani = Math.round((beepScore + pushUpScore + sitUpScore + plankScore) / 4);
+                        }
+                    }
+                    // ===================================
+                    // Akhir Perbaikan
+                    // ===================================
+
+                    // Calculate Materi Score (Ini sudah benar karena one-to-many)
+                    let avg_materi = 0;
+                    if (pendaftar.penilaian_materi && pendaftar.penilaian_materi.length > 0) {
+                        const total = pendaftar.penilaian_materi.reduce((sum, p) => sum + (Number(p.nilai) || 0), 0);
+                        avg_materi = Math.round(total / pendaftar.penilaian_materi.length);
+                    }
+
+                    // Calculate Wawancara Score (Ini sudah benar karena one-to-many)
+                    let avg_wawancara = 0;
+                    if (pendaftar.penilaian_wawancara && pendaftar.penilaian_wawancara.length > 0) {
+                        const total = pendaftar.penilaian_wawancara.reduce((sum, p) => sum + (Number(p.nilai) || 0), 0);
+                        avg_wawancara = Math.round(total / pendaftar.penilaian_wawancara.length);
+                    }
+                    
+                    const total_avg = Math.round((avg_jasmani + avg_materi + avg_wawancara) / 3);
+
+                    return { 
+                        ...pendaftar, 
+                        tanggal_daftar: pendaftar.dibuat_pada, 
+                        cv_url: isian.cv_url || 'N/A', 
+                        alasan_minat: isian.alasan_minat || 'N/A', 
+                        sepuluh_calon: isian.sepuluh_calon || 'N/A', 
+                        persentase_minat: isian.persentase_minat || 'N/A', 
+                        pengalaman_organisasi: isian.pengalaman_organisasi || 'N/A', 
+                        pengalaman_kepanitiaan: isian.pengalaman_kepanitiaan || 'N/A',
+                        avg_jasmani,
+                        avg_materi,
+                        avg_wawancara,
+                        total_avg
+                    };
                 });
                 setDataPendaftar(processedData);
             }
@@ -432,11 +809,6 @@ export default function DataPendaftar() {
             setLoadingPendaftar(false);
         }
     }, []);
-
-    const handleHapusPendaftar = (pendaftarId) => {
-        setPendaftarToDelete(pendaftarId);
-        setIsConfirmModalOpen(true);
-    };
 
     const executeDelete = async () => {
         if (!pendaftarToDelete) return;
@@ -490,13 +862,6 @@ export default function DataPendaftar() {
         }
     }, [selectedPeriodeId, authLoading, role, fetchPendaftarByPeriode]);
 
-    const handleLihatCv = (e, url) => {
-        e.stopPropagation();
-        setCurrentCvUrl(url);
-        setIsCvModalOpen(true);
-    };
-    const handleCloseCvModal = () => { setIsCvModalOpen(false); setCurrentCvUrl(''); };
-
     const sortedData = useMemo(() => {
         if (isSortedByMinat) {
             return [...dataPendaftar].sort((a, b) => {
@@ -518,6 +883,12 @@ export default function DataPendaftar() {
             return searchableFields.some(field => field && String(field).toLowerCase().includes(lowerCaseQuery));
         });
     }, [sortedData, searchQuery]);
+
+    const table = useReactTable({
+        data: filteredPendaftar,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    });
     
     return (
         <div className="relative min-h-screen text-white">
@@ -541,6 +912,7 @@ export default function DataPendaftar() {
                                 <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit">
                                     <nav className="flex space-x-4 justify-center">
                                         <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
+                                        <Link to="/penilaian-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Penilaian Pendaftar"><ClipboardCheck size={20} /></Link>
                                         {role === 'admin' && (
                                             <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
                                         )}
@@ -549,6 +921,7 @@ export default function DataPendaftar() {
                                 <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="fixed left-4 top-1/2 -translate-y-1/2 flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
                                     <nav className="space-y-3">
                                         <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Kembali ke Struktur Pengurus"><ChevronLeft size={20} /></Link>
+                                        <Link to="/penilaian-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Penilaian Pendaftar"><ClipboardCheck size={20} /></Link>
                                         {role === 'admin' && (
                                             <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran"><UserPlus size={20} /></Link>
                                         )}
@@ -557,7 +930,7 @@ export default function DataPendaftar() {
                             </>
                         )}
 
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24 space-y-8">
+                        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24 space-y-8">
                             <div className="text-center">
                                 <motion.h1 variants={titleVariants} initial="hidden" animate="visible" className="text-4xl md:text-6xl font-league uppercase text-accent mb-2 drop-shadow-lg">Data Pendaftar</motion.h1>
                                 <motion.p variants={subtitleVariants} initial="hidden" animate="visible" className="text-gray-300 drop-shadow-md">Lihat dan kelola data pendaftar berdasarkan periode.</motion.p>
@@ -611,56 +984,47 @@ export default function DataPendaftar() {
                                 {loadingPendaftar ? (
                                     <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /><span className="ml-3 text-gray-300">Memuat data pendaftar...</span></div>
                                 ) : filteredPendaftar.length > 0 ? (
-                                    <div className="overflow-x-auto rounded-lg border border-gray-700 shadow-inner">
-                                        <table className="min-w-full divide-y divide-gray-700">
-                                            <thead className="bg-gray-700/50">
-                                                <tr>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Nama Lengkap</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">NPT</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Kelas / Angkatan</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">No. Telepon</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">CV</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Minat (%)</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Alasan Minat</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Organisasi</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pengalaman Kepanitiaan</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">10 Calon</th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tanggal Daftar</th>
-                                                    {role === 'admin' && (
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Aksi</th>
-                                                    )}
-                                                </tr>
+                                    <div 
+                                        className="overflow-auto rounded-lg border border-gray-700 shadow-inner transition-all duration-300 ease-in-out" 
+                                        style={{ maxHeight: expandedRows.size > 0 ? '80vh' : '60vh' }}
+                                    >
+                                        <table className="min-w-full text-sm text-left">
+                                            <thead className="sticky top-0 z-10 bg-gray-800">
+                                                {table.getHeaderGroups().map(headerGroup => (
+                                                    <tr key={headerGroup.id}>
+                                                        {headerGroup.headers.map(header => (
+                                                            <th 
+                                                                key={header.id}
+                                                                className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                                                                style={{ width: header.getSize() }}
+                                                            >
+                                                                {header.isPlaceholder
+                                                                    ? null
+                                                                    : flexRender(
+                                                                        header.column.columnDef.header,
+                                                                        header.getContext()
+                                                                    )}
+                                                            </th>
+                                                        ))}
+                                                    </tr>
+                                                ))}
                                             </thead>
                                             <tbody className="divide-y divide-gray-800">
-                                                {filteredPendaftar.map((pendaftar) => (
-                                                    <tr key={pendaftar.id} className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => toggleRowExpansion(pendaftar.id)}>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-white ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.nama_lengkap || 'N/A'}</td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.npt || 'N/A'}</td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{`${pendaftar.profiles?.kelas || 'N/A'} / ${pendaftar.profiles?.angkatan || 'N/A'}`}</td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{pendaftar.profiles?.nomor_telepon || 'N/A'}</td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>
-                                                            {pendaftar.cv_url && pendaftar.cv_url !== 'N/A' ? (<button onClick={(e) => handleLihatCv(e, pendaftar.cv_url)} className="text-blue-300 hover:text-blue-200 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">Lihat CV</button>) : 'N/A'}
-                                                        </td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{`${pendaftar.persentase_minat || 'N/A'}%`}</td>
-                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.alasan_minat} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.pengalaman_organisasi} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.pengalaman_kepanitiaan} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                        <td className={`px-6 py-4 text-sm text-gray-300 max-w-xs whitespace-normal ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}><ExpandableText text={pendaftar.sepuluh_calon} isExpanded={expandedRows.has(pendaftar.id)} /></td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-300 ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>{new Date(pendaftar.tanggal_daftar).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                                                        {role === 'admin' && (
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${expandedRows.has(pendaftar.id) ? 'align-top' : 'align-middle'}`}>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleHapusPendaftar(pendaftar.id);
-                                                                    }}
-                                                                    className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors duration-200"
-                                                                    title="Hapus Pendaftar"
-                                                                >
-                                                                    <Trash2 size={18} />
-                                                                </button>
+                                                {table.getRowModel().rows.map(row => (
+                                                    <tr 
+                                                        key={row.id} 
+                                                        className="hover:bg-gray-800/50 transition-colors cursor-pointer"
+                                                        onClick={() => toggleRowExpansion(row.original.id)}
+                                                    >
+                                                        {row.getVisibleCells().map(cell => (
+                                                            <td 
+                                                                key={cell.id}
+                                                                className={`px-6 py-4 text-gray-300 ${expandedRows.has(row.original.id) ? 'align-top' : 'align-middle'}`}
+                                                                style={{ width: cell.column.getSize() }}
+                                                            >
+                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                             </td>
-                                                        )}
+                                                        ))}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -686,6 +1050,12 @@ export default function DataPendaftar() {
             <AnimatePresence>
                 {isCvModalOpen && (<CvModal cvUrl={currentCvUrl} onClose={handleCloseCvModal} modalGlassmorphismStyle={glassmorphismStyle} />)}
             </AnimatePresence>
+            
+            <PenilaianModal 
+                isOpen={isPenilaianModalOpen}
+                onClose={handleClosePenilaianModal}
+                pendaftar={selectedPendaftarForNilai}
+            />
         </div>
     );
 }
