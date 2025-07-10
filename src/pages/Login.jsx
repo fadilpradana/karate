@@ -8,7 +8,8 @@ import { supabase } from '../supabaseClient';
 
 function Login() {
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
+    // [MODIFIKASI] Mengubah state dari email menjadi identifier
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [feedback, setFeedback] = useState({ message: '', type: null });
 
@@ -23,30 +24,48 @@ function Login() {
         boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.1), inset 1px 1px 2px rgba(255, 255, 255, 0.11), inset -1px -1px 2px rgba(0, 0, 0, 0.1)` 
     };
 
+    // [MODIFIKASI] Logika handleLogin diubah total untuk mendukung multi-identifier
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setFeedback({ message: '', type: null });
+
         try {
-            const { error } = await signIn({ email, password });
-            if (error) {
-                throw error; 
+            // Langkah 1: Panggil fungsi RPC untuk mendapatkan email berdasarkan identifier
+            const { data: foundEmail, error: rpcError } = await supabase.rpc('get_email_from_identifier', {
+                p_identifier: identifier
+            });
+
+            if (rpcError) {
+                console.error('RPC Error:', rpcError);
+                throw new Error("Terjadi kesalahan pada server.");
             }
+
+            // Langkah 2: Cek apakah email ditemukan dari identifier yang diberikan
+            if (!foundEmail) {
+                throw new Error("Identifier atau password salah.");
+            }
+            
+            // Langkah 3: Gunakan email yang ditemukan untuk login
+            const { error: signInError } = await signIn({ 
+                email: foundEmail, 
+                password 
+            });
+
+            if (signInError) {
+                // Error dari proses sign-in (kemungkinan besar password salah)
+                throw new Error("Identifier atau password salah.");
+            }
+            
+            // Jika semua berhasil
             setFeedback({ message: 'Login berhasil! Mengalihkan...', type: 'success' });
             setTimeout(() => {
                 navigate('/dashboard');
             }, 1500);
+
         } catch (error) {
             console.error('Login error:', error.message);
-            let errorMessage = 'Terjadi kesalahan tidak dikenal saat login.';
-            if (error.message.includes('Invalid login credentials')) {
-                errorMessage = 'Email atau password salah. Silakan coba lagi.';
-            } else if (error.message.includes('User not found')) {
-                errorMessage = 'Pengguna tidak ditemukan. Silakan daftar jika belum memiliki akun.';
-            } else if (error.message.includes('email not confirmed')) {
-                errorMessage = 'Email Anda belum terkonfirmasi. Silakan cek inbox Anda.';
-            }
-            setFeedback({ message: errorMessage, type: 'error' });
+            setFeedback({ message: error.message, type: 'error' });
             setTimeout(() => {
                 setFeedback({ message: '', type: null });
             }, 5000);
@@ -85,13 +104,16 @@ function Login() {
                     
                     <form onSubmit={handleLogin} className="space-y-6 pt-4">
                         <div>
-                            <label className="block mb-1 text-sm text-gray-300">Email</label>
+                            {/* [MODIFIKASI] Label diubah */}
+                            <label className="block mb-1 text-sm text-gray-300">Email / NPT / Username</label>
                             <input 
-                                type="email" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)} 
+                                // [MODIFIKASI] type, value, dan onChange diubah
+                                type="text" 
+                                value={identifier} 
+                                onChange={(e) => setIdentifier(e.target.value)} 
                                 required 
                                 className={inputStyle}
+                                placeholder="Masukkan email, NPT, atau username"
                             />
                         </div>
                         <div>
@@ -102,6 +124,7 @@ function Login() {
                                 onChange={(e) => setPassword(e.target.value)} 
                                 required 
                                 className={inputStyle}
+                                placeholder="••••••••"
                             />
                         </div>
 

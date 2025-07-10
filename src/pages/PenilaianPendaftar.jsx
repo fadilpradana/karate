@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { LoaderCircle, User, Award, ClipboardEdit, Save, ChevronLeft, Lock, ChevronDown, Pencil, XCircle, BookOpen } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+// [MODIFIKASI] Menambahkan ikon untuk modal notifikasi
+import { LoaderCircle, User, Award, ClipboardEdit, Save, ChevronLeft, Lock, ChevronDown, Pencil, XCircle, BookOpen, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import heroBg from '../assets/bg9.jpg';
@@ -16,6 +17,79 @@ const glassmorphismStyle = {
     boxShadow: `0px 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)`,
     borderRadius: '0.8rem',
 };
+
+// [MODIFIKASI] Komponen Modal Notifikasi Baru
+const NotificationModal = ({ isOpen, onClose, title, message, type = 'success' }) => {
+    if (!isOpen) return null;
+
+    const icons = {
+        success: <CheckCircle size={40} className="text-green-400" />,
+        error: <XCircle size={40} className="text-red-400" />,
+        warning: <AlertTriangle size={40} className="text-amber-400" />,
+    };
+
+    const iconBgColors = {
+        success: 'bg-green-500/20',
+        error: 'bg-red-500/20',
+        warning: 'bg-amber-500/20',
+    };
+
+    const iconBorderColors = {
+        success: 'border-green-500/50',
+        error: 'border-red-500/50',
+        warning: 'border-amber-500/50',
+    };
+    
+    const overlayVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+        exit: { opacity: 0 }
+    };
+
+    const modalVariants = {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 25 } },
+        exit: { opacity: 0, scale: 0.8 }
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={overlayVariants}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        variants={modalVariants}
+                        className="relative p-6 text-center text-white max-w-md w-full"
+                        style={glassmorphismStyle}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex flex-col items-center justify-center">
+                            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-4 border ${iconBgColors[type]} ${iconBorderColors[type]}`}>
+                                {icons[type]}
+                            </div>
+                            <h3 className="text-2xl font-bold mb-2">{title}</h3>
+                            <p className="text-gray-300 mb-6">{message}</p>
+                            <button
+                                onClick={onClose}
+                                style={{...glassmorphismStyle, backgroundColor: 'rgba(255, 255, 255, 0.1)'}}
+                                className="w-full py-2.5 px-4 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
 
 // --- Komponen Accordion ---
 const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
@@ -133,6 +207,9 @@ export default function PenilaianPendaftar() {
     const [isWawancaraFormActive, setIsWawancaraFormActive] = useState(false);
 
     const [openSection, setOpenSection] = useState('jasmani');
+
+    // [MODIFIKASI] State untuk mengontrol modal notifikasi
+    const [notification, setNotification] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
     useEffect(() => {
         const fetchPeriode = async () => {
@@ -360,7 +437,8 @@ export default function PenilaianPendaftar() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!selectedPendaftarId || !user) {
-            alert("Pilih pendaftar terlebih dahulu.");
+            // [MODIFIKASI] Mengganti alert dengan modal
+            setNotification({ isOpen: true, type: 'warning', title: 'Peringatan', message: 'Silakan pilih pendaftar terlebih dahulu.' });
             return;
         }
         setIsSubmitting(true);
@@ -380,11 +458,13 @@ export default function PenilaianPendaftar() {
                 const { error } = await supabase.from('penilaian_wawancara').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, nilai: parseInt(wawancaraInput.nilai), keterangan: wawancaraInput.keterangan }, { onConflict: 'id_pendaftar, id_penilai' });
                 if (error) throw error;
             }
-            alert(`Penilaian berhasil disimpan/diperbarui!`);
+            // [MODIFIKASI] Mengganti alert dengan modal
+            setNotification({ isOpen: true, type: 'success', title: 'Berhasil', message: 'Penilaian Anda telah berhasil disimpan atau diperbarui.' });
             await fetchDetails(selectedPendaftarId);
         } catch (error) {
             console.error("Error submitting assessment:", error);
-            alert(`Gagal menyimpan penilaian: ${error.message}`);
+            // [MODIFIKASI] Mengganti alert dengan modal
+            setNotification({ isOpen: true, type: 'error', title: 'Gagal Menyimpan', message: `Terjadi kesalahan: ${error.message}` });
         } finally {
             setIsSubmitting(false);
         }
@@ -398,13 +478,26 @@ export default function PenilaianPendaftar() {
         <div className="relative min-h-screen text-white">
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             <div className="relative z-10 flex flex-col min-h-screen">
-                <main className="flex-grow pt-24 pb-12 px-12 md:px-24">
+                <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24">
+                    {(role === 'admin' || role === 'pengurus') && (
+                        <>
+                            <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="block md:hidden mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg mx-auto w-fit">
+                                <nav className="flex space-x-4 justify-center">
+                                    <Link to="/data-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Kembali ke Data Pendaftar"><ChevronLeft size={20} /></Link>
+                                    <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Manajemen Pengurus"><Users size={20} /></Link>
+                                </nav>
+                            </motion.div>
+                            <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.3 }} className="fixed left-4 top-1/2 -translate-y-1/2 flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20 hidden md:flex">
+                                <nav className="space-y-3">
+                                    <Link to="/data-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Kembali ke Data Pendaftar"><ChevronLeft size={20} /></Link>
+                                    <Link to="/pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Manajemen Pengurus"><Users size={20} /></Link>
+                                </nav>
+                            </motion.div>
+                        </>
+                    )}
                     <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="max-w-7xl mx-auto">
-                        <div className="flex justify-between items-center mb-8">
+                        <div className="text-center md:text-left mb-8">
                             <h1 className="text-4xl md:text-5xl font-league uppercase text-accent drop-shadow-lg">Penilaian Pendaftar</h1>
-                            <button onClick={() => navigate('/data-pendaftar')} className="flex items-center gap-2 px-4 py-2 text-white transition-colors hover:bg-white/20" style={glassmorphismStyle}>
-                                <ChevronLeft size={20} /> Kembali
-                            </button>
                         </div>
 
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="p-6 mb-8" style={glassmorphismStyle}>
@@ -426,7 +519,7 @@ export default function PenilaianPendaftar() {
                             </div>
                         </motion.div>
 
-                        {loading && <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /></div>}
+                        {loading && !selectedPendaftarId && <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /></div>}
                         {error && <p className="text-center text-red-400">{error}</p>}
                         
                         {selectedPendaftar && selectedPendaftar.profiles && (
@@ -464,7 +557,7 @@ export default function PenilaianPendaftar() {
                                                     <label className="block text-sm font-medium text-gray-300">Plank</label>
                                                     <div className="flex gap-2 mt-1">
                                                         <input type="number" placeholder="Menit" disabled={!isJasmaniFormActive} value={jasmaniInput.plank_minutes} onChange={e => setJasmaniInput({...jasmaniInput, plank_minutes: e.target.value})} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
-                                                        <input type="number" placeholder="Detik" disabled={!isJasmaniFormActive} value={jasmaniInput.plank_seconds} onChange={e => setJasmaniInput({...jasmaniInput, plank_seconds: e.target.value})} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
+                                                        <input type="number" placeholder="Detik" disabled={!isJasmaniFormActive} value={jasmaniInput.plank_seconds} onChange={e => { const seconds = e.target.value; const cappedSeconds = seconds && parseInt(seconds, 10) > 59 ? '59' : seconds; setJasmaniInput({...jasmaniInput, plank_seconds: cappedSeconds}); }} className="w-full bg-white/10 p-2 rounded-md text-center disabled:opacity-60 disabled:cursor-not-allowed" />
                                                     </div>
                                                     <ScoreDisplay label="Skor" value={calculatedScores.plankScore || 0} />
                                                 </div>
@@ -570,7 +663,7 @@ export default function PenilaianPendaftar() {
                                                     </div>
                                                     {existingMateri.length > 0 ? (
                                                         <div className='mt-2 pt-2 border-t border-white/10'>
-                                                             <p className="text-sm text-gray-400">Telah dinilai oleh: {existingMateri.length} penilai</p>
+                                                                <p className="text-sm text-gray-400">Telah dinilai oleh: {existingMateri.length} penilai</p>
                                                             <div className="space-y-2 mt-1">
                                                                 {existingMateri.map(p => (
                                                                     <div key={p.id_penilai} className="text-xs text-gray-400">
@@ -635,13 +728,21 @@ export default function PenilaianPendaftar() {
                         )}
                         {selectedPendaftar && !selectedPendaftar.profiles && (
                              <div className="p-6 text-center" style={glassmorphismStyle}>
-                                <p className="text-amber-400">Data profil untuk pendaftar ini tidak ditemukan. Penilaian tidak dapat dilakukan.</p>
+                                 <p className="text-amber-400">Data profil untuk pendaftar ini tidak ditemukan. Penilaian tidak dapat dilakukan.</p>
                              </div>
                         )}
                     </motion.div>
                 </main>
                 <Footer />
             </div>
+            {/* [MODIFIKASI] Menambahkan komponen modal notifikasi di sini */}
+            <NotificationModal
+                isOpen={notification.isOpen}
+                onClose={() => setNotification({ ...notification, isOpen: false })}
+                type={notification.type}
+                title={notification.title}
+                message={notification.message}
+            />
         </div>
     );
 }

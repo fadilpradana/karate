@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, Filter, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User } from 'lucide-react';
+// [MODIFIKASI] Menambahkan ikon Palette untuk filter warna
+import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 
-// [BARU] Impor dari TanStack Table
+// Impor dari TanStack Table
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
 // Impor PDF.js Library
@@ -98,7 +99,6 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
         </motion.div>
     );
 
-    // [MODIFIKASI] Ubah cara kita mengakses data penilaian jasmani dari array menjadi object
     const jasmaniDisplayData = (penilaian_jasmani && !Array.isArray(penilaian_jasmani)) ? [penilaian_jasmani] : (penilaian_jasmani || []);
 
     return (
@@ -141,14 +141,14 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                                             <div key={p.id}>
                                                 <p className="text-sm text-gray-400">Dinilai oleh: {p.penilai?.nama_lengkap || 'N/A'}</p>
                                                 <div className="text-xs text-gray-400 mt-1 grid grid-cols-2 gap-1">
-                                                      <span>Beep Test: {p.beep_level || '0'}-{p.beep_shuttle || '0'}</span>
-                                                      <span>Skor: {calculateScore(calculateTotalShuttles(Number(p.beep_level), Number(p.beep_shuttle)), standard.beepShuttles)}</span>
-                                                      <span>Push Up: {p.push_up || '0'}</span>
-                                                      <span>Skor: {calculateScore(Number(p.push_up), standard.pushUp)}</span>
-                                                      <span>Sit Up: {p.sit_up || '0'}</span>
-                                                      <span>Skor: {calculateScore(Number(p.sit_up), standard.sitUp)}</span>
-                                                      <span>Plank: {p.plank_seconds ? `${Math.floor(p.plank_seconds/60)}m ${p.plank_seconds%60}s` : '0m 0s'}</span>
-                                                      <span>Skor: {calculateScore(Number(p.plank_seconds), standard.plankSeconds)}</span>
+                                                        <span>Beep Test: {p.beep_level || '0'}-{p.beep_shuttle || '0'}</span>
+                                                        <span>Skor: {calculateScore(calculateTotalShuttles(Number(p.beep_level), Number(p.beep_shuttle)), standard.beepShuttles)}</span>
+                                                        <span>Push Up: {p.push_up || '0'}</span>
+                                                        <span>Skor: {calculateScore(Number(p.push_up), standard.pushUp)}</span>
+                                                        <span>Sit Up: {p.sit_up || '0'}</span>
+                                                        <span>Skor: {calculateScore(Number(p.sit_up), standard.sitUp)}</span>
+                                                        <span>Plank: {p.plank_seconds ? `${Math.floor(p.plank_seconds/60)}m ${p.plank_seconds%60}s` : '0m 0s'}</span>
+                                                        <span>Skor: {calculateScore(Number(p.plank_seconds), standard.plankSeconds)}</span>
                                                 </div>
                                                 {p.keterangan && <p className="text-xs text-gray-400 mt-2 italic">Ket: {p.keterangan}</p>}
                                             </div>
@@ -556,7 +556,8 @@ export default function DataPendaftar() {
     const [expandedRows, setExpandedRows] = useState(new Set());
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendaftarToDelete, setPendaftarToDelete] = useState(null);
-    const [isSortedByMinat, setIsSortedByMinat] = useState(false);
+    // [MODIFIKASI] Menambah 'label' sebagai tipe sort
+    const [sortType, setSortType] = useState('default'); // 'default', 'minat', 'nilai', 'label'
     const [isPenilaianModalOpen, setIsPenilaianModalOpen] = useState(false);
     const [selectedPendaftarForNilai, setSelectedPendaftarForNilai] = useState(null);
 
@@ -598,6 +599,28 @@ export default function DataPendaftar() {
     const handleHapusPendaftar = (pendaftarId) => {
         setPendaftarToDelete(pendaftarId);
         setIsConfirmModalOpen(true);
+    };
+    
+    const handleLabelChange = async (pendaftarId, label) => {
+        setDataPendaftar(currentData =>
+            currentData.map(p =>
+                p.id === pendaftarId ? { ...p, status_label: label } : p
+            )
+        );
+
+        try {
+            const { error } = await supabase
+                .from('data_pendaftar')
+                .update({ status_label: label })
+                .eq('id', pendaftarId);
+            
+            if (error) throw error;
+
+        } catch (err) {
+            console.error("Gagal memperbarui label:", err.message);
+            alert("Gagal menyimpan tanda. Memuat ulang data...");
+            fetchPendaftarByPeriode(selectedPeriodeId);
+        }
     };
     
     const columns = useMemo(() => [
@@ -685,6 +708,45 @@ export default function DataPendaftar() {
                 </button>
             )
         },
+        ...(['admin', 'pengurus'].includes(role) ? [{
+            id: 'status_label',
+            header: 'Tandai',
+            size: 120,
+            cell: ({ row }) => {
+                const pendaftarId = row.original.id;
+                const currentLabel = row.original.status_label;
+                const labels = ['hijau', 'kuning', 'merah'];
+                
+                return (
+                    <div className="flex items-center justify-center gap-2">
+                        {labels.map(label => {
+                            const colorClasses = {
+                                hijau: 'text-green-500 hover:text-green-400',
+                                kuning: 'text-yellow-400 hover:text-yellow-300',
+                                merah: 'text-red-500 hover:text-red-400',
+                            };
+                            const isActive = currentLabel === label;
+                            const activeClasses = isActive ? 'bg-white/20 scale-125' : 'opacity-50 hover:opacity-100';
+
+                            return (
+                                <button
+                                    key={label}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const newLabel = isActive ? null : label;
+                                        handleLabelChange(pendaftarId, newLabel);
+                                    }}
+                                    className={`p-1.5 rounded-full transition-all duration-200 ${activeClasses}`}
+                                    title={`Tandai ${label}`}
+                                >
+                                    <Flag size={18} className={colorClasses[label]} />
+                                </button>
+                            );
+                        })}
+                    </div>
+                );
+            }
+        }] : []),
         ...(role === 'admin' ? [{
             id: 'aksi',
             header: 'Aksi',
@@ -725,14 +787,14 @@ export default function DataPendaftar() {
         if (!periodeId) { setDataPendaftar([]); return; }
         setLoadingPendaftar(true); setError(null);
         try {
-            // [MODIFIKASI] Query diubah untuk mengambil relasi one-to-one (penilaian_jasmani) dan one-to-many (materi, wawancara)
             const { data, error } = await supabase
                 .from('data_pendaftar')
                 .select(`
                     id, 
                     id_pengguna, 
                     dibuat_pada, 
-                    data_isian, 
+                    data_isian,
+                    status_label, 
                     profiles:id_pengguna (nama_lengkap, npt, kelas, angkatan, nomor_telepon, jenis_kelamin, avatar_url),
                     penilaian_jasmani:penilaian_jasmani!id_pendaftar(id, beep_level, beep_shuttle, push_up, sit_up, plank_seconds, keterangan, penilai:id_penilai(nama_lengkap)),
                     penilaian_materi:penilaian_materi!id_pendaftar(id, nilai, keterangan, penilai:id_penilai(nama_lengkap)),
@@ -747,13 +809,9 @@ export default function DataPendaftar() {
                 const processedData = data.map(pendaftar => {
                     const isian = pendaftar.data_isian && typeof pendaftar.data_isian === 'object' ? pendaftar.data_isian : {};
                     
-                    // ===================================
-                    // [PERBAIKAN UTAMA DI SINI]
-                    // ===================================
                     let avg_jasmani = 0;
-                    // Cek jika penilaian_jasmani adalah sebuah OBJECT (bukan array)
                     if (pendaftar.penilaian_jasmani && typeof pendaftar.penilaian_jasmani === 'object' && !Array.isArray(pendaftar.penilaian_jasmani)) {
-                        const jasmani = pendaftar.penilaian_jasmani; // Gunakan object langsung
+                        const jasmani = pendaftar.penilaian_jasmani;
                         const standard = STANDARDS[pendaftar.profiles?.jenis_kelamin];
                         
                         if(standard) {
@@ -765,18 +823,13 @@ export default function DataPendaftar() {
                             avg_jasmani = Math.round((beepScore + pushUpScore + sitUpScore + plankScore) / 4);
                         }
                     }
-                    // ===================================
-                    // Akhir Perbaikan
-                    // ===================================
 
-                    // Calculate Materi Score (Ini sudah benar karena one-to-many)
                     let avg_materi = 0;
                     if (pendaftar.penilaian_materi && pendaftar.penilaian_materi.length > 0) {
                         const total = pendaftar.penilaian_materi.reduce((sum, p) => sum + (Number(p.nilai) || 0), 0);
                         avg_materi = Math.round(total / pendaftar.penilaian_materi.length);
                     }
 
-                    // Calculate Wawancara Score (Ini sudah benar karena one-to-many)
                     let avg_wawancara = 0;
                     if (pendaftar.penilaian_wawancara && pendaftar.penilaian_wawancara.length > 0) {
                         const total = pendaftar.penilaian_wawancara.reduce((sum, p) => sum + (Number(p.nilai) || 0), 0);
@@ -786,7 +839,8 @@ export default function DataPendaftar() {
                     const total_avg = Math.round((avg_jasmani + avg_materi + avg_wawancara) / 3);
 
                     return { 
-                        ...pendaftar, 
+                        ...pendaftar,
+                        status_label: pendaftar.status_label,
                         tanggal_daftar: pendaftar.dibuat_pada, 
                         cv_url: isian.cv_url || 'N/A', 
                         alasan_minat: isian.alasan_minat || 'N/A', 
@@ -863,15 +917,33 @@ export default function DataPendaftar() {
     }, [selectedPeriodeId, authLoading, role, fetchPendaftarByPeriode]);
 
     const sortedData = useMemo(() => {
-        if (isSortedByMinat) {
-            return [...dataPendaftar].sort((a, b) => {
+        const dataToSort = [...dataPendaftar];
+        if (sortType === 'minat') {
+            return dataToSort.sort((a, b) => {
                 const minatA = Number(a.persentase_minat) || 0;
                 const minatB = Number(b.persentase_minat) || 0;
                 return minatB - minatA;
             });
         }
-        return dataPendaftar;
-    }, [dataPendaftar, isSortedByMinat]);
+        if (sortType === 'nilai') {
+            return dataToSort.sort((a, b) => {
+                const nilaiA = Number(a.total_avg) || 0;
+                const nilaiB = Number(b.total_avg) || 0;
+                return nilaiB - nilaiA;
+            });
+        }
+        // [MODIFIKASI] Logika baru untuk sort by label
+        if (sortType === 'label') {
+            const labelOrder = { 'hijau': 1, 'kuning': 2, 'merah': 3 };
+            return dataToSort.sort((a, b) => {
+                // Memberikan bobot pada setiap label. Label yang tidak ada diberi bobot 4 agar di bawah.
+                const aValue = labelOrder[a.status_label] || 4;
+                const bValue = labelOrder[b.status_label] || 4;
+                return aValue - bValue;
+            });
+        }
+        return dataToSort; 
+    }, [dataPendaftar, sortType]);
 
     const filteredPendaftar = useMemo(() => {
         if (!searchQuery) return sortedData;
@@ -883,6 +955,19 @@ export default function DataPendaftar() {
             return searchableFields.some(field => field && String(field).toLowerCase().includes(lowerCaseQuery));
         });
     }, [sortedData, searchQuery]);
+    
+    const getRowBgClass = (label) => {
+        switch (label) {
+            case 'hijau':
+                return 'bg-green-500/20 hover:bg-green-500/30';
+            case 'kuning':
+                return 'bg-yellow-500/20 hover:bg-yellow-500/30';
+            case 'merah':
+                return 'bg-red-500/20 hover:bg-red-500/30';
+            default:
+                return 'hover:bg-gray-800/50';
+        }
+    };
 
     const table = useReactTable({
         data: filteredPendaftar,
@@ -967,16 +1052,31 @@ export default function DataPendaftar() {
                             <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
                                     <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3"><UserRoundCheck className="text-amber-400" />Daftar Pendaftar</motion.h2>
-                                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                                    <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                                        {/* [MODIFIKASI] Menambahkan tombol filter baru berdasarkan label warna */}
                                         <button
-                                            onClick={() => setIsSortedByMinat(prev => !prev)}
-                                            title="Urutkan berdasarkan minat"
-                                            className={`p-2.5 rounded-full transition-colors duration-200 ${isSortedByMinat ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                            onClick={() => setSortType(prev => prev === 'label' ? 'default' : 'label')}
+                                            title="Urutkan berdasarkan label warna"
+                                            className={`p-2.5 rounded-full transition-colors duration-200 ${sortType === 'label' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
                                         >
-                                            <Filter size={18} />
+                                            <Palette size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => setSortType(prev => prev === 'minat' ? 'default' : 'minat')}
+                                            title="Urutkan berdasarkan minat tertinggi"
+                                            className={`p-2.5 rounded-full transition-colors duration-200 ${sortType === 'minat' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                        >
+                                            <Heart size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => setSortType(prev => prev === 'nilai' ? 'default' : 'nilai')}
+                                            title="Urutkan berdasarkan total nilai tertinggi"
+                                            className={`p-2.5 rounded-full transition-colors duration-200 ${sortType === 'nilai' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                        >
+                                            <Trophy size={18} />
                                         </button>
                                         <div className="relative w-full sm:w-auto flex-grow" style={{...glassmorphismStyle, borderRadius: '9999px'}}>
-                                            <input type="text" placeholder="Cari pendaftar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors border-none rounded-full" />
+                                            <input type="text" placeholder="Cari..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors border-none rounded-full" />
                                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                         </div>
                                     </div>
@@ -1012,8 +1112,8 @@ export default function DataPendaftar() {
                                             <tbody className="divide-y divide-gray-800">
                                                 {table.getRowModel().rows.map(row => (
                                                     <tr 
-                                                        key={row.id} 
-                                                        className="hover:bg-gray-800/50 transition-colors cursor-pointer"
+                                                        key={row.id}
+                                                        className={`transition-colors cursor-pointer ${getRowBgClass(row.original.status_label)}`}
                                                         onClick={() => toggleRowExpansion(row.original.id)}
                                                     >
                                                         {row.getVisibleCells().map(cell => (
