@@ -242,7 +242,7 @@ export default function PemilihanKomandan() {
                             </nav>
                         </motion.div>
 
-                        <h1 className="text-6xl font-league uppercase text-accent drop-shadow-lg text-center mb-4">
+                        <h1 className="text-4xl md:text-6xl font-league uppercase text-accent drop-shadow-lg text-center mb-4">
                             {activePeriod ? activePeriod.nama_periode : 'Pemilihan Komandan'}
                         </h1>
                         
