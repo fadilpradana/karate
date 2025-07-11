@@ -67,7 +67,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
 
     if (!isOpen || !pendaftar) return null;
 
-    const { profiles, penilaian_jasmani, penilaian_materi, penilaian_wawancara, avg_jasmani, avg_materi, avg_wawancara, total_avg } = pendaftar;
+    const { profiles, penilaian_jasmani_individu, penilaian_materi, penilaian_wawancara, avg_jasmani, avg_materi, avg_wawancara, total_avg } = pendaftar;
     const standard = profiles ? STANDARDS[profiles.jenis_kelamin] : null;
 
     const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
@@ -98,8 +98,6 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
             </AnimatePresence>
         </motion.div>
     );
-
-    const jasmaniDisplayData = (penilaian_jasmani && !Array.isArray(penilaian_jasmani)) ? [penilaian_jasmani] : (penilaian_jasmani || []);
 
     return (
        <AnimatePresence>
@@ -136,23 +134,45 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                         <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                             <AccordionSection title="Penilaian Jasmani" icon={<Award className="text-amber-400" />} isOpen={openSection === 'jasmani'} onToggle={() => setOpenSection(openSection === 'jasmani' ? null : 'jasmani')}>
                                 <div className='mt-2 pt-2 border-t border-white/10'>
-                                    {jasmaniDisplayData.length > 0 && standard ? (
-                                        jasmaniDisplayData.map(p => (
-                                            <div key={p.id}>
-                                                <p className="text-sm text-gray-400">Dinilai oleh: {p.penilai?.nama_lengkap || 'N/A'}</p>
-                                                <div className="text-xs text-gray-400 mt-1 grid grid-cols-2 gap-1">
-                                                        <span>Beep Test: {p.beep_level || '0'}-{p.beep_shuttle || '0'}</span>
-                                                        <span>Skor: {calculateScore(calculateTotalShuttles(Number(p.beep_level), Number(p.beep_shuttle)), standard.beepShuttles)}</span>
-                                                        <span>Push Up: {p.push_up || '0'}</span>
-                                                        <span>Skor: {calculateScore(Number(p.push_up), standard.pushUp)}</span>
-                                                        <span>Sit Up: {p.sit_up || '0'}</span>
-                                                        <span>Skor: {calculateScore(Number(p.sit_up), standard.sitUp)}</span>
-                                                        <span>Plank: {p.plank_seconds ? `${Math.floor(p.plank_seconds/60)}m ${p.plank_seconds%60}s` : '0m 0s'}</span>
-                                                        <span>Skor: {calculateScore(Number(p.plank_seconds), standard.plankSeconds)}</span>
-                                                </div>
-                                                {p.keterangan && <p className="text-xs text-gray-400 mt-2 italic">Ket: {p.keterangan}</p>}
-                                            </div>
-                                        ))
+                                    {penilaian_jasmani_individu && penilaian_jasmani_individu.length > 0 && standard ? (
+                                        <div className="space-y-3">
+                                            {penilaian_jasmani_individu.map(p => {
+                                                let testLabel, testValue, testScore;
+                                                switch(p.jenis_tes) {
+                                                    case 'beep_test':
+                                                        testLabel = 'Beep Test';
+                                                        testValue = `${p.nilai || '0'}-${p.keterangan || '0'}`;
+                                                        testScore = calculateScore(calculateTotalShuttles(Number(p.nilai), Number(p.keterangan)), standard.beepShuttles);
+                                                        break;
+                                                    case 'push_up':
+                                                        testLabel = 'Push Up';
+                                                        testValue = p.nilai || '0';
+                                                        testScore = calculateScore(Number(p.nilai), standard.pushUp);
+                                                        break;
+                                                    case 'sit_up':
+                                                        testLabel = 'Sit Up';
+                                                        testValue = p.nilai || '0';
+                                                        testScore = calculateScore(Number(p.nilai), standard.sitUp);
+                                                        break;
+                                                    case 'plank':
+                                                        testLabel = 'Plank';
+                                                        testValue = p.nilai ? `${Math.floor(p.nilai/60)}m ${p.nilai%60}s` : '0m 0s';
+                                                        testScore = calculateScore(Number(p.nilai), standard.plankSeconds);
+                                                        break;
+                                                    default:
+                                                        return null;
+                                                }
+                                                return (
+                                                    <div key={p.jenis_tes} className="text-sm">
+                                                        <p className="font-semibold text-gray-300">{testLabel}</p>
+                                                        <div className="text-xs text-gray-400 pl-2">
+                                                            <p>Hasil: <span className="font-bold text-white">{testValue}</span> | Skor: <span className="font-bold text-white">{testScore}</span></p>
+                                                            <p>Dinilai oleh: <span className="italic">{p.penilai?.nama_lengkap || 'N/A'}</span></p>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
                                 </div>
                             </AccordionSection>
@@ -209,7 +229,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                                     <div className="text-3xl font-bold text-amber-400">{avg_wawancara}</div>
                                     <div className="text-sm text-gray-300">Wawancara</div>
                                 </div>
-                                 <div>
+                                <div>
                                     <div className="text-3xl font-bold battery-style-gradient">{total_avg}</div>
                                     <div className="text-sm text-gray-300">Total</div>
                                 </div>
@@ -223,7 +243,6 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
 };
 
 
-// Komponen Modal Konfirmasi
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
     const modalVariants = {
         hidden: { opacity: 0, scale: 0.8 },
@@ -287,7 +306,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
 };
 
 
-// Komponen Modal CV
 const CvModal = ({ cvUrl, onClose, modalGlassmorphismStyle }) => {
     const canvasRef = useRef(null);
     const renderTaskRef = useRef(null);
@@ -556,8 +574,7 @@ export default function DataPendaftar() {
     const [expandedRows, setExpandedRows] = useState(new Set());
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendaftarToDelete, setPendaftarToDelete] = useState(null);
-    // [MODIFIKASI] Menambah 'label' sebagai tipe sort
-    const [sortType, setSortType] = useState('default'); // 'default', 'minat', 'nilai', 'label'
+    const [sortType, setSortType] = useState('default');
     const [isPenilaianModalOpen, setIsPenilaianModalOpen] = useState(false);
     const [selectedPendaftarForNilai, setSelectedPendaftarForNilai] = useState(null);
 
@@ -796,9 +813,9 @@ export default function DataPendaftar() {
                     data_isian,
                     status_label, 
                     profiles:id_pengguna (nama_lengkap, npt, kelas, angkatan, nomor_telepon, jenis_kelamin, avatar_url),
-                    penilaian_jasmani:penilaian_jasmani!id_pendaftar(id, beep_level, beep_shuttle, push_up, sit_up, plank_seconds, keterangan, penilai:id_penilai(nama_lengkap)),
-                    penilaian_materi:penilaian_materi!id_pendaftar(id, nilai, keterangan, penilai:id_penilai(nama_lengkap)),
-                    penilaian_wawancara:penilaian_wawancara!id_pendaftar(id, nilai, keterangan, penilai:id_penilai(nama_lengkap))
+                    penilaian_jasmani_individu:penilaian_jasmani_individu(jenis_tes, nilai, keterangan, penilai:id_penilai(nama_lengkap)),
+                    penilaian_materi:penilaian_materi!id_pendaftar(id_penilai, nilai, keterangan, penilai:id_penilai(nama_lengkap)),
+                    penilaian_wawancara:penilaian_wawancara!id_pendaftar(id_penilai, nilai, keterangan, penilai:id_penilai(nama_lengkap))
                 `)
                 .eq('id_periode', periodeId)
                 .order('dibuat_pada', { ascending: true });
@@ -810,16 +827,20 @@ export default function DataPendaftar() {
                     const isian = pendaftar.data_isian && typeof pendaftar.data_isian === 'object' ? pendaftar.data_isian : {};
                     
                     let avg_jasmani = 0;
-                    if (pendaftar.penilaian_jasmani && typeof pendaftar.penilaian_jasmani === 'object' && !Array.isArray(pendaftar.penilaian_jasmani)) {
-                        const jasmani = pendaftar.penilaian_jasmani;
+                    if (pendaftar.penilaian_jasmani_individu && pendaftar.penilaian_jasmani_individu.length > 0) {
                         const standard = STANDARDS[pendaftar.profiles?.jenis_kelamin];
-                        
                         if(standard) {
-                            const totalShuttles = calculateTotalShuttles(Number(jasmani.beep_level), Number(jasmani.beep_shuttle));
+                            const scores = pendaftar.penilaian_jasmani_individu;
+                            const beepTest = scores.find(s => s.jenis_tes === 'beep_test');
+                            const pushUp = scores.find(s => s.jenis_tes === 'push_up');
+                            const sitUp = scores.find(s => s.jenis_tes === 'sit_up');
+                            const plank = scores.find(s => s.jenis_tes === 'plank');
+
+                            const totalShuttles = calculateTotalShuttles(Number(beepTest?.nilai), Number(beepTest?.keterangan));
                             const beepScore = calculateScore(totalShuttles, standard.beepShuttles);
-                            const pushUpScore = calculateScore(Number(jasmani.push_up), standard.pushUp);
-                            const sitUpScore = calculateScore(Number(jasmani.sit_up), standard.sitUp);
-                            const plankScore = calculateScore(Number(jasmani.plank_seconds), standard.plankSeconds);
+                            const pushUpScore = calculateScore(Number(pushUp?.nilai), standard.pushUp);
+                            const sitUpScore = calculateScore(Number(sitUp?.nilai), standard.sitUp);
+                            const plankScore = calculateScore(Number(plank?.nilai), standard.plankSeconds);
                             avg_jasmani = Math.round((beepScore + pushUpScore + sitUpScore + plankScore) / 4);
                         }
                     }
@@ -840,6 +861,7 @@ export default function DataPendaftar() {
 
                     return { 
                         ...pendaftar,
+                        penilaian_jasmani_individu: pendaftar.penilaian_jasmani_individu || [],
                         status_label: pendaftar.status_label,
                         tanggal_daftar: pendaftar.dibuat_pada, 
                         cv_url: isian.cv_url || 'N/A', 
@@ -932,11 +954,9 @@ export default function DataPendaftar() {
                 return nilaiB - nilaiA;
             });
         }
-        // [MODIFIKASI] Logika baru untuk sort by label
         if (sortType === 'label') {
             const labelOrder = { 'hijau': 1, 'kuning': 2, 'merah': 3 };
             return dataToSort.sort((a, b) => {
-                // Memberikan bobot pada setiap label. Label yang tidak ada diberi bobot 4 agar di bawah.
                 const aValue = labelOrder[a.status_label] || 4;
                 const bValue = labelOrder[b.status_label] || 4;
                 return aValue - bValue;
@@ -1053,7 +1073,6 @@ export default function DataPendaftar() {
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
                                     <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3"><UserRoundCheck className="text-amber-400" />Daftar Pendaftar</motion.h2>
                                     <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                                        {/* [MODIFIKASI] Menambahkan tombol filter baru berdasarkan label warna */}
                                         <button
                                             onClick={() => setSortType(prev => prev === 'label' ? 'default' : 'label')}
                                             title="Urutkan berdasarkan label warna"
