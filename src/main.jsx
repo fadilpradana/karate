@@ -32,6 +32,8 @@ import AdminPendaftaran from './pages/AdminPendaftaran';
 import ModerasiPengurus from './pages/ModerasiPengurus';
 import DataPendaftar from './pages/DataPendaftar';
 import PenilaianPendaftar from './pages/PenilaianPendaftar';
+import PemilihanKomandan from './pages/PemilihanKomandan.jsx'
+import AdminPeriodeKomandan from './pages/AdminPeriodeKomandan.jsx'
 
 // Definisikan semua rute/halaman aplikasi
 const router = createBrowserRouter([
@@ -103,6 +105,14 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'pemilihan-komandan',
+        element: (
+          <ProtectedRoute>
+            <PemilihanKomandan />
+          </ProtectedRoute>
+        ),
+      },
       // --- Rute Khusus Admin ---
       {
         path: 'moderasi-artikel',
@@ -141,6 +151,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <ModerasiPengurus />
+          </AdminRoute>
+        ),
+      }, 
+      {
+        path: 'admin-komandan',
+        element: (
+          <AdminRoute>
+            <AdminPeriodeKomandan />
           </AdminRoute>
         ),
       }, 

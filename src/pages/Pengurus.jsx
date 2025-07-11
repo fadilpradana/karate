@@ -325,8 +325,8 @@ export default function Pengurus() {
                                             <Link to="/moderasi-pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Moderasi Pengurus" >
                                                 <Settings size={20} />
                                             </Link>
-                                            <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Admin Pendaftaran" >
-                                                <UserPlus size={20} />
+                                            <Link to="/pemilihan-komandan" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Pemilihan Komandan" >
+                                                <Shield size={20} />
                                             </Link>
                                         </>
                                     )}
@@ -353,12 +353,12 @@ export default function Pengurus() {
                                             <Link to="/moderasi-pengurus" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Moderasi Pengurus" >
                                                 <Settings size={20} />
                                             </Link>
-                                            <Link to="/admin-pendaftaran" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Admin Pendaftaran" >
-                                                <UserPlus size={20} />
-                                            </Link>
                                         </>
                                     )}
                                     {/* Tombol ini untuk admin DAN pengurus */}
+                                    <Link to="/pemilihan-komandan" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Pemilihan Komandan" >
+                                        <Shield size={20} />
+                                    </Link>                                    
                                     <Link to="/data-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Data Pendaftar" >
                                         <UserRoundCheck size={20} />
                                     </Link>

@@ -94,10 +94,10 @@ const AdminRoute = ({ children }) => {
                         {/* Pembungkus untuk menengahkan tombol */}
                         <div className="flex justify-center">
                             <Link
-                                to="/login" // PERUBAHAN: Mengarahkan ke halaman artikel
+                                to="/" // PERUBAHAN: Mengarahkan ke halaman artikel
                                 className={glassButtonClasses}
                             >
-                                Silahkan login kembali {/* PERUBAHAN: Teks tombol */}
+                                Kembali ke beranda {/* PERUBAHAN: Teks tombol */}
                             </Link>
                         </div>
                     </motion.div>
