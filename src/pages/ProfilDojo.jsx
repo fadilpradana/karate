@@ -165,8 +165,8 @@ export default function ProfilDojo() {
     // --- Transformasi Animasi Berbasis Scroll ---
     const hero1Scale = useTransform(scrollYProgress, [0, 0.1], [1, 0.01]);
     const hero1Opacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
-    const hero2Scale = useTransform(scrollYProgress, [0.15, 0.2, 0.25, 0.35], [0.5, 1, 1, 0.01]);
-    const hero2Opacity = useTransform(scrollYProgress, [0.15, 0.2, 0.25, 0.35], [0, 1, 1, 0]);
+    const hero2Scale = useTransform(scrollYProgress, [0.1, 0.15, 0.2, 0.25], [0.5, 1, 1, 0.01]);
+    const hero2Opacity = useTransform(scrollYProgress, [0.1, 0.15, 0.2, 0.25], [0, 1, 1, 0]);
     const mainContentOpacity = useTransform(scrollYProgress, [0.2, 0.3], [0, 1]);
     const mainContentY = useTransform(scrollYProgress, [0.2, 0.3], [100, 0]);
 
