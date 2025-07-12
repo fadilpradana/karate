@@ -163,12 +163,12 @@ export default function ProfilDojo() {
     });
 
     // --- Transformasi Animasi Berbasis Scroll ---
-    const hero1Scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.01]);
-    const hero1Opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-    const hero2Scale = useTransform(scrollYProgress, [0.25, 0.3, 0.4, 0.5], [0.5, 1, 1, 0.01]);
-    const hero2Opacity = useTransform(scrollYProgress, [0.25, 0.3, 0.4, 0.5], [0, 1, 1, 0]);
-    const mainContentOpacity = useTransform(scrollYProgress, [0.5, 0.6], [0, 1]);
-    const mainContentY = useTransform(scrollYProgress, [0.6, 0.7], [100, 0]);
+    const hero1Scale = useTransform(scrollYProgress, [0, 0.1], [1, 0.01]);
+    const hero1Opacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+    const hero2Scale = useTransform(scrollYProgress, [0.15, 0.25, 0.3, 0.4], [0.5, 1, 1, 0.01]);
+    const hero2Opacity = useTransform(scrollYProgress, [0.15, 0.25, 0.3, 0.4], [0, 1, 1, 0]);
+    const mainContentOpacity = useTransform(scrollYProgress, [0.45, 0.55], [0, 1]);
+    const mainContentY = useTransform(scrollYProgress, [0.45, 0.6], [100, 0]);
 
     // --- Helper Functions ---
     const showToast = useCallback((message, type = 'success') => {
@@ -643,18 +643,18 @@ export default function ProfilDojo() {
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
                                     <div className="flex flex-col items-center justify-center gap-8">
                                         <h2 className="text-4xl font-league uppercase text-gray-300">Naungan Organisasi</h2>
-                                        <div className="flex justify-center items-center gap-8 md:gap-12 flex-wrap">
+                                        <div className="flex justify-center items-center gap-6 md:gap-12 flex-wrap">
                                             <a href="https://karate.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
-                                                <img src={logoBintang} alt="Logo STMKG Karate Club" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                                <img src={logoBintang} alt="Logo STMKG Karate Club" className="h-14 md:h-28 w-auto transition-transform hover:scale-105" />
                                             </a>
                                             <a href="https://resimen.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
-                                                <img src={logoResimen} alt="Logo Resimen" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                                <img src={logoResimen} alt="Logo Resimen" className="h-14 md:h-24 w-auto transition-transform hover:scale-105" />
                                             </a>
                                             <a href="https://stmkg.ac.id" target="_blank" rel="noopener noreferrer">
-                                                <img src={logoStmkg} alt="Logo STMKG" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                                <img src={logoStmkg} alt="Logo STMKG" className="h-14 md:h-24 w-auto transition-transform hover:scale-105" />
                                             </a>
                                             <a href="https://bmkg.go.id" target="_blank" rel="noopener noreferrer">
-                                                <img src={logoBmkg} alt="Logo BMKG" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                                <img src={logoBmkg} alt="Logo BMKG" className="h-14 md:h-24 w-auto transition-transform hover:scale-105" />
                                             </a>
                                         </div>
                                     </div>
