@@ -165,10 +165,10 @@ export default function ProfilDojo() {
     // --- Transformasi Animasi Berbasis Scroll ---
     const hero1Scale = useTransform(scrollYProgress, [0, 0.1], [1, 0.01]);
     const hero1Opacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
-    const hero2Scale = useTransform(scrollYProgress, [0.15, 0.25, 0.3, 0.4], [0.5, 1, 1, 0.01]);
-    const hero2Opacity = useTransform(scrollYProgress, [0.15, 0.25, 0.3, 0.4], [0, 1, 1, 0]);
-    const mainContentOpacity = useTransform(scrollYProgress, [0.45, 0.55], [0, 1]);
-    const mainContentY = useTransform(scrollYProgress, [0.45, 0.6], [100, 0]);
+    const hero2Scale = useTransform(scrollYProgress, [0.15, 0.2, 0.25, 0.35], [0.5, 1, 1, 0.01]);
+    const hero2Opacity = useTransform(scrollYProgress, [0.15, 0.2, 0.25, 0.35], [0, 1, 1, 0]);
+    const mainContentOpacity = useTransform(scrollYProgress, [0.2, 0.3], [0, 1]);
+    const mainContentY = useTransform(scrollYProgress, [0.2, 0.3], [100, 0]);
 
     // --- Helper Functions ---
     const showToast = useCallback((message, type = 'success') => {
@@ -402,7 +402,7 @@ export default function ProfilDojo() {
             {isTestimonialAdminOpen && <TestimonialAdminModal testimonials={testimonials} onDataChange={fetchAndSetData} onClose={() => setIsTestimonialAdminOpen(false)} showToast={showToast} />}
 
             <div ref={scrollContainerRef} className="relative z-10 w-full">
-                <div className="h-[900vh]">
+                <div className="h-[500vh]">
                     <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
                         <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: "easeOut" }} style={{ scale: hero1Scale, opacity: hero1Opacity }} className="text-center p-4 absolute">
                             <h1 className="text-4xl md:text-6xl font-league uppercase text-accent battery-style-gradient">TENTANG KAMI</h1>
@@ -565,7 +565,7 @@ export default function ProfilDojo() {
                                 {/* --- START: UPDATED TESTIMONIAL SECTION --- */}
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
                                     <div className="flex justify-center items-center mb-12 gap-4">
-                                        <h2 className="text-3xl md:text-5xl font-league uppercase text-center text-accent">Suara Sang Ksatria</h2>
+                                        <h2 className="text-3xl md:text-5xl font-league uppercase text-center text-accent">Gema Tapak Ksatria</h2>
                                         {userRole === 'admin' && (
                                             <button onClick={() => setIsTestimonialAdminOpen(true)} className={`p-2 rounded-full ${glassEffect} hover:bg-accent/20 text-accent transition-colors`}>
                                                 <Edit size={20} />
@@ -614,7 +614,7 @@ export default function ProfilDojo() {
                                                                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
                                                                 />
                                                                 <p className="text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-all flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
-                                                                <p className="font-[Montserrat] font-semibold text-sm text-accent break-words">- {testimonial.name}</p>
+                                                                <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm text-accent break-words">- {testimonial.name}</p>
                                                             </div>
                                                         </motion.div>
                                                     );
