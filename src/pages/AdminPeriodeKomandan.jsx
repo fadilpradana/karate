@@ -381,7 +381,7 @@ export default function AdminPeriodeKomandan() {
                                 <form onSubmit={handleSubmit}>
                                     <div className="space-y-4">
                                         <div><label className="block text-sm font-medium text-gray-300 mb-1">Nama Periode</label><input type="text" required value={newPeriodData.nama_periode} onChange={e => setNewPeriodData({...newPeriodData, nama_periode: e.target.value})} className="w-full p-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-amber-500 outline-none"/></div>
-                                        <div><label className="block text-sm font-medium text-gray-300 mb-1">Tahun Angkatan</label><input type="number" required value={newPeriodData.tahun_angkatan} onChange={e => setNewPeriodData({...newPeriodData, tahun_angkatan: e.target.value})} className="w-full p-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-amber-500 outline-none"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-300 mb-1">Tahun Kepengurusan</label><input type="number" required value={newPeriodData.tahun_angkatan} onChange={e => setNewPeriodData({...newPeriodData, tahun_angkatan: e.target.value})} className="w-full p-2 bg-black/20 border border-white/20 rounded-md focus:ring-2 focus:ring-amber-500 outline-none"/></div>
                                     </div>
                                     <div className="flex justify-end gap-4 mt-6">
                                         <button type="button" onClick={() => setIsFormModalOpen(false)} style={glassmorphismStyle} className="px-4 py-2 rounded-md hover:bg-white/20 text-gray-300 hover:text-white">Batal</button>

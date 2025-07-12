@@ -1,341 +1,870 @@
 // src/pages/ProfilDojo.jsx
 
-import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { LoaderCircle, AlertTriangle, CheckCircle, X, Edit, Trash2, Plus, ChevronDown, Save, ShieldCheck, ArrowLeft, Settings, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// --- Import Aset untuk Footer ---
-import Footer from '../components/Footer';
-// --------------------------------
+// --- Import Supabase Client (sesuaikan dengan proyek Anda) ---
+// Pastikan path ini benar sesuai dengan struktur proyek Anda
+import { supabase } from '../supabaseClient.js'; 
 
-// --- Data Profil Terintegrasi ---
+// --- Import Aset ---
+import Footer from '../components/Footer'; // Pastikan komponen Footer ada
+import heroBg from '../assets/bg12.jpg';
+import logoBintang from '../assets/logo_bintangcompress.png';
+import brevet from '../assets/brevet.png';
+// *** NEW *** Impor logo tambahan
+import logoResimen from '../assets/logo_resimen.png';
+import logoStmkg from '../assets/logo_stmkg.png';
+import logoBmkg from '../assets/logobmkglight.png';
+
+
+// --- Data Statis ---
 const profilData = {
-  about: {
-    title: "Tentang Kami",
-    history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran yang berdedikasi tinggi bagi para taruna dan taruni, **telah eksis sejak awal berdirinya lembaga ini dan didirikan atas inisiatif Bapak Dr. Suko Adi Prayitno**. Klub ini beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan dan arahan diberikan oleh Ibu **Ayu Adi Justicea S.T., S.ST., M.App.Sc.** Dengan semangat yang membara serta visi kuat untuk mencetak pribadi yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate autentik, klub ini menjadi pilar fundamental dalam pengembangan potensi holistik setiap taruna. Kami berkomitmen penuh menanamkan nilai-nilai inti karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kedinasan maupun dalam kehidupan bermasyarakat.",
-    vision: "Menjadikan organisasi Karate yang unggul dalam membentuk Taruna berkarakter, berprestasi, dan berjiwa Bushido.",
-    mission: [
-      "Mengusahakan menjalin kerja sama dengan perguruan/yayasan karate yang legal secara hukum.",
-      "Mengutamakan kejujuran dalam hak dan kewajiban baik itu pelatih, senpai, dan kohai.",
-      "Mengadakan ujian sabuk legal persemester.",
-      "Revolusi mental anggota organisasi.",
-      "Memfasilitasi Taruna/i untuk mempelajari bela diri praktis yang dapat diaplikasikan secara nyata."
-    ],
-    philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopopan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
-  },
-  highlights: {
-    title: "Sekilas Klub",
-    items: [
-      { id: 1, icon: "🗓️", text: "Latihan Rutin (Sabtu Pagi)" },
-      { id: 2, icon: "🥋", text: "Latihan Khusus BDT (Senin Sore)" },
-      { id: 3, icon: "🎓", text: "Pengembangan Karakter Taruna" },
-      { id: 4, icon: "🤝", text: "Komunitas Solid & Suportif" },
-      { id: 5, icon: "🏆", text: "Fokus Pembinaan Prestasi Internal" },
-      { id: 6, icon: "👨‍🏫", text: "Pembinaan oleh Senpai & Sensei Berpengalaman" },
+    about: {
+        title: "Tentang Kami",
+        history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran yang berdedikasi tinggi bagi para taruna dan taruni, **telah eksis sejak awal berdirinya lembaga ini dan didirikan atas inisiatif Bapak Dr. Suko Adi Prayitno**. Klub ini beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan dan arahan diberikan oleh Ibu **Ayu Adi Justicea S.T., S.ST., M.App.Sc.** Dengan semangat yang membara serta visi kuat untuk mencetak pribadi yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate autentik, klub ini menjadi pilar fundamental dalam pengembangan potensi holistik setiap taruna. Kami berkomitmen penuh menanamkan nilai-nilai inti karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kedinasan maupun dalam kehidupan bermasyarakat.",
+        philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopopan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
+    },
+    sumpahKarate: [
+        "1. Sanggup memelihara kepribadian;",
+        "2. Sanggup patuh pada kejujuran;",
+        "3. Sanggup mempertinggi prestasi;",
+        "4. Sanggup menjaga sopan santun;",
+        "5. Sanggup menguasai diri.",
     ]
-  },
-  testimonials: {
-    title: "Suara Sang Ksatria",
-    items: [
-      {
-        id: 1,
-        quote: "Bergabung dengan Karate STMKG bukan hanya melatih fisik, tapi juga membentuk mental saya menjadi lebih disiplin dan percaya diri. Sensei dan teman-teman sangat mendukung.",
-        name: "Taruna R. Wibowo",
-        image: "/images/testi-1.jpg"
-      },
-      {
-        id: 2,
-        quote: "Saya merasakan peningkatan signifikan dalam fokus dan ketahanan diri sejak berlatih karate di sini. Lingkungan latihannya sangat kondusif untuk berkembang dan berprestasi.",
-        name: "Taruni D. Lestari",
-        image: "/images/testi-2.jpg"
-      },
-      {
-        id: 3,
-        quote: "Karate mengajarkan saya tentang pentingnya ketekunan dan kerendahan hati. STMKG Karate Club adalah keluarga kedua yang selalu memotivasi.",
-        name: "Taruna M. Arif",
-        image: "/images/testi-3.jpg"
-      },
-    ]
-  }
-};
-// --- Akhir Data Profil Terintegrasi ---
-
-// --- Shared styles from Home.jsx for consistency ---
-const glassButtonStyle = {
-  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  backdropFilter: 'blur(5px)',
-  WebkitBackdropFilter: 'blur(5px)',
-  border: '1px solid rgba(255, 255, 255, 0.3)',
-  color: 'white',
-  boxShadow: `
-    0px 2px 5px rgba(0, 0, 0, 0.2),
-    inset 1px 1px 2px rgba(255, 255, 255, 0.13),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.25)
-  `,
-  transition: 'all 0.3s ease-in-out',
 };
 
-const glassButtonHoverStyle = (e) => {
-  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-  e.currentTarget.style.boxShadow = `
-    0px 1px 2px rgba(0, 0, 0, 0.1),
-    inset 0.5px 0.5px 1px rgba(255, 255, 255, 0.3),
-    inset -0.5px -0.5px 1px rgba(0, 0, 0, 0.05)
-  `;
+const logoPhilosophies = [
+    { term: "Bintang Prestasi", description: "Melambangkan pencapaian luar biasa dalam perlombaan karate. Setiap satu bintang mewakili lima medali emas yang diraih oleh karateka STMKG pada tingkat nasional." },
+    { term: "Lingkaran", description: "Melambangkan kebulatan tekad dan semangat karateka dalam melaksanakan aktivitasnya di bidang karate." },
+    { term: "Arah Mata Angin", description: "Melambangkan arah dan tujuan yang ingin dicapai." },
+    { term: "Merah", description: "Melambangkan keberanian akan sebuah tindakan." },
+    { term: "Kuning", description: "Melambangkan kreativitas." },
+    { term: "Biru", description: "Melambangkan tanggungjawab dan bisa diandalkan." },
+    { term: "Tulisan Warna Hitam", description: "Melambangkan kekuasaan karateka yang harus sanggup menguasai diri sesuai dengan sumpah karate yang kelima." },
+    { term: "Putih", description: "Melambangkan ketulusan dan saling menghargai." }
+];
+
+const brevetPhilosophies = [
+    { term: "Lingkaran", description: "Sebagai bentuk kewaspadaan seorang karateka, mengembangkan rasa empati, dan simpati." },
+    { term: "Arah Mata Angin", description: "Melambangkan arah dan tujuan yang ingin dicapai, serta menandakan naungan Sekolah Tinggi Meteorologi Klimatologi dan Geofisika." },
+    { term: "Dua Tate Zuki", description: "Pukulan mengepal setengah terbalik dan pukulan ke arah kepala, melambangkan tekad, semangat, dan kemauan kuat seorang Taruna/i untuk berlatih." },
+    { term: "Dua Tangan Nukite", description: "Serangan dengan tangan seperti tombak, melambangkan perjuangan sensei dan senpai terdahulu karena tombak merupakan senjata tradisional." },
+    { term: "Dua Sayap (6 Bulu)", description: "Perwujudan STMKG Karate sebagai organisasi dinamis. Enam bulu menunjukkan jumlah warna sabuk di karate dan semangat membangun prestasi." },
+    { term: "STMKG KARATE CLUB", description: "Wadah latihan fisik, mental baja, dan penempaan diri dengan penuh kesadaran, itikad baik, serta tanggung jawab terhadap cita-cita Bangsa." }
+];
+
+
+// --- Komponen & Style Helper ---
+const glassEffect = "bg-black/20 backdrop-blur-lg border border-white/10 shadow-lg";
+
+const Toast = ({ message, type, onClose }) => {
+    const isError = type === 'error';
+    const Icon = isError ? AlertTriangle : CheckCircle;
+    useEffect(() => {
+        const timer = setTimeout(onClose, 5000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 100 }} className={`fixed bottom-5 right-5 flex items-center gap-4 p-4 rounded-lg shadow-xl z-50 ${glassEffect} ${isError ? 'border-red-500/50' : 'border-green-500/50'}`}>
+            <Icon className={`h-6 w-6 ${isError ? 'text-red-400' : 'text-green-400'}`} />
+            <p className="text-white font-[Montserrat]">{message}</p>
+            <button onClick={onClose} className="ml-4 text-white/50 hover:text-white"><X className="h-5 w-5" /></button>
+        </motion.div>
+    );
 };
 
-const glassButtonLeaveStyle = (e) => {
-  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-  e.currentTarget.style.boxShadow = `
-    0px 2px 5px rgba(0, 0, 0, 0.2),
-    inset 1px 1px 2px rgba(255, 255, 255, 0.13),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.25)
-  `;
+const ConfirmModal = ({ isOpen, onClose, onConfirm, message }) => (
+    <AnimatePresence>
+        {isOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className={`p-8 shadow-xl max-w-sm mx-auto text-center ${glassEffect} rounded-2xl`}>
+                    <p className="text-white text-lg mb-6 font-[Montserrat]">{message}</p>
+                    <div className="flex justify-center gap-4">
+                        <button onClick={onClose} className={`px-4 py-2 ${glassEffect} rounded-lg text-white/90 hover:bg-white/10 transition-all`}>Batal</button>
+                        <button onClick={onConfirm} className={`px-4 py-2 ${glassEffect} rounded-lg text-green-400 hover:bg-green-500/20 transition-all`}>Konfirmasi</button>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
+);
+
+// --- Framer Motion Variants ---
+const sectionVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 100,
+            damping: 12,
+            staggerChildren: 0.1,
+        },
+    },
 };
 
-const photoFrameContainerBaseStyle = {
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  border: '1px solid rgba(255, 255, 255, 0.3)',
-  boxShadow: `
-    0px 4px 10px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2)
-  `,
-  borderRadius: '1rem',
-  padding: '10px',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  overflow: 'hidden',
-  transition: 'all 0.3s ease-in-out',
-  transform: 'scale(1)',
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: 'spring',
+            stiffness: 120,
+            damping: 15,
+        },
+    },
 };
 
-const photoFrameContainerHoverStyle = (e) => {
-  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-  e.currentTarget.style.boxShadow = `
-    0px 2px 5px rgba(0, 0, 0, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4)
-  `;
-  e.currentTarget.style.transform = 'scale(1.03)';
+const formContainerVariants = {
+    hidden: { opacity: 0, x: -50 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeInOut' } },
+    exit: { opacity: 0, x: 50, transition: { duration: 0.5, ease: 'easeInOut' } }
 };
 
-const photoFrameContainerLeaveStyle = (e) => {
-  e.currentTarget.style.backgroundColor = photoFrameContainerBaseStyle.backgroundColor;
-  e.currentTarget.style.borderColor = photoFrameContainerBaseStyle.border.split(' ')[2];
-  e.currentTarget.style.boxShadow = photoFrameContainerBaseStyle.boxShadow;
-  e.currentTarget.style.transform = 'scale(1)';
-};
-
-// Framer Motion Variants
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 1.5, ease: "easeOut" } }
-};
-
-const slideUp = {
-  hidden: { y: 50, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } }
-};
-
-const staggeredContainer = {
-  hidden: { opacity: 1 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15
-    }
-  }
-};
-
-const itemSlideUp = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } }
-};
-
+// --- Komponen Utama ---
 export default function ProfilDojo() {
-  const aboutRef = useRef(null);
-  const highlightsRef = useRef(null);
-  const testimonialsRef = useRef(null);
+    // --- State Management ---
+    const [allVisi, setAllVisi] = useState([]);
+    const [activeVisi, setActiveVisi] = useState(null);
+    const [misiList, setMisiList] = useState([]);
+    const [testimonials, setTestimonials] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const [isVisiMisiEditMode, setIsVisiMisiEditMode] = useState(false);
+    const [isAdminPeriodeMode, setIsAdminPeriodeMode] = useState(false);
+    const [isTestimonialAdminOpen, setIsTestimonialAdminOpen] = useState(false);
+    
+    // State untuk form
+    const [visiInput, setVisiInput] = useState("");
+    const [editingMisi, setEditingMisi] = useState({});
+    const [newMissionInput, setNewMissionInput] = useState("");
+    const [newTahun, setNewTahun] = useState((new Date().getFullYear() + 1).toString());
+    const [newVisiText, setNewVisiText] = useState("");
+    const [newMisiText, setNewMisiText] = useState("");
 
-  const aboutInView = useInView(aboutRef, { once: true, amount: 0.3 });
-  const highlightsInView = useInView(highlightsRef, { once: true, amount: 0.3 });
-  const testimonialsInView = useInView(testimonialsRef, { once: true, amount: 0.3 });
+    // State untuk UI
+    const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {} });
+    const [toastState, setToastState] = useState({ isOpen: false, message: '', type: 'success' });
 
-  return (
-    <motion.main
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
-    >
-      {/* --- Section Tentang Kami, Visi & Misi (2 Kolom) --- */}
-      <motion.section
-        ref={aboutRef}
-        initial="hidden"
-        // Gunakan aboutInView untuk mengaktifkan animasi saat section terlihat
-        animate={aboutInView ? "visible" : "hidden"} 
-        variants={slideUp}
-        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
-        style={{ backgroundColor: '#0a0a0a', color: 'white' }}
-      >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-8 md:mb-12 mt-4 text-accent jadwal-title-gradient"
-          style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-        >
-          {profilData.about.title}
-        </h2>
-        {/* Konten utama tentang kami, visi, misi, dan filosofi */}
-        <div className="flex flex-col md:flex-row justify-center items-start gap-8 md:gap-12 max-w-6xl mx-auto">
-          {/* Kolom Kiri: Tentang Kami */}
-          <motion.div variants={itemSlideUp} className="flex-1 text-left w-full"> {/* Tambahkan w-full */}
-            <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
-              style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-            >
-              Sejarah Singkat
-            </h3>
-            <p className="text-base md:text-lg font-[Montserrat] font-light leading-relaxed text-justify text-[#a7a7a7]">
-              {profilData.about.history}
-            </p>
-          </motion.div>
+    // State untuk Testimonial Carousel
+    const [activeIndex, setActiveIndex] = useState(0);
 
-          {/* Kolom Kanan: Visi & Misi */}
-          <div className="flex-1 text-left w-full"> {/* Tambahkan w-full */}
-            <motion.div variants={itemSlideUp}>
-              <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
-                style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-              >
-                Visi
-              </h3>
-              <p className="text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
-                {profilData.about.vision}
-              </p>
-            </motion.div>
+    // --- Hooks untuk Animasi Scroll ---
+    const scrollContainerRef = useRef(null);
+    const { scrollYProgress } = useScroll({
+        target: scrollContainerRef,
+        offset: ["start start", "end end"]
+    });
 
-            <motion.div variants={itemSlideUp} className="mt-8 md:mt-12">
-              <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
-                style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-              >
-                Misi
-              </h3>
-              <ul className="list-none p-0 text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
-                {profilData.about.mission.map((item, index) => (
-                  <li key={index} className="mb-2 before:content-['\2022\00a0'] before:text-accent before:font-bold">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          </div>
+    // --- Transformasi Animasi Berbasis Scroll ---
+    const hero1Scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.01]);
+    const hero1Opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+    const hero2Scale = useTransform(scrollYProgress, [0.25, 0.3, 0.4, 0.5], [0.5, 1, 1, 0.01]);
+    const hero2Opacity = useTransform(scrollYProgress, [0.25, 0.3, 0.4, 0.5], [0, 1, 1, 0]);
+    const mainContentOpacity = useTransform(scrollYProgress, [0.5, 0.6], [0, 1]);
+    const mainContentY = useTransform(scrollYProgress, [0.6, 0.7], [100, 0]);
+
+    // --- Helper Functions ---
+    const showToast = useCallback((message, type = 'success') => {
+        setToastState({ isOpen: true, message, type });
+    }, []);
+
+    const openModal = (message, onConfirm) => {
+        setModalState({ isOpen: true, message, onConfirm });
+    };
+
+    // --- Data Fetching & Auth ---
+    const fetchAndSetData = useCallback(async () => {
+        // Fetch Visi & Misi
+        const { data: visiData, error: visiError } = await supabase.from('visi').select('*').order('tahun_periode', { ascending: false });
+        if (visiError) {
+            console.error("Error fetching Visi:", visiError);
+            setError(`Gagal mengambil data Visi: ${visiError.message}.`);
+            return;
+        }
+        setAllVisi(visiData);
+        const currentActiveVisi = visiData.find(v => v.is_active) || (visiData.length > 0 ? visiData[0] : null);
+        setActiveVisi(currentActiveVisi);
+        if (currentActiveVisi) {
+            const { data: misiData, error: misiError } = await supabase.from('misi').select('*').eq('visi_id', currentActiveVisi.id).order('id', { ascending: true });
+            if (misiError) {
+                 console.error("Error fetching Misi:", misiError);
+                 setError(`Gagal mengambil data Misi: ${misiError.message}.`);
+            } else {
+                setMisiList(misiData || []);
+                setVisiInput(currentActiveVisi.teks_visi);
+            }
+        } else {
+            setMisiList([]);
+            setVisiInput("");
+        }
+
+        // Fetch Testimonials
+        const { data: testimonialsData, error: testimonialsError } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+        if (testimonialsError) {
+            console.error("Error fetching testimonials:", testimonialsError);
+            setError(prev => `${prev}\n Gagal mengambil data testimoni: ${testimonialsError.message}.`);
+        } else {
+            const testimonialsWithUrls = testimonialsData.map(t => {
+                if (t.image_path) {
+                    const { data } = supabase.storage.from('testimonial_images').getPublicUrl(t.image_path);
+                    return { ...t, image_url: data.publicUrl };
+                }
+                return { ...t, image_url: null };
+            });
+            setTestimonials(testimonialsWithUrls);
+        }
+    }, []);
+
+    const checkUserRole = useCallback(async (user) => {
+        if (user) {
+            const { data: profileData, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            if (profileError) {
+                console.error('Error fetching user profile for role check:', profileError.message);
+                setUserRole(null);
+            } else if (profileData) {
+                setUserRole(profileData.role);
+            } else {
+                setUserRole(null);
+            }
+        } else {
+            setUserRole(null);
+        }
+    }, []);
+
+    useEffect(() => {
+        const initializePage = async () => {
+            setIsLoading(true);
+            const { data: { session } } = await supabase.auth.getSession();
+            await checkUserRole(session?.user);
+            await fetchAndSetData();
+            setIsLoading(false);
+        };
+        
+        initializePage();
+        
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            checkUserRole(session?.user);
+        });
+        
+        const channel = supabase.channel('profil-dojo-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'visi' }, fetchAndSetData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'misi' }, fetchAndSetData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, fetchAndSetData)
+            .subscribe();
+            
+        return () => {
+            authListener.subscription.unsubscribe();
+            supabase.removeChannel(channel);
+        };
+    }, [fetchAndSetData, checkUserRole]);
+
+    // *** MODIFIED ***: useEffect for Testimonial Carousel Timer with reset on interaction
+    useEffect(() => {
+        if (testimonials.length > 1) {
+            const timer = setInterval(() => {
+                setActiveIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
+            }, 10000); // Ganti setiap 10 detik
+
+            return () => clearInterval(timer);
+        }
+    }, [testimonials.length, activeIndex]); // Timer now resets when activeIndex changes
+
+    // --- Carousel Navigation Handlers ---
+    const nextTestimonial = () => {
+        setActiveIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
+    };
+
+    const prevTestimonial = () => {
+        setActiveIndex((prevIndex) => (prevIndex - 1 + testimonials.length) % testimonials.length);
+    };
+    
+    const handleDragEnd = (event, info) => {
+        const swipeThreshold = 50;
+        if (info.offset.x < -swipeThreshold) {
+            nextTestimonial();
+        } else if (info.offset.x > swipeThreshold) {
+            prevTestimonial();
+        }
+    };
+
+
+    // --- Admin Action Handlers ---
+    const handleUpdateVisi = async () => {
+        if (!activeVisi || visiInput === activeVisi.teks_visi) return;
+        const { error } = await supabase.from('visi').update({ teks_visi: visiInput }).eq('id', activeVisi.id);
+        if (error) { showToast(`Gagal: ${error.message}`, "error"); } 
+        else {
+            showToast("Visi berhasil diperbarui.");
+            await fetchAndSetData();
+        }
+    };
+
+    const handleUpdateMisi = async (misiId) => {
+        const newText = editingMisi[misiId];
+        if (!newText) return;
+        const { error } = await supabase.from('misi').update({ teks_misi: newText }).eq('id', misiId);
+        if (error) { showToast(`Gagal: ${error.message}`, "error"); }
+        else {
+            showToast("Misi berhasil diperbarui.");
+            setEditingMisi(prev => ({ ...prev, [misiId]: undefined }));
+            await fetchAndSetData();
+        }
+    };
+
+    const handleAddMisi = async (e) => {
+        e.preventDefault();
+        if (newMissionInput.trim() === "" || !activeVisi) return;
+        const { error } = await supabase.from('misi').insert({ visi_id: activeVisi.id, teks_misi: newMissionInput.trim() });
+        if (error) { showToast(`Gagal: ${error.message}`, "error"); }
+        else {
+            showToast("Misi baru berhasil ditambahkan.");
+            setNewMissionInput("");
+            await fetchAndSetData();
+        }
+    };
+
+    const handleDeleteMisi = (misi) => {
+        openModal(`Yakin ingin menghapus misi: "${misi.teks_misi}"?`, async () => {
+            const { error } = await supabase.from('misi').delete().eq('id', misi.id);
+            if (error) { showToast(`Gagal: ${error.message}`, "error"); } 
+            else {
+                showToast("Misi berhasil dihapus.");
+                await fetchAndSetData();
+            }
+            setModalState({ isOpen: false });
+        });
+    };
+
+    const handleCreatePackage = () => {
+        openModal(`Anda akan membuat paket baru untuk tahun ${newTahun}. Lanjutkan?`, async () => {
+            const misiLines = newMisiText.split('\n').filter(line => line.trim() !== '');
+            if (!newTahun || !newVisiText || misiLines.length === 0) {
+                showToast("Harap isi semua kolom untuk paket baru.", "error");
+                setModalState({ isOpen: false });
+                return;
+            }
+            const { error: rpcError } = await supabase.rpc('create_new_visi_package', { p_tahun: parseInt(newTahun), p_visi_text: newVisiText, p_misi_texts: misiLines });
+            if (rpcError) { showToast(`Gagal membuat paket: ${rpcError.message}`, "error"); }
+            else {
+                showToast("Paket Visi & Misi baru berhasil dibuat!");
+                setNewTahun((new Date().getFullYear() + 1).toString());
+                setNewVisiText("");
+                setNewMisiText("");
+                await fetchAndSetData();
+            }
+            setModalState({ isOpen: false });
+        });
+    };
+
+    const handleActivateVisi = (visiId) => {
+        openModal(`Anda akan mengaktifkan Visi ini. Visi lain akan dinonaktifkan. Lanjutkan?`, async () => {
+            const { error } = await supabase.rpc('set_active_visi', { p_visi_id: visiId });
+            if (error) { showToast(`Gagal mengaktifkan Visi: ${error.message}`, "error"); }
+            else {
+                showToast("Visi berhasil diaktifkan.");
+                await fetchAndSetData();
+            }
+            setModalState({ isOpen: false });
+        });
+    };
+
+    const handleDeleteVisiPackage = (visiId, tahunPeriode) => {
+        openModal(`Yakin ingin menghapus seluruh paket untuk periode ${tahunPeriode}? Tindakan ini tidak dapat dibatalkan.`, async () => {
+            const { error } = await supabase.rpc('delete_visi_package', { p_visi_id: visiId });
+            if (error) { showToast(`Gagal menghapus paket: ${error.message}`, "error"); }
+            else {
+                showToast(`Paket periode ${tahunPeriode} berhasil dihapus.`);
+                await fetchAndSetData();
+            }
+            setModalState({ isOpen: false });
+        });
+    };
+
+    return (
+        <div className="relative text-white bg-[#0E0004]">
+            <motion.div
+                className="fixed inset-0 z-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${heroBg})` }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+            />
+            <div className="fixed inset-0 z-0 bg-black/70"></div>
+            <ConfirmModal {...modalState} onClose={() => setModalState({ isOpen: false })} />
+            <AnimatePresence>{toastState.isOpen && <Toast {...toastState} onClose={() => setToastState({ isOpen: false })} />}</AnimatePresence>
+            {isTestimonialAdminOpen && <TestimonialAdminModal testimonials={testimonials} onDataChange={fetchAndSetData} onClose={() => setIsTestimonialAdminOpen(false)} showToast={showToast} />}
+
+            <div ref={scrollContainerRef} className="relative z-10 w-full">
+                <div className="h-[900vh]">
+                    <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+                        <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: "easeOut" }} style={{ scale: hero1Scale, opacity: hero1Opacity }} className="text-center p-4 absolute">
+                            <h1 className="text-4xl md:text-6xl font-league uppercase text-accent battery-style-gradient">TENTANG KAMI</h1>
+                            <p className="text-lg md:text-xl text-white/70 mt-2 font-[Montserrat]">STMKG Karate Club</p>
+                        </motion.div>
+                        <motion.div style={{ scale: hero2Scale, opacity: hero2Opacity }} className="text-center p-4 absolute">
+                            <div className={`${glassEffect} rounded-2xl p-6 md:p-8`}>
+                                <h2 className="text-3xl md:text-5xl font-league uppercase mb-8 text-center text-accent">Sumpah Karate</h2>
+                                <div className="max-w-md mx-auto space-y-4">
+                                    {profilData.sumpahKarate.map((sumpah, index) => (
+                                        <div key={index} className="flex items-center gap-4">
+                                            <p className="text-lg font-[Montserrat] text-white/90">{sumpah}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+
+                <motion.div style={{ opacity: mainContentOpacity, y: mainContentY }} className="relative w-full -mt-[200vh] z-20">
+                    <div className="w-full max-w-6xl mx-auto p-4 md:p-8">
+                        {isLoading ? (
+                            <div className="flex-grow flex justify-center items-center py-20"><LoaderCircle className="animate-spin h-12 w-12 text-accent" /></div>
+                        ) : (
+                            <div className="space-y-16">
+                                <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={sectionVariants} className={`${glassEffect} rounded-2xl p-6 md:p-8`}>
+                                    <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                                        <motion.div variants={itemVariants} className="text-left">
+                                            <h3 className="text-xl md:text-3xl font-league uppercase mb-4 text-accent">Sejarah Singkat</h3>
+                                            <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-justify" dangerouslySetInnerHTML={{ __html: profilData.about.history }}></p>
+                                        </motion.div>
+                                        <motion.div variants={itemVariants} className="text-left relative">
+                                            {error ? (
+                                                <div className="text-center text-red-400 p-4"><AlertTriangle className="mx-auto h-8 w-8 mb-2" /><p className="font-bold text-lg">Terjadi Kesalahan</p><p className="font-[Montserrat] text-sm mt-1">{error}</p></div>
+                                            ) : (
+                                                <AnimatePresence mode="wait">
+                                                    {isVisiMisiEditMode ? (
+                                                        <motion.div key="edit" variants={formContainerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+                                                            <button onClick={() => setIsVisiMisiEditMode(false)} className="flex items-center gap-2 text-sm text-accent mb-4"><ArrowLeft size={16} /> Kembali</button>
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-white/80 mb-1">Visi Aktif ({activeVisi?.tahun_periode})</label>
+                                                                <textarea value={visiInput} onChange={(e) => setVisiInput(e.target.value)} rows="4" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`}></textarea>
+                                                                <button onClick={handleUpdateVisi} className={`mt-2 w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all flex items-center justify-center gap-2`}>
+                                                                    <Save size={16} /> Simpan Visi
+                                                                </button>
+                                                            </div>
+                                                            <hr className="border-white/10" />
+                                                            <div>
+                                                                <h4 className="text-lg font-league text-white mb-2">Misi Aktif</h4>
+                                                                <div className="space-y-2">
+                                                                    {misiList.map(m => (
+                                                                        <div key={m.id} className="flex items-center gap-2">
+                                                                            <input type="text" value={editingMisi[m.id] !== undefined ? editingMisi[m.id] : m.teks_misi} onChange={(e) => setEditingMisi(prev => ({...prev, [m.id]: e.target.value}))} className={`flex-1 p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
+                                                                            <button onClick={() => handleUpdateMisi(m.id)} className="p-2 text-white/70 hover:text-accent"><Save size={16} /></button>
+                                                                            <button onClick={() => handleDeleteMisi(m)} className="p-2 text-white/70 hover:text-red-400"><Trash2 size={16} /></button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                             <form onSubmit={handleAddMisi}>
+                                                                <input type="text" value={newMissionInput} onChange={(e) => setNewMissionInput(e.target.value)} placeholder="Tambah misi baru..." className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
+                                                                <button type="submit" className={`mt-2 w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all`}>
+                                                                    <Plus size={16} className="inline mr-2" /> Tambah Misi
+                                                                </button>
+                                                            </form>
+                                                        </motion.div>
+                                                    ) : isAdminPeriodeMode ? (
+                                                         <motion.div key="admin-periode" variants={formContainerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+                                                            <button onClick={() => setIsAdminPeriodeMode(false)} className="flex items-center gap-2 text-sm text-accent mb-4"><ArrowLeft size={16} /> Kembali</button>
+                                                            <div className="space-y-4">
+                                                                <h4 className="text-lg font-league text-white">Kelola Periode Visi & Misi</h4>
+                                                                {allVisi.map(v => (
+                                                                    <div key={v.id} className={`p-3 rounded-lg flex items-center justify-between ${glassEffect} ${v.is_active ? 'border-accent' : 'border-transparent'} border`}>
+                                                                        <span className="font-semibold">{v.tahun_periode} {v.is_active && "(Aktif)"}</span>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {!v.is_active && <button onClick={() => handleActivateVisi(v.id)} className="p-2 text-white/70 hover:text-accent"><ShieldCheck size={16} /></button>}
+                                                                            {!v.is_active && <button onClick={() => handleDeleteVisiPackage(v.id, v.tahun_periode)} className="p-2 text-white/70 hover:text-red-400"><Trash2 size={16} /></button>}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <hr className="border-white/10" />
+                                                            <div>
+                                                                <h4 className="text-lg font-league text-white mb-2">Buat Paket Baru</h4>
+                                                                <div className="space-y-2">
+                                                                    <input type="number" value={newTahun} onChange={e => setNewTahun(e.target.value)} placeholder="Tahun Periode" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
+                                                                    <textarea value={newVisiText} onChange={e => setNewVisiText(e.target.value)} placeholder="Teks Visi" rows="3" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`}></textarea>
+                                                                    <textarea value={newMisiText} onChange={e => setNewMisiText(e.target.value)} placeholder="Teks Misi (satu per baris)" rows="5" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`}></textarea>
+                                                                    <button onClick={handleCreatePackage} className={`w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all`}>
+                                                                        <Plus size={16} className="inline mr-2" /> Buat Paket Baru
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                         </motion.div>
+                                                    ) : (
+                                                        <motion.div key="display" variants={formContainerVariants} initial="hidden" animate="visible" exit="exit">
+                                                            <h3 className="text-xl md:text-3xl font-league uppercase text-accent mb-4">VISI</h3>
+                                                            <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-justify">{activeVisi?.teks_visi || "Visi belum ditetapkan."}</p>
+                                                            <h3 className="text-xl md:text-3xl font-league uppercase text-accent mt-8 mb-4">MISI</h3>
+                                                            <ul className="space-y-3">
+                                                                {misiList.length > 0 ? misiList.map(m => (<li key={m.id} className="flex items-start"><span className="text-accent mr-3 mt-1">&#9679;</span><span className="text-white/80 flex-1 font-[Montserrat] font-light">{m.teks_misi}</span></li>)) : <li className="text-white/60 font-[Montserrat]">Misi untuk periode ini belum ditetapkan.</li>}
+                                                            </ul>
+                                                            {userRole === 'admin' && activeVisi && (
+                                                                <div className="mt-8 flex flex-col sm:flex-row gap-2">
+                                                                    <button onClick={() => setIsVisiMisiEditMode(true)} className={`flex-1 py-2 px-4 ${glassEffect} border-accent/50 border text-accent rounded-lg hover:bg-accent/20 transition-all flex items-center justify-center gap-2`}>
+                                                                        <Edit size={16} /> Edit Visi & Misi Aktif
+                                                                    </button>
+                                                                     <button onClick={() => setIsAdminPeriodeMode(true)} className={`flex-1 py-2 px-4 ${glassEffect} border-gray-500/50 border text-gray-300 rounded-lg hover:bg-gray-500/20 transition-all flex items-center justify-center gap-2`}>
+                                                                        <Settings size={16} /> Admin Periode
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            )}
+                                        </motion.div>
+                                    </div>
+                                    <motion.div variants={itemVariants} className="mt-12 pt-8 border-t border-white/10">
+                                        <h3 className="text-xl md:text-3xl font-league uppercase text-accent mb-4 text-center">Filosofi Kami</h3>
+                                        <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-center max-w-3xl mx-auto" dangerouslySetInnerHTML={{ __html: profilData.about.philosophy }}></p>
+                                    </motion.div>
+                                </motion.section>
+
+                                <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={sectionVariants} className="py-8">
+                                    <h2 className="text-3xl md:text-5xl font-league uppercase mb-12 text-center text-accent">Filosofi Logo</h2>
+                                    <div className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center ${glassEffect} p-4 md:p-6 rounded-2xl`}>
+                                        <motion.div variants={itemVariants} className="flex justify-center">
+                                            <img src={logoBintang} alt="Logo STMKG Karate Club" className="max-w-[14rem] w-full h-auto rounded-lg"/>
+                                        </motion.div>
+                                        <motion.div variants={itemVariants} className="space-y-3">
+                                            {logoPhilosophies.map((item) => (
+                                                <div key={item.term}>
+                                                    <h4 className="font-bold text-accent font-[Montserrat] text-sm">{item.term}</h4>
+                                                    <p className="text-white/80 font-[Montserrat] font-light text-sm">{item.description}</p>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    </div>
+                                </motion.section>
+
+                                <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={sectionVariants} className="py-8">
+                                    <h2 className="text-3xl md:text-5xl font-league uppercase mb-12 text-center text-accent">Filosofi Brevet</h2>
+                                    <div className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center ${glassEffect} p-4 md:p-6 rounded-2xl`}>
+                                        <motion.div variants={itemVariants} className="space-y-4 md:order-2 flex justify-center">
+                                            <img src={brevet} alt="Brevet STMKG Karate Club" className="max-w-[16rem] w-full h-auto rounded-lg"/>
+                                        </motion.div>
+                                        <motion.div variants={itemVariants} className="space-y-3 md:order-1">
+                                            {brevetPhilosophies.map((item) => (
+                                                <div key={item.term}>
+                                                    <h4 className="font-bold text-accent font-[Montserrat] text-sm">{item.term}</h4>
+                                                    <p className="text-white/80 font-[Montserrat] font-light text-sm leading-relaxed">{item.description}</p>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    </div>
+                                </motion.section>
+                                
+                                {/* --- START: UPDATED TESTIMONIAL SECTION --- */}
+                                <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
+                                    <div className="flex justify-center items-center mb-12 gap-4">
+                                        <h2 className="text-3xl md:text-5xl font-league uppercase text-center text-accent">Suara Sang Ksatria</h2>
+                                        {userRole === 'admin' && (
+                                            <button onClick={() => setIsTestimonialAdminOpen(true)} className={`p-2 rounded-full ${glassEffect} hover:bg-accent/20 text-accent transition-colors`}>
+                                                <Edit size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {testimonials.length > 0 && (
+                                        <div className="relative">
+                                            <motion.div 
+                                                className="relative w-full h-[420px] md:h-[380px] flex items-center justify-center overflow-hidden"
+                                                drag="x"
+                                                dragConstraints={{ left: 0, right: 0 }}
+                                                onDragEnd={handleDragEnd}
+                                                dragElastic={0.1}
+                                            >
+                                                {testimonials.map((testimonial, index) => {
+                                                    const total = testimonials.length;
+                                                    let offset = index - activeIndex;
+                                                    if (offset > total / 2) offset -= total;
+                                                    if (offset < -total / 2) offset += total;
+
+                                                    const isVisible = Math.abs(offset) <= 1;
+                                                    
+                                                    const animateProps = {
+                                                        x: `${offset * 80}%`,
+                                                        scale: offset === 0 ? 1 : 0.8,
+                                                        opacity: isVisible ? (offset === 0 ? 1 : 0.4) : 0,
+                                                        filter: offset === 0 ? 'blur(0px)' : 'blur(4px)',
+                                                        zIndex: total - Math.abs(offset),
+                                                    };
+
+                                                    return (
+                                                        <motion.div
+                                                            key={testimonial.id}
+                                                            className="absolute w-11/12 md:w-1/3 h-full p-2"
+                                                            initial={false}
+                                                            animate={animateProps}
+                                                            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                                                        >
+                                                            <div className={`flex flex-col items-center p-6 text-center ${glassEffect} rounded-2xl h-full w-full`}>
+                                                                <img 
+                                                                    src={testimonial.image_url || 'https://placehold.co/100x100/333/FFF?text=User'} 
+                                                                    alt={testimonial.name} 
+                                                                    className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30" 
+                                                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
+                                                                />
+                                                                <p className="text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-all flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
+                                                                <p className="font-[Montserrat] font-semibold text-sm text-accent break-words">- {testimonial.name}</p>
+                                                            </div>
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </motion.div>
+
+                                            {/* Navigation Buttons */}
+                                            <button onClick={prevTestimonial} className={`absolute left-0 md:-left-8 top-1/2 -translate-y-1/2 p-2 rounded-full z-30 ${glassEffect}`}>
+                                                <ChevronLeft className="h-6 w-6 text-white/70 hover:text-white transition-colors" />
+                                            </button>
+                                            <button onClick={nextTestimonial} className={`absolute right-0 md:-right-8 top-1/2 -translate-y-1/2 p-2 rounded-full z-30 ${glassEffect}`}>
+                                                <ChevronRight className="h-6 w-6 text-white/70 hover:text-white transition-colors" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {testimonials.length === 0 && (
+                                        <div className="text-center text-white/60 font-[Montserrat]">
+                                            Belum ada testimoni.
+                                        </div>
+                                    )}
+                                </motion.section>
+                                {/* --- END: UPDATED TESTIMONIAL SECTION --- */}
+                                
+                                {/* --- START: UPDATED ORGANIZATION SECTION --- */}
+                                <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
+                                    <div className="flex flex-col items-center justify-center gap-8">
+                                        <h2 className="text-4xl font-league uppercase text-gray-300">Naungan Organisasi</h2>
+                                        <div className="flex justify-center items-center gap-8 md:gap-12 flex-wrap">
+                                            <a href="https://karate.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
+                                                <img src={logoBintang} alt="Logo STMKG Karate Club" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                            </a>
+                                            <a href="https://resimen.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
+                                                <img src={logoResimen} alt="Logo Resimen" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                            </a>
+                                            <a href="https://stmkg.ac.id" target="_blank" rel="noopener noreferrer">
+                                                <img src={logoStmkg} alt="Logo STMKG" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                            </a>
+                                            <a href="https://bmkg.go.id" target="_blank" rel="noopener noreferrer">
+                                                <img src={logoBmkg} alt="Logo BMKG" className="h-16 md:h-24 w-auto transition-transform hover:scale-105" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </motion.section>
+                                {/* --- END: UPDATED ORGANIZATION SECTION --- */}
+                            </div>
+                        )}
+                    </div>
+                    <Footer />
+                </motion.div>
+            </div>
         </div>
+    );
+}
 
-        {/* Filosofi Kami (di bawah 2 kolom) */}
-        <motion.div variants={itemSlideUp} className="mt-12 md:mt-16 max-w-4xl mx-auto text-center">
-          <h3 className="text-xl md:text-4xl font-league uppercase mb-4 md:mb-6 text-accent"
-            style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-          >
-            Filosofi Kami
-          </h3>
-          <p className="text-base md:text-lg font-[Montserrat] font-thin leading-relaxed text-justify text-[#a7a7a7]">
-            {profilData.about.philosophy}
-          </p>
-        </motion.div>
-      </motion.section>
+// --- Komponen Modal Admin Testimoni ---
+// (Tidak ada perubahan pada komponen ini, disertakan untuk kelengkapan)
+function TestimonialAdminModal({ onClose, showToast, testimonials, onDataChange }) {
+    const [editingTestimonial, setEditingTestimonial] = useState(null); // null, 'new', or an object
+    const [formData, setFormData] = useState({ name: '', quote: '' });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    
+    // State untuk modal konfirmasi internal
+    const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {} });
 
-      {/* --- Section Sekilas Klub / Highlights --- */}
-      <motion.section
-        ref={highlightsRef}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={slideUp}
-        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
-        style={{ backgroundColor: '#0E0004' }}
-      >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-12 md:mb-16 text-accent"
-          style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-        >
-          {profilData.highlights.title}
-        </h2>
-        <motion.div
-          variants={staggeredContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto"
-        >
-          {profilData.highlights.items.map(item => (
-            <motion.div
-              key={item.id}
-              variants={itemSlideUp}
-              className="flex flex-col items-center p-6 md:p-8 rounded-2xl cursor-default"
-              style={photoFrameContainerBaseStyle}
-              onMouseEnter={photoFrameContainerHoverStyle}
-              onMouseLeave={photoFrameContainerLeaveStyle}
-            >
-              <span className="text-4xl md:text-5xl mb-3 md:mb-4" role="img" aria-label={item.text}>{item.icon}</span>
-              <h3 className="text-lg md:text-2xl font-[Montserrat] font-semibold text-white text-center">
-                {item.text}
-              </h3>
+    const openModal = (message, onConfirm) => {
+        setModalState({ isOpen: true, message, onConfirm });
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const compressedFile = await compressImage(file);
+            setImageFile(compressedFile);
+            setImagePreview(URL.createObjectURL(compressedFile));
+        } catch (err) {
+            showToast(`Gagal kompres gambar: ${err.message}`, 'error');
+        }
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        let image_path = editingTestimonial?.image_path || null;
+
+        // 1. Upload gambar jika ada file baru
+        if (imageFile) {
+            if (editingTestimonial && editingTestimonial.image_path) {
+                await supabase.storage.from('testimonial_images').remove([editingTestimonial.image_path]);
+            }
+            
+            const filePath = `public/${Date.now()}-${imageFile.name}`;
+            const { error: uploadError } = await supabase.storage.from('testimonial_images').upload(filePath, imageFile);
+            if (uploadError) {
+                showToast(`Gagal unggah gambar: ${uploadError.message}`, 'error');
+                return;
+            }
+            image_path = filePath;
+        }
+
+        // 2. Simpan data ke database
+        const testimonialData = { ...formData, image_path };
+        let error;
+        if (editingTestimonial === 'new') {
+            ({ error } = await supabase.from('testimonials').insert(testimonialData));
+        } else {
+            ({ error } = await supabase.from('testimonials').update(testimonialData).eq('id', editingTestimonial.id));
+        }
+
+        if (error) {
+            showToast(`Gagal menyimpan testimoni: ${error.message}`, 'error');
+        } else {
+            showToast(`Testimoni berhasil ${editingTestimonial === 'new' ? 'dibuat' : 'diperbarui'}.`);
+            setEditingTestimonial(null);
+            onDataChange();
+        }
+    };
+
+    const handleDelete = (testimonial) => {
+        openModal(`Yakin ingin menghapus testimoni dari ${testimonial.name}?`, async () => {
+            if (testimonial.image_path) {
+                await supabase.storage.from('testimonial_images').remove([testimonial.image_path]);
+            }
+            const { error } = await supabase.from('testimonials').delete().eq('id', testimonial.id);
+            if (error) {
+                showToast(`Gagal hapus testimoni: ${error.message}`, 'error');
+            } else {
+                showToast('Testimoni berhasil dihapus.');
+                onDataChange();
+            }
+            setModalState({ isOpen: false }); // Tutup modal konfirmasi
+        });
+    };
+
+    const startEditing = (testimonial) => {
+        setEditingTestimonial(testimonial);
+        setFormData({ name: testimonial.name, quote: testimonial.quote });
+        setImagePreview(testimonial.image_url);
+        setImageFile(null);
+    };
+
+    const startNew = () => {
+        setEditingTestimonial('new');
+        setFormData({ name: '', quote: '' });
+        setImagePreview(null);
+        setImageFile(null);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50 p-4">
+            <ConfirmModal {...modalState} onClose={() => setModalState({ isOpen: false })} />
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-xl ${glassEffect} rounded-2xl`}>
+                <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white"><X /></button>
+                <h3 className="text-2xl font-league uppercase text-accent mb-6">Kelola Testimoni</h3>
+
+                {editingTestimonial ? (
+                    // Form View
+                    <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <button onClick={() => setEditingTestimonial(null)} className="flex items-center gap-2 text-sm text-accent mb-4"><ArrowLeft size={16} /> Kembali ke daftar</button>
+                        <form onSubmit={handleSave} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-white/80 mb-1">Nama</label>
+                                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/80 mb-1">Kutipan</label>
+                                <textarea value={formData.quote} onChange={e => setFormData({...formData, quote: e.target.value})} rows="4" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} required></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/80 mb-1">Foto</label>
+                                <div className="flex items-center gap-4">
+                                    {imagePreview && <img src={imagePreview} alt="Preview" className="w-16 h-16 rounded-full object-cover" />}
+                                    <label className={`flex-1 p-4 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-accent/50 text-center ${glassEffect}`}>
+                                        <UploadCloud className="mx-auto mb-2 text-white/50" />
+                                        <span className="text-sm text-white/70">Klik untuk unggah (WebP)</span>
+                                        <input type="file" onChange={handleFileChange} className="hidden" accept="image/*" />
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" className={`w-full py-2 ${glassEffect} bg-accent/30 text-accent rounded-lg hover:bg-accent/50 transition-colors`}>Simpan</button>
+                        </form>
+                    </motion.div>
+                ) : (
+                    // List View
+                    <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <button onClick={startNew} className={`w-full mb-4 py-2 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-colors`}>
+                            <Plus className="inline mr-2" size={16} /> Tambah Testimoni Baru
+                        </button>
+                        <div className="space-y-2">
+                            {testimonials.map(t => (
+                                <div key={t.id} className={`p-3 rounded-lg flex items-center justify-between ${glassEffect}`}>
+                                    <div className="flex items-center gap-3">
+                                        <img src={t.image_url || 'https://placehold.co/100x100/333/FFF?text=U'} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
+                                        <span className="font-semibold">{t.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => startEditing(t)} className="p-2 text-white/70 hover:text-accent"><Edit size={16} /></button>
+                                        <button onClick={() => handleDelete(t)} className="p-2 text-white/70 hover:text-red-400"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
             </motion.div>
-          ))}
-        </motion.div>
-      </motion.section>
+        </div>
+    );
+}
 
-      {/* --- Section Testimoni --- */}
-      <motion.section
-        ref={testimonialsRef}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={slideUp}
-        className="py-12 px-6 md:py-20 md:px-20 text-center relative z-10" // Tambahkan z-10
-        style={{ backgroundColor: '#0a0a0a' }}
-      >
-        <h2 className="text-3xl md:text-6xl font-league uppercase mb-12 md:mb-16 text-accent"
-          style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
-        >
-          {profilData.testimonials.title}
-        </h2>
-        <motion.div
-          variants={staggeredContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto"
-        >
-          {profilData.testimonials.items.map(testimonial => (
-            <motion.div
-              key={testimonial.id}
-              variants={itemSlideUp}
-              className="flex flex-col items-center p-6 md:p-8 rounded-2xl"
-              style={photoFrameContainerBaseStyle}
-            >
-              {testimonial.image && (
-                <img
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover mb-4 md:mb-6 border-2 border-white/30 shadow-lg"
-                  loading="lazy"
-                />
-              )}
-              <p className="text-base md:text-lg font-[Montserrat] font-light italic leading-relaxed text-[#E7E7E7] mb-3 md:mb-4">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
-              <p className="font-[Montserrat] font-semibold text-sm md:text-base text-accent">
-                - {testimonial.name}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.section>
+// --- Utility Kompresi Gambar ---
+// (Tidak ada perubahan pada fungsi ini, disertakan untuk kelengkapan)
+function compressImage(file, maxWidth = 800, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let { width, height } = img;
 
-      <Footer />
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
 
-    </motion.main>
-  );
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            const compressedFile = new File([blob], `${Date.now()}-compressed.webp`, {
+                                type: 'image/webp',
+                                lastModified: Date.now(),
+                            });
+                            resolve(compressedFile);
+                        }
+                    },
+                    'image/webp',
+                    quality
+                );
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
 }
