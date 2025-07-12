@@ -23,8 +23,7 @@ import logoBmkg from '../assets/logobmkglight.png';
 const profilData = {
     about: {
         title: "Tentang Kami",
-        history: "STMKG Karate Club, sebuah wadah pembinaan karakter dan kebugaran yang berdedikasi tinggi bagi para taruna dan taruni, **telah eksis sejak awal berdirinya lembaga ini dan didirikan atas inisiatif Bapak Dr. Suko Adi Prayitno**. Klub ini beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan dan arahan diberikan oleh Ibu **Ayu Adi Justicea S.T., S.ST., M.App.Sc.** Dengan semangat yang membara serta visi kuat untuk mencetak pribadi yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate autentik, klub ini menjadi pilar fundamental dalam pengembangan potensi holistik setiap taruna. Kami berkomitmen penuh menanamkan nilai-nilai inti karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kedinasan maupun dalam kehidupan bermasyarakat.",
-        philosophy: "Kami menjunjung tinggi **prinsip kehormatan (Rei), kesopopan (Makoto), keberanian (Yuuki), dan semangat pantang menyerah (Konjo)**. Setiap gerakan adalah cerminan dari dedikasi dan respek terhadap seni bela diri, membentuk pribadi yang tangguh di luar dan dalam."
+        history: "STMKG Karate Club, sebuah wadah pembinaan penguasaan bela diri dan karakter yang berdedikasi tinggi bagi para Taruna dan Taruni. Awal berdirinya organisasi ini didirikan atas inisiatif Bapak Dr. Ir. Suko Adi Prayitno, M.Si., M.I.Kom. STMKG Karate Club beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan diberikan oleh Pembina Ayu Adi Justicea S.T., S.ST., M.App.Sc. Dengan semangat yang membara serta visi kuat untuk mencetak Taruna dan Taruni yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate yang autentik, STMKG Karate Club menjadi pilar fundamental dalam pengembangan potensi holistik setiap Taruna. Kami berkomitmen menanamkan nilai-nilai karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kampus maupun dalam kehidupan bermasyarakat.",
     },
     sumpahKarate: [
         "1. Sanggup memelihara kepribadian;",
@@ -396,7 +395,7 @@ export default function ProfilDojo() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1.5, ease: 'easeInOut' }}
             />
-            <div className="fixed inset-0 z-0 bg-black/70"></div>
+            <div className="fixed inset-0 z-0 bg-black/20"></div>
             <ConfirmModal {...modalState} onClose={() => setModalState({ isOpen: false })} />
             <AnimatePresence>{toastState.isOpen && <Toast {...toastState} onClose={() => setToastState({ isOpen: false })} />}</AnimatePresence>
             {isTestimonialAdminOpen && <TestimonialAdminModal testimonials={testimonials} onDataChange={fetchAndSetData} onClose={() => setIsTestimonialAdminOpen(false)} showToast={showToast} />}
@@ -405,7 +404,7 @@ export default function ProfilDojo() {
                 <div className="h-[500vh]">
                     <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
                         <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: "easeOut" }} style={{ scale: hero1Scale, opacity: hero1Opacity }} className="text-center p-4 absolute">
-                            <h1 className="text-4xl md:text-6xl font-league uppercase text-accent battery-style-gradient">TENTANG KAMI</h1>
+                            <h1 className="text-4xl md:text-8xl font-league uppercase text-accent battery-style-gradient">TENTANG KAMI</h1>
                             <p className="text-lg md:text-xl text-white/70 mt-2 font-[Montserrat]">STMKG Karate Club</p>
                         </motion.div>
                         <motion.div style={{ scale: hero2Scale, opacity: hero2Opacity }} className="text-center p-4 absolute">
@@ -522,10 +521,6 @@ export default function ProfilDojo() {
                                             )}
                                         </motion.div>
                                     </div>
-                                    <motion.div variants={itemVariants} className="mt-12 pt-8 border-t border-white/10">
-                                        <h3 className="text-xl md:text-3xl font-league uppercase text-accent mb-4 text-center">Filosofi Kami</h3>
-                                        <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-center max-w-3xl mx-auto" dangerouslySetInnerHTML={{ __html: profilData.about.philosophy }}></p>
-                                    </motion.div>
                                 </motion.section>
 
                                 <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={sectionVariants} className="py-8">
@@ -589,13 +584,21 @@ export default function ProfilDojo() {
                                                     if (offset < -total / 2) offset += total;
 
                                                     const isVisible = Math.abs(offset) <= 1;
+                                                    const isCenter = offset === 0;
                                                     
                                                     const animateProps = {
                                                         x: `${offset * 80}%`,
-                                                        scale: offset === 0 ? 1 : 0.8,
-                                                        opacity: isVisible ? (offset === 0 ? 1 : 0.4) : 0,
-                                                        filter: offset === 0 ? 'blur(0px)' : 'blur(4px)',
+                                                        scale: isCenter ? 1 : 0.8,
+                                                        opacity: isVisible ? 1 : 0,
                                                         zIndex: total - Math.abs(offset),
+                                                    };
+
+                                                    const backgroundAnimateProps = {
+                                                        filter: isCenter ? 'blur(0px)' : 'blur(4px)',
+                                                    };
+
+                                                    const contentAnimateProps = {
+                                                        opacity: isCenter ? 1 : 0.5,
                                                     };
 
                                                     return (
@@ -606,15 +609,26 @@ export default function ProfilDojo() {
                                                             animate={animateProps}
                                                             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                                                         >
-                                                            <div className={`flex flex-col items-center p-6 text-center ${glassEffect} rounded-2xl h-full w-full`}>
-                                                                <img 
-                                                                    src={testimonial.image_url || 'https://placehold.co/100x100/333/FFF?text=User'} 
-                                                                    alt={testimonial.name} 
-                                                                    className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30" 
-                                                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
+                                                            <div className="relative w-full h-full">
+                                                                <motion.div 
+                                                                    className={`absolute inset-0 ${glassEffect} rounded-2xl`}
+                                                                    animate={backgroundAnimateProps}
+                                                                    transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                                                                 />
-                                                                <p className="text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-all flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
-                                                                <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm text-accent break-words">- {testimonial.name}</p>
+                                                                <motion.div 
+                                                                    className="relative flex flex-col items-center p-6 text-center h-full w-full"
+                                                                    animate={contentAnimateProps}
+                                                                    transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                                                                >
+                                                                    <img 
+                                                                        src={testimonial.image_url || 'https://placehold.co/100x100/333/FFF?text=User'} 
+                                                                        alt={testimonial.name} 
+                                                                        className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30" 
+                                                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
+                                                                    />
+                                                                    <p className="text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-all flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
+                                                                    <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm break-words">- {testimonial.name}</p>
+                                                                </motion.div>
                                                             </div>
                                                         </motion.div>
                                                     );
@@ -642,7 +656,7 @@ export default function ProfilDojo() {
                                 {/* --- START: UPDATED ORGANIZATION SECTION --- */}
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
                                     <div className="flex flex-col items-center justify-center gap-8">
-                                        <h2 className="text-4xl font-league uppercase text-gray-300">Naungan Organisasi</h2>
+                                        <h2 className="text-4xl md:text-5xl font-league uppercase text-gray-300">Naungan Organisasi</h2>
                                         <div className="flex justify-center items-center gap-6 md:gap-12 flex-wrap">
                                             <a href="https://karate.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
                                                 <img src={logoBintang} alt="Logo STMKG Karate Club" className="h-14 md:h-28 w-auto transition-transform hover:scale-105" />
