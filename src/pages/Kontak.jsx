@@ -165,9 +165,9 @@ export default function Kontak() {
                                             animate="animate"
                                             exit="exit"
                                         >
-                                            <p className="whitespace-nowrap">
+                                            <p className="flex flex-col md:flex-row md:items-baseline">
                                                 {humasContacts[currentHumasIndex].telepon}
-                                                <span className="text-gray-400 ml-2 text-xs">
+                                                <span className="text-gray-400 text-xs md:ml-2">
                                                     {humasContacts[currentHumasIndex].nama}
                                                 </span>
                                             </p>
