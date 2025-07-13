@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom'; // <-- [PERUBAHAN] Kembali menggunakan Link
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -94,13 +94,32 @@ const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
 // =================================================================
 // KOMPONEN MODAL UNTUK KONFIRMASI AKSI
 // =================================================================
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, actionText, isProcessing, status }) => {
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, actionText, isProcessing, status, confirmAction }) => {
     if (!isOpen) return null;
 
     const getStatusColor = () => {
         if (status.type === 'success') return 'text-green-400';
         if (status.type === 'error') return 'text-red-400';
         return 'text-gray-300';
+    };
+
+    // [PERUBAHAN] Fungsi untuk menentukan style tombol konfirmasi secara dinamis
+    const getConfirmButtonClass = () => {
+        const baseClass = "px-6 py-2 rounded-md disabled:opacity-50 flex items-center justify-center gap-2 w-36 transition-colors border";
+        switch (confirmAction) {
+            case 'publish':
+                // Tombol kaca transparan dengan teks hijau
+                return `${baseClass} bg-transparent border-green-400/50 text-green-400 hover:bg-green-500/10 hover:border-green-400`;
+            case 'unpublish':
+                // Tombol kaca transparan dengan teks ungu
+                return `${baseClass} bg-transparent border-purple-400/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400`;
+            case 'delete':
+                // Pertahankan tombol merah solid untuk aksi hapus
+                return `${baseClass} bg-red-600 text-white border-red-600 hover:bg-red-700`;
+            default:
+                // Fallback untuk kasus yang tidak terduga
+                return `${baseClass} bg-gray-600 text-white border-gray-600 hover:bg-gray-700`;
+        }
     };
 
     return (
@@ -116,7 +135,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, action
                 {!status.message && (
                     <div className="flex justify-center gap-4">
                         <button onClick={onClose} disabled={isProcessing} className="px-6 py-2 bg-white/10 rounded-md hover:bg-white/20 disabled:opacity-50">Batal</button>
-                        <button onClick={onConfirm} disabled={isProcessing} className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 w-36">
+                        {/* [PERUBAHAN] Menggunakan fungsi untuk menerapkan class dinamis */}
+                        <button onClick={onConfirm} disabled={isProcessing} className={getConfirmButtonClass()}>
                             {isProcessing ? <><Loader2 className="animate-spin" size={20} /></> : actionText}
                         </button>
                     </div>
@@ -280,14 +300,12 @@ export default function ModerasiPengumuman() {
         }
     };
     
-    // [PERUBAHAN] Definisikan class yang seragam untuk semua tombol menu
     const menuLinkClass = "p-2 rounded-full transition-colors duration-200 text-gray-300 hover:bg-[#FF9F1C] hover:text-white";
 
     return (
         <div className="relative min-h-screen flex flex-col justify-between text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
             <div className="absolute inset-0 bg-black opacity-70"></div>
             <div className="relative z-10">
-                {/* [PERUBAHAN] Navigasi Samping untuk Desktop */}
                 <motion.div initial={{ x: -100 }} animate={{ x: 0 }} className="fixed left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20">
                     <nav className="space-y-3">
                         <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={`${menuLinkClass} block`}><Edit size={20} /></Link>
@@ -297,7 +315,6 @@ export default function ModerasiPengumuman() {
                 </motion.div>
 
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
-                     {/* [PERUBAHAN] Navigasi Atas untuk Mobile */}
                      <motion.div initial={{ y: -50 }} animate={{ y: 0 }} className="md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-10 w-fit">
                         <nav className="flex space-x-4 justify-center">
                             <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={menuLinkClass}><Edit size={20} /></Link>
@@ -338,6 +355,7 @@ export default function ModerasiPengumuman() {
                     actionText={getModalContent().actionText}
                     isProcessing={isProcessingAction}
                     status={actionStatus}
+                    confirmAction={confirmAction}
                 >
                     {getModalContent().message}
                 </ConfirmationModal>}
