@@ -210,19 +210,22 @@ export default function Kontak() {
                             <textarea name="pesan" placeholder="Pesan kamu..." required rows="3" className="w-full p-2.5 rounded-xl bg-transparent border border-[rgba(255,255,255,0.3)] text-white placeholder:text-[#a7a7a7] focus:outline-none focus:border-[#FF9F1C] transition-colors duration-200 text-sm" style={{ boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)' }} ></textarea>
                             <button
                                 type="submit"
-                                className="inline-block mt-2 px-4 py-2 font-semibold rounded-lg text-xs text-white"
+                                className="inline-block mt-2 px-4 py-2 font-semibold rounded-lg text-xs battery-style-gradient"
                                 style={{ ...glassmorphismStyle, borderRadius: '0.6rem', boxShadow: `0px 2px 5px rgba(0, 0, 0, 0.2), inset 1px 1px 2px rgba(255, 255, 255, 0.13), inset -1px -1px 2px rgba(0, 0, 0, 0.25)`, color: '#e7e7e7' }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
                                     e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
                                     e.currentTarget.style.boxShadow = `0 0 20px rgba(42, 20, 54, 0.8), 0px 2px 5px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.4)`;
                                     e.currentTarget.style.color = '#FF9F1C';
+                                    e.currentTarget.classList.remove('battery-style-gradient');
+                                    e.currentTarget.style.webkitTextFillColor = '';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
                                     e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                                     e.currentTarget.style.boxShadow = `0px 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)`;
-                                    e.currentTarget.style.color = '#e7e7e7';
+                                    e.currentTarget.style.color = ''; // kosongkan agar class CSS kembali aktif
+                                    e.currentTarget.classList.add('battery-style-gradient');
                                 }}
                             >
                                 Kirim Pesan

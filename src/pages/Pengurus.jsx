@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
-import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings, UserPlus, UserRoundCheck } from 'lucide-react';
+import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings, UserPlus, UserRoundCheck, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
@@ -119,8 +119,53 @@ const MemberCard = ({ member, onClick, index, totalMembersInBidang }) => {
     );
 };
 
+// Komponen Card Purna Pengurus (lebih kecil dan horizontal)
+const PurnaMemberCard = ({ member, onClick, index }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.8 }}
+            transition={{
+                duration: 0.5,
+                ease: "easeOut",
+                delay: index * 0.05
+            }}
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
+            animate={{
+                scale: isHovered ? 1.03 : 1,
+                boxShadow: isHovered
+                    ? '0px 4px 12px rgba(0, 0, 0, 0.3)'
+                    : '0px 1px 6px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.15)'
+            }}
+            className="flex items-center p-3 rounded-lg shadow-md cursor-pointer w-full h-full"
+            style={glassmorphismStyle}
+            onClick={() => onClick(member)}
+        >
+            <img
+                src={member.profiles.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles.nama_lengkap.replace(/\s+/g, '+')}&background=0284c7&color=fff&bold=true`}
+                alt={`Foto ${member.profiles.nama_lengkap}`}
+                className="w-10 h-10 rounded-full object-cover aspect-square border border-gray-500 shadow-sm flex-shrink-0"
+            />
+            <div className="ml-2.5 text-left overflow-hidden">
+                <h3 className="text-xs font-bold text-white text-wrap">
+                    {member.profiles.nama_lengkap}
+                </h3>
+                <div className="text-[10px] text-gray-400 text-wrap">
+                    <span>{member.profiles.kelas}</span> | <span>{member.profiles.angkatan}</span>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+
 export default function Pengurus() {
     const [pengurus, setPengurus] = useState({});
+    const [purnaList, setPurnaList] = useState([]); // State baru untuk purna pengurus
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [namaPeriode, setNamaPeriode] = useState("Periode Saat Ini");
@@ -156,38 +201,60 @@ export default function Pengurus() {
     }, []);
 
     useEffect(() => {
-        const fetchPengurus = async () => {
+        const fetchAllData = async () => {
             try {
+                setLoading(true);
+                // Fetch pengurus aktif berdasarkan periode
                 const { data: periodeData, error: periodeError } = await supabase
                     .from('periode_kepengurusan').select('id, nama_periode').eq('sedang_berjalan', true).single();
+                
                 if (periodeError) throw new Error("Tidak dapat menemukan periode kepengurusan yang aktif.");
                 if (!periodeData) {
-                    setLoading(false);
                     setError("Data kepengurusan untuk periode ini belum diatur.");
                     return;
                 }
+                
                 setNamaPeriode(periodeData.nama_periode);
-                const { data, error: jabatanError } = await supabase
+                const { data: jabatanData, error: jabatanError } = await supabase
                     .from('jabatan_pengurus')
                     .select(`jabatan, profiles (nama_lengkap, avatar_url, kelas, angkatan), bidang_pengurus (nama_bidang, urutan)`)
                     .eq('id_periode', periodeData.id)
                     .order('urutan', { foreignTable: 'bidang_pengurus', ascending: true });
+
                 if (jabatanError) throw jabatanError;
-                const grouped = data.reduce((acc, curr) => {
+
+                const grouped = jabatanData.reduce((acc, curr) => {
                     const bidang = curr.bidang_pengurus.nama_bidang;
                     if (!acc[bidang]) acc[bidang] = [];
                     acc[bidang].push(curr);
                     return acc;
                 }, {});
                 setPengurus(grouped);
+
+                // Fetch purna pengurus dari tabel profiles
+                const { data: purnaData, error: purnaError } = await supabase
+                    .from('profiles')
+                    .select('nama_lengkap, avatar_url, kelas, angkatan')
+                    .eq('role', 'purna_pengurus');
+
+                if (purnaError) {
+                    console.error("Gagal mengambil data purna pengurus:", purnaError);
+                } else {
+                    const formattedPurnaData = purnaData.map(profile => ({
+                        jabatan: 'Purna Pengurus',
+                        profiles: profile
+                    }));
+                    setPurnaList(formattedPurnaData);
+                }
+
             } catch (err) {
-                console.error("Error fetching pengurus:", err);
+                console.error("Error fetching data:", err);
                 setError(err.message);
             } finally {
                 setLoading(false);
             }
         };
-        fetchPengurus();
+        fetchAllData();
     }, []);
 
     const sortedBidang = useMemo(() => {
@@ -243,8 +310,9 @@ export default function Pengurus() {
     const komandan = pengurus['Komandan Karate'] || [];
     const sekretaris = pengurus['Sekretaris'] || [];
     const bendahara = pengurus['Bendahara'] || [];
+    const pengurusPendamping = pengurus['Pengurus Pendamping'] || [];
     const bidangLain = sortedBidang.filter(namaBidang =>
-        !['Komandan Karate', 'Sekretaris', 'Bendahara'].includes(namaBidang)
+        !['Komandan Karate', 'Sekretaris', 'Bendahara', 'Pengurus Pendamping'].includes(namaBidang)
     );
 
     const getIconForBidang = (namaBidang) => {
@@ -255,6 +323,8 @@ export default function Pengurus() {
         if (namaBidang === 'Desain Komunikasi Visual') return <Paintbrush className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
         if (namaBidang === 'Strategi Dana dan Operasional') return <BarChart3 className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
         if (namaBidang === 'Kesehatan') return <HeartPulse className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Pengurus Pendamping') return <UserPlus className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
+        if (namaBidang === 'Purna Pengurus') return <GraduationCap className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
         return <Users className="h-5 w-5 sm:h-7 sm:w-7 flex-shrink-0" />;
     };
 
@@ -358,7 +428,7 @@ export default function Pengurus() {
                                     {/* Tombol ini untuk admin DAN pengurus */}
                                     <Link to="/pemilihan-komandan" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Pemilihan Komandan" >
                                         <Shield size={20} />
-                                    </Link>                                    
+                                    </Link>                                       
                                     <Link to="/data-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Data Pendaftar" >
                                         <UserRoundCheck size={20} />
                                     </Link>
@@ -415,6 +485,43 @@ export default function Pengurus() {
                                 </motion.section>
                             );
                         })}
+
+                        {/* --- BAGIAN PENGURUS PENDAMPING --- */}
+                        {pengurusPendamping.length > 0 && (
+                            <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
+                                <motion.div className="flex justify-center mb-8" variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }}>
+                                    <h2 className="text-xl sm:text-3xl font-semibold text-white pb-2 px-6 flex items-center gap-2 sm:gap-3 justify-center relative group">
+                                        {getIconForBidang('Pengurus Pendamping')} Pengurus Pendamping
+                                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent group-hover:via-[#FF9F1C] transition-colors duration-300"></span>
+                                    </h2>
+                                </motion.div>
+                                <div className="flex flex-wrap justify-center gap-6">
+                                    {pengurusPendamping.map((member, index) => (
+                                        <MemberCard key={member.profiles.nama_lengkap} member={member} onClick={handleCardClick} index={index} totalMembersInBidang={pengurusPendamping.length} />
+                                    ))}
+                                </div>
+                            </motion.section>
+                        )}
+                        {/* --- AKHIR BAGIAN PENGURUS PENDAMPING --- */}
+
+                        {/* --- BAGIAN BARU: PURNA PENGURUS --- */}
+                        {purnaList.length > 0 && (
+                            <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
+                                <motion.div className="flex justify-center mb-8" variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }}>
+                                    <h2 className="text-xl sm:text-3xl font-semibold text-white pb-2 px-6 flex items-center gap-2 sm:gap-3 justify-center relative group">
+                                        {getIconForBidang('Purna Pengurus')} Purna Pengurus
+                                        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent group-hover:via-[#FF9F1C] transition-colors duration-300"></span>
+                                    </h2>
+                                </motion.div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
+                                    {purnaList.map((member, index) => (
+                                        <PurnaMemberCard key={member.profiles.nama_lengkap} member={member} onClick={handleCardClick} index={index} />
+                                    ))}
+                                </div>
+                            </motion.section>
+                        )}
+                        {/* --- AKHIR BAGIAN BARU --- */}
+
                     </div>
                 </main>
                 <Footer />

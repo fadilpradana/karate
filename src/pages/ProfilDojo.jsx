@@ -443,7 +443,7 @@ export default function ProfilDojo() {
                                                         <motion.div key="edit" variants={formContainerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                                                             <button onClick={() => setIsVisiMisiEditMode(false)} className="flex items-center gap-2 text-sm text-accent mb-4"><ArrowLeft size={16} /> Kembali</button>
                                                             <div>
-                                                                <label className="block text-sm font-medium text-white/80 mb-1">Visi Aktif ({activeVisi?.tahun_periode})</label>
+                                                                <label className="block text-2xl uppercase font-league text-accent mb-1">Visi Aktif ({activeVisi?.tahun_periode})</label>
                                                                 <textarea value={visiInput} onChange={(e) => setVisiInput(e.target.value)} rows="4" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`}></textarea>
                                                                 <button onClick={handleUpdateVisi} className={`mt-2 w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all flex items-center justify-center gap-2`}>
                                                                     <Save size={16} /> Simpan Visi
@@ -451,7 +451,7 @@ export default function ProfilDojo() {
                                                             </div>
                                                             <hr className="border-white/10" />
                                                             <div>
-                                                                <h4 className="text-lg font-league text-white mb-2">Misi Aktif</h4>
+                                                                <h4 className="text-2xl font-league text-accent uppercase mb-2">Misi Aktif</h4>
                                                                 <div className="space-y-2">
                                                                     {misiList.map(m => (
                                                                         <div key={m.id} className="flex items-center gap-2">
@@ -473,7 +473,7 @@ export default function ProfilDojo() {
                                                          <motion.div key="admin-periode" variants={formContainerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                                                             <button onClick={() => setIsAdminPeriodeMode(false)} className="flex items-center gap-2 text-sm text-accent mb-4"><ArrowLeft size={16} /> Kembali</button>
                                                             <div className="space-y-4">
-                                                                <h4 className="text-lg font-league text-white">Kelola Periode Visi & Misi</h4>
+                                                                <h4 className="text-2xl uppercase font-league text-accent">Kelola Periode Visi & Misi</h4>
                                                                 {allVisi.map(v => (
                                                                     <div key={v.id} className={`p-3 rounded-lg flex items-center justify-between ${glassEffect} ${v.is_active ? 'border-accent' : 'border-transparent'} border`}>
                                                                         <span className="font-semibold">{v.tahun_periode} {v.is_active && "(Aktif)"}</span>
@@ -486,7 +486,7 @@ export default function ProfilDojo() {
                                                             </div>
                                                             <hr className="border-white/10" />
                                                             <div>
-                                                                <h4 className="text-lg font-league text-white mb-2">Buat Paket Baru</h4>
+                                                                <h4 className="text-2xl uppercase font-league text-accent mb-2">Buat Paket Baru</h4>
                                                                 <div className="space-y-2">
                                                                     <input type="number" value={newTahun} onChange={e => setNewTahun(e.target.value)} placeholder="Tahun Periode" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
                                                                     <textarea value={newVisiText} onChange={e => setNewVisiText(e.target.value)} placeholder="Teks Visi" rows="3" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`}></textarea>
@@ -532,7 +532,7 @@ export default function ProfilDojo() {
                                         <motion.div variants={itemVariants} className="space-y-3">
                                             {logoPhilosophies.map((item) => (
                                                 <div key={item.term}>
-                                                    <h4 className="font-bold text-accent font-[Montserrat] text-sm">{item.term}</h4>
+                                                    <h4 className="font-bold battery-style-gradient font-[Montserrat] text-sm">{item.term}</h4>
                                                     <p className="text-white/80 font-[Montserrat] font-light text-sm">{item.description}</p>
                                                 </div>
                                             ))}
@@ -549,7 +549,7 @@ export default function ProfilDojo() {
                                         <motion.div variants={itemVariants} className="space-y-3 md:order-1">
                                             {brevetPhilosophies.map((item) => (
                                                 <div key={item.term}>
-                                                    <h4 className="font-bold text-accent font-[Montserrat] text-sm">{item.term}</h4>
+                                                    <h4 className="font-bold battery-style-gradient font-[Montserrat] text-sm">{item.term}</h4>
                                                     <p className="text-white/80 font-[Montserrat] font-light text-sm leading-relaxed">{item.description}</p>
                                                 </div>
                                             ))}
@@ -656,7 +656,7 @@ export default function ProfilDojo() {
                                 {/* --- START: UPDATED ORGANIZATION SECTION --- */}
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
                                     <div className="flex flex-col items-center justify-center gap-8">
-                                        <h2 className="text-4xl md:text-5xl font-league uppercase text-gray-300">Naungan Organisasi</h2>
+                                        <h2 className="text-4xl md:text-5xl font-league uppercase battery-style-gradient">Naungan Organisasi</h2>
                                         <div className="flex justify-center items-center gap-6 md:gap-12 flex-wrap">
                                             <a href="https://karate.stmkg.ac.id" target="_blank" rel="noopener noreferrer">
                                                 <img src={logoBintang} alt="Logo STMKG Karate Club" className="h-14 md:h-28 w-auto transition-transform hover:scale-105" />

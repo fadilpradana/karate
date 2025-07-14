@@ -1,14 +1,20 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Plus, Edit, Trash, Loader2, UploadCloud, ArrowLeft, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { compressAndConvertToWebP } from '../utils/imageCompressor'; 
+import { compressAndConvertToWebP } from '../utils/imageCompressor';
 
-// Import gambar background
-import bg10 from '../assets/bg10.jpg';
-
+// Asset & Ikon
 import Footer from '../components/Footer';
+import { CheckCircle, AlertTriangle, Edit, ChevronDown, Trash2, Camera, Eye, X, Loader2, Replace, Search, Plus, UploadCloud, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Path yang sudah dikonfirmasi: dari /src/pages/dashboard.jsx ke /src/assets/bg11.jpg
+import bgImage from '../assets/bg10.jpg';
+
+// Komponen Modal
+import Modal from '../components/Modal';
 
 const glassButtonClasses = "flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-md shadow-lg transition-all duration-200";
 
@@ -162,6 +168,8 @@ const PrestasiForm = ({ currentPrestasi, onSave, onCancel, uploading, isCompress
 export default function AdminPrestasi() {
     const navigate = useNavigate();
     const [prestasiList, setPrestasiList] = useState([]);
+    const [filteredPrestasi, setFilteredPrestasi] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPrestasi, setCurrentPrestasi] = useState(null); 
@@ -170,8 +178,6 @@ export default function AdminPrestasi() {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
-    // --- PERUBAHAN ---
-    // Definisikan style di sini agar bisa digunakan kembali
     const glassCardStyle = { 
         backgroundColor: 'rgba(255, 255, 255, 0.05)', 
         backdropFilter: 'blur(10px)', 
@@ -180,6 +186,15 @@ export default function AdminPrestasi() {
 
     useEffect(() => { const checkUser = async () => { const { data: { user } } = await supabase.auth.getUser(); if (!user) { navigate('/login'); return; } const { data: profileData, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single(); if (profileError || profileData?.role !== 'admin') { navigate('/'); } else { setUserRole(profileData.role); fetchPrestasi(); }}; checkUser(); }, [navigate]);
     
+    useEffect(() => {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        const filtered = prestasiList.filter(item =>
+            (item.judul && item.judul.toLowerCase().includes(lowercasedQuery)) ||
+            (item.deskripsi && item.deskripsi.toLowerCase().includes(lowercasedQuery))
+        );
+        setFilteredPrestasi(filtered);
+    }, [searchQuery, prestasiList]);
+
     const fetchPrestasi = async () => { setLoading(true); setError(null); const { data, error } = await supabase.from('prestasi').select('*').order('created_at', { ascending: false }); if (error) { setError("Gagal memuat prestasi."); console.error(error); } else { const dataWithImageUrls = await Promise.all(data.map(async (item) => { let imageUrl = item.gambar_url; if (imageUrl) { const { data: publicUrlData } = supabase.storage.from('gambarprestasi').getPublicUrl(imageUrl); imageUrl = publicUrlData ? publicUrlData.publicUrl : null; } return { ...item, gambar: imageUrl }; })); setPrestasiList(dataWithImageUrls); } setLoading(false); };
     
     const handleSave = async (formData) => {
@@ -304,7 +319,7 @@ export default function AdminPrestasi() {
                 >
                     <div
                         className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${bg10})` }}
+                        style={{ backgroundImage: `url(${bgImage})` }}
                     />
                     <div className="absolute inset-0 bg-black/60" />
                 </motion.div>
@@ -326,7 +341,7 @@ export default function AdminPrestasi() {
             >
                 <div
                     className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${bg10})` }}
+                    style={{ backgroundImage: `url(${bgImage})` }}
                 />
                 <div className="absolute inset-0 bg-black/70" /> 
             </motion.div>
@@ -347,20 +362,31 @@ export default function AdminPrestasi() {
                             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="w-full">
                                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                                     <h1 className="text-4xl md:text-5xl font-league uppercase text-accent text-center md:text-left">Kelola Prestasi</h1>
-                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400`}>
-                                        + Tambah Prestasi
-                                    </motion.button>
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Cari prestasi..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="px-4 py-2 pl-10 text-sm bg-white/5 border border-white/10 rounded-full focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white w-full sm:w-56"
+                                                style={{ backdropFilter: 'blur(10px)' }}
+                                            />
+                                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        </div>
+                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400`}>
+                                            <span className="hidden sm:inline">+ Tambah Prestasi Baru</span>
+                                        </motion.button>
+                                    </div>
                                 </div>
                                 {error && <div className="text-red-400 p-3 bg-red-500/10 rounded-md mb-4">{error}</div>}
-                                {prestasiList.length === 0 ? (
-                                    <p className="text-center text-xl text-gray-500 mt-16">Belum ada prestasi yang ditambahkan.</p>
+                                {filteredPrestasi.length === 0 ? (
+                                    <p className="text-center text-xl text-gray-500 mt-16">{searchQuery ? 'Prestasi tidak ditemukan.' : 'Belum ada prestasi yang ditambahkan.'}</p>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {prestasiList.map((item) => (
+                                        {filteredPrestasi.map((item) => (
                                             <motion.div 
                                                 key={item.id} 
-                                                // --- PERUBAHAN ---
-                                                // Menggunakan style yang sama dan menyesuaikan padding/rounding
                                                 className="p-6 rounded-2xl relative flex flex-col"
                                                 style={glassCardStyle} 
                                                 initial={{ opacity: 0, y: 20 }} 
@@ -374,7 +400,7 @@ export default function AdminPrestasi() {
                                                         <Edit size={16} />
                                                     </motion.button>
                                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => promptDelete(item)} className={`${glassButtonClasses} p-2 text-red-500 hover:text-red-400`}>
-                                                        <Trash size={16} />
+                                                        <Trash2 size={16} />
                                                     </motion.button>
                                                 </div>
                                             </motion.div>
