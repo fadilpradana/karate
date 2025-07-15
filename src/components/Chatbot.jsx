@@ -214,7 +214,7 @@ const Chatbot = () => {
           className="chatbot-toggle-button"
           style={{ top: `${position.y}px` }} // Atur posisi Y secara dinamis
         >
-            <span className="gradient-text">Say Hello! 👋</span>
+            <span className="gradient-text-chat">Say Hello! 👋</span>
         </button>
       )}
     </div>
