@@ -84,9 +84,9 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Efek untuk mengambil data prestasi dari Supabase
+  // Efek untuk mengambil data prestasi dari Supabase dan menghitung kunjungan
   useEffect(() => {
-    const fetchPrestasi = async () => {
+    const fetchPrestasiAndCountVisit = async () => {
       setLoadingPrestasi(true);
       const { data, error } = await supabase
         .from('prestasi')
@@ -102,20 +102,30 @@ export default function Home() {
           let imageUrl = item.gambar_url;
           if (imageUrl) {
             const { data: publicUrlData } = supabase
-                .storage
-                .from('gambarprestasi')
-                .getPublicUrl(imageUrl);
+              .storage
+              .from('gambarprestasi')
+              .getPublicUrl(imageUrl);
             imageUrl = publicUrlData ? publicUrlData.publicUrl : null;
           }
           return { ...item, gambar: imageUrl };
         }));
         setPrestasiList(dataWithImageUrls);
         setLoadingPrestasi(false);
+
+        // --- PENAMBAHAN: Panggil fungsi untuk menghitung kunjungan ---
+        try {
+          // Ini adalah panggilan "fire-and-forget", kita tidak perlu menunggu hasilnya
+          await supabase.functions.invoke('increment-visitor-count');
+        } catch (e) {
+          // Log error jika ada, tapi jangan sampai mengganggu user
+          console.error("Gagal mencatat kunjungan:", e);
+        }
+        // -----------------------------------------------------------
       }
     };
 
-    fetchPrestasi();
-  }, []);
+    fetchPrestasiAndCountVisit();
+  }, []); // Dependency array kosong agar hanya berjalan sekali
 
   const containerVariants = {
     hidden: { opacity: 0 },

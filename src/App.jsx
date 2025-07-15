@@ -1,6 +1,7 @@
 // src/App.jsx
 import { Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Chatbot from './components/Chatbot'; // Pastikan import ini ada
 
 function App() {
   return (
@@ -16,6 +17,11 @@ function App() {
         <Outlet />
       </main>
       
+      {/* Kita letakkan Chatbot di sini, di luar <main>, 
+        agar ia tetap berada di posisi yang sama (fixed) 
+        di semua halaman yang ditampilkan oleh <Outlet>.
+      */}
+      <Chatbot />
     </div>
   );
 }
