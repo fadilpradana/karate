@@ -367,20 +367,20 @@ export default function AdminPrestasi() {
                             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="w-full">
                                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                                     <h1 className="text-4xl md:text-5xl font-league uppercase text-accent text-center md:text-left">Kelola Prestasi</h1>
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative">
+                                    <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+                                        <div className="relative w-full md:w-auto">
                                             <input
                                                 type="text"
                                                 placeholder="Cari prestasi..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="px-4 py-2 pl-10 text-sm bg-white/5 border border-white/10 rounded-full focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white w-full sm:w-56"
+                                                className="px-4 py-2 pl-10 text-sm bg-white/5 border border-white/10 rounded-full focus:ring-2 focus:ring-[#FF9F1C] focus:outline-none transition-all duration-200 text-white w-full md:w-56"
                                                 style={{ backdropFilter: 'blur(10px)' }}
                                             />
                                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                         </div>
-                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400`}>
-                                            <span className="hidden sm:inline">+ Tambah Prestasi Baru</span>
+                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={showAddForm} className={`${glassButtonClasses} px-4 py-2 font-semibold text-sm text-accent battery-style-gradient hover:text-yellow-400 w-full md:w-auto`}>
+                                            <span>+ Tambah Prestasi Baru</span>
                                         </motion.button>
                                     </div>
                                 </div>

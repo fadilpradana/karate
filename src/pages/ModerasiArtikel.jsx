@@ -764,7 +764,6 @@ export default function ModerasiArtikel() {
                     <nav className="space-y-3">
                         <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Tulis Artikel Baru"><Edit size={20} /></Link>
                         <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Lihat Artikel"><BookOpen size={20} /></Link>
-                        <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Moderasi Artikel"><Settings size={20} /></Link>
                     </nav>
                 </motion.div>
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
@@ -772,7 +771,6 @@ export default function ModerasiArtikel() {
                         <nav className="flex space-x-4 justify-center">
                             <Link to="/tulis-artikel-baru" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Tulis Artikel Baru"><Edit size={20} /></Link>
                             <Link to="/artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Lihat Artikel"><BookOpen size={20} /></Link>
-                            <Link to="/moderasi-artikel" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200" title="Moderasi Artikel"><Settings size={20} /></Link>
                         </nav>
                     </motion.div>
                     <h1 className="text-3xl sm:text-6xl font-league font-bold uppercase text-center mb-10 text-[#FF9F1C]">Panel Moderasi Artikel</h1>

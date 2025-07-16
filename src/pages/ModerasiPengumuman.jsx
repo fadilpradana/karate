@@ -315,7 +315,6 @@ export default function ModerasiPengumuman() {
                     <nav className="space-y-3">
                         <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={`${menuLinkClass} block`}><Edit size={20} /></Link>
                         <Link to="/pengumuman" title="Lihat Pengumuman" className={`${menuLinkClass} block`}><BookOpen size={20} /></Link>
-                        <Link to="/moderasi-pengumuman" title="Moderasi" className={`${menuLinkClass} block`}><Settings size={20} /></Link>
                     </nav>
                 </motion.div>
 
@@ -324,7 +323,6 @@ export default function ModerasiPengumuman() {
                         <nav className="flex space-x-4 justify-center">
                             <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={menuLinkClass}><Edit size={20} /></Link>
                             <Link to="/pengumuman" title="Lihat Pengumuman" className={menuLinkClass}><BookOpen size={20} /></Link>
-                            <Link to="/moderasi-pengumuman" title="Moderasi" className={menuLinkClass}><Settings size={20} /></Link>
                         </nav>
                     </motion.div>
                     
