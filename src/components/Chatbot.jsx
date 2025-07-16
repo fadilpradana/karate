@@ -36,6 +36,7 @@ const Chatbot = () => {
   const dragStartPos = useRef(0);
   const buttonRef = useRef(null);
   const chatBodyRef = useRef(null);
+  const chatWindowRef = useRef(null); // Ref baru untuk jendela chat
 
   const toggleChatbot = () => {
     if (isOpen) {
@@ -60,20 +61,60 @@ const Chatbot = () => {
     }
   };
 
-  const closeChat = () => {
+  const closeChat = useCallback(() => { // Menggunakan useCallback untuk stabilitas
     setIsClosing(true);
     setTimeout(() => {
       setIsOpen(false);
       setIsClosing(false);
       setIsButtonExpanded(false);
     }, 400);
-  };
+  }, []);
 
   useEffect(() => {
     if (chatBodyRef.current) {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Efek untuk mengontrol scrolling halaman dan efek dimming saat chatbot terbuka (khusus mobile)
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768; // Cek apakah perangkat mobile
+
+    if (isOpen && isMobile) { // Hanya mencegah scroll dan menambahkan dimming jika chatbot terbuka DAN di perangkat mobile
+      document.body.style.overflow = 'hidden'; 
+      document.body.classList.add('chatbot-active-mobile'); // Tambahkan kelas untuk dimming
+    } else {
+      document.body.style.overflow = 'unset'; // Mengembalikan scrolling normal
+      document.body.classList.remove('chatbot-active-mobile'); // Hapus kelas dimming
+    }
+
+    // Cleanup function: pastikan overflow dikembalikan dan kelas dihapus saat komponen di-unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.classList.remove('chatbot-active-mobile');
+    };
+  }, [isOpen]); // Bergantung pada state isOpen
+
+  // Efek untuk menutup chatbot saat klik di luar (khusus mobile)
+  useEffect(() => {
+    const handleOutsideClickToCloseChat = (event) => {
+      const isMobile = window.innerWidth <= 768;
+      // Periksa jika chat terbuka, ini perangkat mobile, dan klik berada di luar jendela chat
+      if (isOpen && isMobile && chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
+        closeChat(); // Gunakan fungsi closeChat yang sudah ada
+      }
+    };
+
+    if (isOpen) { // Hanya tambahkan listener jika chat terbuka
+      document.addEventListener('mousedown', handleOutsideClickToCloseChat);
+      document.addEventListener('touchstart', handleOutsideClickToCloseChat);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClickToCloseChat);
+      document.removeEventListener('touchstart', handleOutsideClickToCloseChat);
+    };
+  }, [isOpen, closeChat]); // Bergantung pada isOpen dan closeChat
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -162,61 +203,22 @@ const Chatbot = () => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput('');
     setIsLoading(true);
-
-    const systemMessage = {
-      role: 'system',
-      content: `Anda adalah "Sensei AI", asisten virtual untuk Dojo Karate 'STMKG KARATE CLUB'. Anda harus selalu ramah, sopan, dan menggunakan sapaan "Oss!". 
-      Tugas Anda adalah menjawab pertanyaan pengunjung seputar informasi umum dojo. Gunakan format Markdown untuk penekanan (seperti **bold**) dan untuk membuat link.
-      
-      Berikut adalah informasi yang Anda miliki:
-      - **Nama Dojo**: STMKG Karate Club
-      - **Alamat**: Jl. Meteorologi No.5, Tanah Tinggi, Kec. Tangerang, Kota Tangerang, Banten 15221
-      - **Jadwal Latihan Rutin**: Setiap Sabtu pagi, jam 07.00 - 09.30 WIB.
-      - **Jadwal Latihan Khusus**: Program Bela Diri Taruna (fokus aplikasi bela diri di dunia nyata), setiap Senin sore, jam 16.00 - 17.45 WIB.
-      - **Kewajiban Latihan**: Latihan karate **wajib** untuk seluruh Taruna/i tingkat 1.
-      - **Prosedur Izin/Sakit (Tingkat 1)**: Jika sakit atau berhalangan hadir, wajib memberitahukan kepada Komandan Karate dan Pembina Ketarunaan. Untuk izin sakit (baik ringan maupun berat), **wajib** melampirkan surat sakit kepada Komandan Karate.
-      - **Struktur Pengurus**: Untuk melihat struktur pengurus, silakan kunjungi halaman [berikut ini](https://karate.stmkg.ac.id/pengurus).
-      - **Prestasi**: Untuk melihat daftar prestasi, silakan kunjungi [halaman ini](https://karate.stmkg.ac.id).
-      
-      - **Sumpah Karate**:
-        1. Sanggup memelihara kepribadian;
-        2. Sanggup patuh pada kejujuran;
-        3. Sanggup mempertinggi prestasi;
-        4. Sanggup menjaga sopan santun;
-        5. Sanggup menguasai diri.
-
-      - **Sejarah STMKG Karate Club**:
-        STMKG Karate Club, sebuah wadah pembinaan penguasaan bela diri dan karakter yang berdedikasi tinggi bagi para Taruna dan Taruni. Awal berdirinya organisasi ini didirikan atas inisiatif Bapak Dr. Ir. Suko Adi Prayitno, M.Si., M.I.Kom. STMKG Karate Club beroperasi di bawah naungan Komandan Batalyon 2 Resimen Taruna STMKG, dengan Komandan Karate sebagai pimpinan tertinggi di dalam organisasi. Saat ini, pembinaan diberikan oleh Pembina Ayu Adi Justicea S.T., S.ST., M.App.Sc. Dengan semangat yang membara serta visi kuat untuk mencetak Taruna dan Taruni yang tak hanya tangguh secara fisik namun juga disiplin tinggi serta menguasai seni bela diri karate yang autentik, STMKG Karate Club menjadi pilar fundamental dalam pengembangan potensi holistik setiap Taruna. Kami berkomitmen menanamkan nilai-nilai karate seperti kehormatan, integritas, dan ketekunan, yang membentuk individu bermental kuat dan siap menghadapi berbagai tantangan baik di lingkungan kampus maupun dalam kehidupan bermasyarakat.
-
-      - **Filosofi Logo**:
-        **Bintang Prestasi** melambangkan pencapaian luar biasa dalam perlombaan karate. Setiap satu bintang mewakili lima medali emas yang diraih oleh karateka STMKG pada tingkat nasional. **Lingkaran** melambangkan kebulatan tekad dan semangat karateka dalam melaksanakan aktivitasnya di bidang karate. **Arah Mata Angin** melambangkan arah dan tujuan yang ingin dicapai. **Merah** melambangkan keberanian akan sebuah tindakan. **Kuning** melambangkan kreativitas. **Biru** melambangkan tanggungjawab dan bisa diandalkan. **Tulisan Warna Hitam** melambangkan kekuasaan karateka yang harus sanggup menguasai diri sesuai dengan sumpah karate yang kelima. **Putih** melambangkan ketulusan dan saling menghargai.
-
-      - **Filosofi Brevet**:
-        **Lingkaran** sebagai bentuk kewaspadaan seorang karateka, mengembangkan rasa empati, dan simpati. **Arah Mata Angin** melambangkan arah dan tujuan yang ingin dicapai, serta menandakan naungan Sekolah Tinggi Meteorologi Klimatologi dan Geofisika. **Dua Tate Zuki**, pukulan mengepal setengah terbalik dan pukulan ke arah kepala, melambangkan tekad, semangat, dan kemauan kuat seorang Taruna/i untuk berlatih. **Dua Tangan Nukite**, serangan dengan tangan seperti tombak, melambangkan perjuangan sensei dan senpai terdahulu karena tombak merupakan senjata tradisional. **Dua Sayap (6 Bulu)** merupakan perwujudan STMKG Karate sebagai organisasi dinamis. Enam bulu menunjukkan jumlah warna sabuk di karate dan semangat membangun prestasi. **STMKG KARATE CLUB** adalah wadah latihan fisik, mental baja, dan penempaan diri dengan penuh kesadaran, itikad baik, serta tanggung jawab terhadap cita-cita Bangsa.
-
-      Jika ada pertanyaan di luar topik ini, katakan dengan sopan bahwa Anda hanya bisa menjawab seputar dojo dan sarankan untuk menghubungi pengurus via Instagram: @karate.stmkg. Jangan menjawab pertanyaan tentang coding, atau topik umum lainnya.`
-    };
     
-    const currentChatHistory = [...messages, userMessage];
-    const mappedMessages = currentChatHistory.map(msg => ({
+    const chatHistoryForAPI = messages.map(msg => ({
         role: msg.sender === 'bot' ? 'assistant' : 'user',
         content: msg.text,
     }));
-    const chatHistoryForAPI = [systemMessage, ...mappedMessages];
+    chatHistoryForAPI.push({ role: 'user', content: userMessage.text });
 
     try {
-      // PERUBAHAN: Panggil Edge Function Anda, bukan OpenRouter langsung
-      // Ganti URL ini dengan URL Edge Function Anda
       const supabaseFunctionUrl = 'https://unkauvoourtaoxdpdlst.supabase.co/functions/v1/chat-proxy';
 
       const response = await fetch(supabaseFunctionUrl, {
         method: "POST",
         headers: {
-          // Tidak perlu lagi mengirim Authorization header dari client
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Kirim hanya messages, karena model dan detail lain diatur di Edge Function
           messages: chatHistoryForAPI,
         }),
       });
@@ -247,7 +249,7 @@ const Chatbot = () => {
   return (
     <div className="chatbot-container">
       {isOpen && (
-        <div className={`chat-window on-${panelSide} ${isClosing ? 'closing' : ''}`}>
+        <div ref={chatWindowRef} className={`chat-window on-${panelSide} ${isClosing ? 'closing' : ''}`}>
           <div className="chat-header">
             <div className="header-content">
                 <div className="avatar">🥋</div>
@@ -279,11 +281,10 @@ const Chatbot = () => {
                 </ReactMarkdown>
               </div>
             ))}
+            {/* Indikator "mengetik..." saat isLoading true */}
             {isLoading && (
-               <div className="chat-message bot">
-                 <p className="loading-dots">
-                     <span>.</span><span>.</span><span>.</span>
-                 </p>
+               <div className="chat-message bot typing-indicator">
+                   <p>Mengetik<span>.</span><span>.</span><span>.</span></p>
                </div>
             )}
           </div>

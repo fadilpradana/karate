@@ -128,9 +128,9 @@
   animation: slide-in 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* PERUBAHAN: Animasi keluar disamakan dengan animasi masuk */
+/* MENGEMBALIKAN: Animasi keluar ke 0.4 detik */
 .chat-window.closing {
-  animation: slide-out 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: slide-out 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
 }
 
 .chat-window.on-right {
@@ -386,40 +386,67 @@
     box-shadow: none;
 }
 
-.loading-dots p {
-    padding: 12px 18px;
+/* Gaya untuk indikator mengetik */
+.typing-indicator p {
+  display: inline-block;
+  /* Mengubah warna latar belakang agar terlihat kontras */
+  background-color: #3A3A3C; /* Warna abu-abu gelap, cocok dengan tema */
+  /* Mengubah warna teks agar terlihat jelas di latar belakang gelap */
+  color: #E5E5EA; /* Warna abu-abu terang, sama dengan teks bot lainnya */
+  /* Menyesuaikan padding untuk memperkecil ukuran bubble */
+  padding: 6px 12px; /* Mengurangi padding vertikal lebih lanjut */
+  border-radius: 15px;
+  max-width: 70%;
+  word-wrap: break-word;
+  font-style: italic; /* Opsional: membuat teks sedikit miring */
+  animation: pulse 1.5s infinite; /* Animasi untuk gelembung */
+  white-space: nowrap; /* Menjaga teks dalam satu baris */
 }
 
-.loading-dots span {
-    animation-name: blink;
-    animation-duration: 1.4s;
-    animation-iteration-count: infinite;
-    animation-fill-mode: both;
-    font-size: 1.2rem;
-    line-height: 1;
+.typing-indicator span {
+  opacity: 0;
+  animation: blink 1.4s infinite;
 }
 
-.loading-dots span:nth-child(2) {
-    animation-delay: .2s;
+.typing-indicator span:nth-child(1) {
+  animation-delay: 0.2s;
 }
 
-.loading-dots span:nth-child(3) {
-    animation-delay: .4s;
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.6s;
 }
 
 @keyframes blink {
-    0% { opacity: .2; }
-    20% { opacity: 1; }
-    100% { opacity: .2; }
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Pastikan gelembung mengetik muncul di sisi bot */
+.chat-message.bot.typing-indicator {
+    align-self: flex-start; /* Sejajar kiri */
+    margin-right: auto; /* Memastikan tidak ada margin kanan yang mendorongnya */
+    /* Menghapus margin-left agar sejajar dengan bubble chat bot lainnya */
+    margin-left: 0; 
 }
 
 @keyframes wave-animation {
     0% { transform: rotate( 0.0deg) }
-   10% { transform: rotate(14.0deg) }
-   20% { transform: rotate(-8.0deg) }
-   30% { transform: rotate(14.0deg) }
-   40% { transform: rotate(-4.0deg) }
-   50% { transform: rotate(10.0deg) }
-   60% { transform: rotate( 0.0deg) }
-  100% { transform: rotate( 0.0deg) }
+    10% { transform: rotate(14.0deg) }
+    20% { transform: rotate(-8.0deg) }
+    30% { transform: rotate(14.0deg) }
+    40% { transform: rotate(-4.0deg) }
+    50% { transform: rotate(10.0deg) }
+    60% { transform: rotate( 0.0deg) }
+    100% { transform: rotate( 0.0deg) }
 }
+
