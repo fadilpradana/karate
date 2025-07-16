@@ -36,7 +36,9 @@ const Chatbot = () => {
   const dragStartPos = useRef(0);
   const buttonRef = useRef(null);
   const chatBodyRef = useRef(null);
-  const chatWindowRef = useRef(null); // Ref baru untuk jendela chat
+  // Ref chatWindowRef tidak lagi diperlukan untuk deteksi klik di luar,
+  // tetapi tetap dipertahankan jika ada kebutuhan lain di masa depan.
+  const chatWindowRef = useRef(null); 
 
   const toggleChatbot = () => {
     if (isOpen) {
@@ -67,7 +69,7 @@ const Chatbot = () => {
       setIsOpen(false);
       setIsClosing(false);
       setIsButtonExpanded(false);
-    }, 400);
+    }, 400); 
   }, []);
 
   useEffect(() => {
@@ -76,45 +78,41 @@ const Chatbot = () => {
     }
   }, [messages]);
 
-  // Efek untuk mengontrol scrolling halaman dan efek dimming saat chatbot terbuka (khusus mobile)
+  // Efek untuk mengontrol scrolling halaman (khusus mobile)
   useEffect(() => {
     const isMobile = window.innerWidth <= 768; // Cek apakah perangkat mobile
 
-    if (isOpen && isMobile) { // Hanya mencegah scroll dan menambahkan dimming jika chatbot terbuka DAN di perangkat mobile
+    if (isOpen && isMobile) { // Hanya mencegah scroll jika chatbot terbuka DAN di perangkat mobile
       document.body.style.overflow = 'hidden'; 
-      document.body.classList.add('chatbot-active-mobile'); // Tambahkan kelas untuk dimming
     } else {
       document.body.style.overflow = 'unset'; // Mengembalikan scrolling normal
-      document.body.classList.remove('chatbot-active-mobile'); // Hapus kelas dimming
     }
 
-    // Cleanup function: pastikan overflow dikembalikan dan kelas dihapus saat komponen di-unmount
+    // Cleanup function: pastikan overflow dikembalikan saat komponen di-unmount
     return () => {
       document.body.style.overflow = 'unset';
-      document.body.classList.remove('chatbot-active-mobile');
     };
   }, [isOpen]); // Bergantung pada state isOpen
 
-  // Efek untuk menutup chatbot saat klik di luar (khusus mobile)
-  useEffect(() => {
-    const handleOutsideClickToCloseChat = (event) => {
-      const isMobile = window.innerWidth <= 768;
-      // Periksa jika chat terbuka, ini perangkat mobile, dan klik berada di luar jendela chat
-      if (isOpen && isMobile && chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
-        closeChat(); // Gunakan fungsi closeChat yang sudah ada
-      }
-    };
+  // MENGHAPUS: Efek untuk menutup chatbot saat klik di luar (khusus mobile)
+  // useEffect(() => {
+  //   const handleOutsideClickToCloseChat = (event) => {
+  //     const isMobile = window.innerWidth <= 768;
+  //     if (isOpen && isMobile && chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
+  //       closeChat();
+  //     }
+  //   };
 
-    if (isOpen) { // Hanya tambahkan listener jika chat terbuka
-      document.addEventListener('mousedown', handleOutsideClickToCloseChat);
-      document.addEventListener('touchstart', handleOutsideClickToCloseChat);
-    }
+  //   if (isOpen) {
+  //     document.addEventListener('mousedown', handleOutsideClickToCloseChat);
+  //     document.addEventListener('touchstart', handleOutsideClickToCloseChat);
+  //   }
 
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClickToCloseChat);
-      document.removeEventListener('touchstart', handleOutsideClickToCloseChat);
-    };
-  }, [isOpen, closeChat]); // Bergantung pada isOpen dan closeChat
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleOutsideClickToCloseChat);
+  //     document.removeEventListener('touchstart', handleOutsideClickToCloseChat);
+  //   };
+  // }, [isOpen, closeChat]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
