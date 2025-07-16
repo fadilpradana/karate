@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import { supabase } from '../supabaseClient'; // Pastikan path ini benar
+import { useAuth } from '../context/AuthContext'; // Pastikan path ini benar
+import { Helmet } from 'react-helmet-async';
 import { 
     LoaderCircle, 
     Lock, 
@@ -19,8 +19,8 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import Footer from '../components/Footer';
-import heroVideo from '../assets/daftar.mp4';
+import Footer from '../components/Footer'; // Pastikan path ini benar
+import heroVideo from '../assets/daftar.mp4'; // Pastikan path ini benar
 
 // Variabel cache
 let pendaftaranDataCache = null;
@@ -146,29 +146,32 @@ const ThankYouModal = ({ isOpen, onClose, periodeName }) => {
     );
 }
 
-
-export default function Pendaftaran() {
+// Komponen baru untuk konten utama dan animasi
+const PendaftaranContent = ({
+    periodeAktif,
+    profile,
+    handleSubmit,
+    mengirim,
+    sudahKirim,
+    persentaseMinat,
+    setPersentaseMinat,
+    alasanMinat,
+    setAlasanMinat,
+    pengalamanOrganisasi,
+    setPengalamanOrganisasi,
+    pengalamanKepanitiaan,
+    setPengalamanKepanitiaan,
+    sepuluhCalon,
+    setSepuluhCalon,
+    cvFile,
+    setCvFile,
+    handleCvFileChange,
+    isModalOpen,
+    setIsModalOpen,
+    modalContent,
+    showModal,
+}) => {
     const navigate = useNavigate();
-    const { session, role, loading: authLoading } = useAuth();
-
-    const [periodeAktif, setPeriodeAktif] = useState(null);
-    const [profile, setProfile] = useState(null);
-    const [isFetchingData, setIsFetchingData] = useState(!pendaftaranDataCache);
-    const [mengirim, setMengirim] = useState(false);
-    const [sudahKirim, setSudahKirim] = useState(false);
-    const [persentaseMinat, setPersentaseMinat] = useState(50);
-    const [alasanMinat, setAlasanMinat] = useState('');
-    const [pengalamanOrganisasi, setPengalamanOrganisasi] = useState('');
-    const [pengalamanKepanitiaan, setPengalamanKepanitiaan] = useState('');
-    const [sepuluhCalon, setSepuluhCalon] = useState('');
-    const [cvFile, setCvFile] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalContent, setModalContent] = useState({ title: '', message: '' });
-
-    const showModal = (title, message) => {
-        setModalContent({ title, message });
-        setIsModalOpen(true);
-    };
 
     const glassFormStyle = {
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -177,7 +180,8 @@ export default function Pendaftaran() {
         border: '1px solid rgba(255, 255, 255, 0.2)',
         borderRadius: '0.75rem',
     };
-    
+
+    // Refs and scroll animations are now inside this component
     const heroRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: heroRef,
@@ -201,120 +205,18 @@ export default function Pendaftaran() {
     });
     const opacityPeminatan = useTransform(scrollPeminatan, [0, 0.3], [0, 1]);
     const yPeminatan = useTransform(scrollPeminatan, [0, 0.3], [50, 0]);
-
-    useEffect(() => {
-        if (authLoading) return;
-        if (pendaftaranDataCache && pendaftaranDataCache.userId !== session?.user?.id) {
-            pendaftaranDataCache = null;
-            setIsFetchingData(true);
-        }
-        if (pendaftaranDataCache) {
-            setPeriodeAktif(pendaftaranDataCache.periodeAktif);
-            setProfile(pendaftaranDataCache.profile);
-            setSudahKirim(pendaftaranDataCache.sudahKirim);
-            setIsFetchingData(false);
-            return;
-        }
-        if (role && role.toLowerCase() !== 'anggota') {
-            navigate('/dashboard', { replace: true });
-            return;
-        }
-        if (session && role?.toLowerCase() === 'anggota') {
-            const ambilDataAwal = async () => {
-                try {
-                    const [periodeRes, profileRes] = await Promise.all([
-                        supabase.from('periode_pendaftaran').select('*').eq('sedang_aktif', true).maybeSingle(),
-                        supabase.from('profiles').select('*').eq('id', session.user.id).single()
-                    ]);
-                    const periodeData = periodeRes.data;
-                    const profileData = profileRes.data;
-                    let isAlreadySubmitted = false;
-                    if (periodeData) {
-                        const { count } = await supabase
-                            .from('data_pendaftar')
-                            .select('*', { count: 'exact', head: true })
-                            .eq('id_pengguna', session.user.id)
-                            .eq('id_periode', periodeData.id);
-                        isAlreadySubmitted = count > 0;
-                    }
-                    setPeriodeAktif(periodeData);
-                    setProfile(profileData);
-                    setSudahKirim(isAlreadySubmitted);
-                    pendaftaranDataCache = {
-                        periodeAktif: periodeData, profile: profileData,
-                        sudahKirim: isAlreadySubmitted, userId: session.user.id
-                    };
-                } catch (error) {
-                    console.error('Gagal mengambil data awal pendaftaran:', error);
-                    pendaftaranDataCache = null;
-                } finally {
-                    setIsFetchingData(false);
-                }
-            };
-            ambilDataAwal();
-        } else {
-            setIsFetchingData(false);
-        }
-    }, [authLoading, session, role, navigate]);
-
-    const handleCvFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 1 * 1024 * 1024) {
-                showModal("Ukuran File Terlalu Besar", "Ukuran file CV tidak boleh lebih dari 1MB.");
-                return;
-            }
-            if (file.type !== 'application/pdf') {
-                showModal("Format File Tidak Didukung", "Harap unggah file dengan format PDF.");
-                return;
-            }
-            setCvFile(file);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!cvFile) {
-            showModal('CV Belum Diunggah', 'Harap unggah file CV Anda sebelum mengirim pendaftaran.');
-            return;
-        }
-        setMengirim(true);
-        try {
-            const fileExt = cvFile.name.split('.').pop();
-            const fileName = `${periodeAktif.tahun_angkatan}/${profile?.nama_lengkap?.replace(/\s+/g, '_')}_${session.user.id}.${fileExt}`;
-            const BUCKET_NAME = 'cvpendaftar';
-            const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(fileName, cvFile, { upsert: true });
-            if (uploadError) throw uploadError;
-            const { data: publicUrlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(uploadData.path);
-            const dataIsian = { persentase_minat: persentaseMinat, alasan_minat: alasanMinat, pengalaman_organisasi: pengalamanOrganisasi, pengalaman_kepanitiaan: pengalamanKepanitiaan, sepuluh_calon: sepuluhCalon, cv_url: publicUrlData.publicUrl };
-            const { error: submissionError } = await supabase.from('data_pendaftar').insert({ id_pengguna: session.user.id, id_periode: periodeAktif.id, data_isian: dataIsian });
-            if (submissionError) throw submissionError;
-            setSudahKirim(true);
-            if (pendaftaranDataCache) {
-                pendaftaranDataCache.sudahKirim = true;
-            }
-        } catch (error) {
-            showModal('Pendaftaran Gagal', error.message);
-        } finally {
-            setMengirim(false);
-        }
-    };
     
     const heroVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
     };
 
-    if (authLoading || isFetchingData) { return ( <div className="min-h-screen bg-gray-900 text-white flex flex-col"> <div className="flex-grow flex justify-center items-center"> <LoaderCircle className="animate-spin h-8 w-8 text-white" /> </div> <Footer /> </div> ); }
-    if (!session) { navigate('/login', { replace: true }); return null; }
-    if (!periodeAktif || !periodeAktif.telah_dibuka) { return ( <div className="min-h-screen bg-gray-900 text-white flex flex-col"> <main className="flex-grow flex justify-center items-center text-center p-4"> <div> <Lock className="h-16 w-16 text-red-500 mx-auto mb-4" /> <h1 className="text-3xl font-bold text-accent">{periodeAktif?.nama_periode || 'Pendaftaran'}</h1> <p className="mt-2 text-gray-300">Saat ini pendaftaran sedang ditutup atau belum ada periode yang dibuka.</p> </div> </main> <Footer /> </div> ); }
-
     return (
         <div className="relative text-white h-full">
             <Helmet>
-                <title>Pendaftaran - STMKG Karate Club</title>
+                <title>Pendaftaran - UKM Karate STMKG</title>
                 <meta name="robots" content="noindex, nofollow" />
-            </Helmet>
+            </Helmet> 
             <video
                 autoPlay
                 loop
@@ -442,5 +344,191 @@ export default function Pendaftaran() {
                 <Footer />
             </div>
         </div>
+    );
+}
+
+
+export default function Pendaftaran() {
+    const navigate = useNavigate();
+    const { session, role, loading: authLoading } = useAuth();
+
+    const [periodeAktif, setPeriodeAktif] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [isFetchingData, setIsFetchingData] = useState(!pendaftaranDataCache);
+    const [mengirim, setMengirim] = useState(false);
+    const [sudahKirim, setSudahKirim] = useState(false);
+    const [persentaseMinat, setPersentaseMinat] = useState(50);
+    const [alasanMinat, setAlasanMinat] = useState('');
+    const [pengalamanOrganisasi, setPengalamanOrganisasi] = useState('');
+    const [pengalamanKepanitiaan, setPengalamanKepanitiaan] = useState('');
+    const [sepuluhCalon, setSepuluhCalon] = useState('');
+    const [cvFile, setCvFile] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({ title: '', message: '' });
+
+    const showModal = (title, message) => {
+        setModalContent({ title, message });
+        setIsModalOpen(true);
+    };
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (pendaftaranDataCache && pendaftaranDataCache.userId !== session?.user?.id) {
+            pendaftaranDataCache = null;
+            setIsFetchingData(true);
+        }
+        if (pendaftaranDataCache) {
+            setPeriodeAktif(pendaftaranDataCache.periodeAktif);
+            setProfile(pendaftaranDataCache.profile);
+            setSudahKirim(pendaftaranDataCache.sudahKirim);
+            setIsFetchingData(false);
+            return;
+        }
+        if (role && role.toLowerCase() !== 'anggota') {
+            navigate('/dashboard', { replace: true });
+            return;
+        }
+        if (session && role?.toLowerCase() === 'anggota') {
+            const ambilDataAwal = async () => {
+                setIsFetchingData(true); // Set loading true at the start
+                try {
+                    const [periodeRes, profileRes] = await Promise.all([
+                        supabase.from('periode_pendaftaran').select('*').eq('sedang_aktif', true).maybeSingle(),
+                        supabase.from('profiles').select('*').eq('id', session.user.id).single()
+                    ]);
+                    const periodeData = periodeRes.data;
+                    const profileData = profileRes.data;
+                    let isAlreadySubmitted = false;
+                    if (periodeData) {
+                        const { count } = await supabase
+                            .from('data_pendaftar')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('id_pengguna', session.user.id)
+                            .eq('id_periode', periodeData.id);
+                        isAlreadySubmitted = count > 0;
+                    }
+                    setPeriodeAktif(periodeData);
+                    setProfile(profileData);
+                    setSudahKirim(isAlreadySubmitted);
+                    pendaftaranDataCache = {
+                        periodeAktif: periodeData, profile: profileData,
+                        sudahKirim: isAlreadySubmitted, userId: session.user.id
+                    };
+                } catch (error) {
+                    console.error('Gagal mengambil data awal pendaftaran:', error);
+                    pendaftaranDataCache = null;
+                } finally {
+                    setIsFetchingData(false);
+                }
+            };
+            ambilDataAwal();
+        } else if (!session && !authLoading) {
+            navigate('/login', { replace: true });
+        } else {
+            setIsFetchingData(false);
+        }
+    }, [authLoading, session, role, navigate]);
+
+    const handleCvFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 1 * 1024 * 1024) {
+                showModal("Ukuran File Terlalu Besar", "Ukuran file CV tidak boleh lebih dari 1MB.");
+                return;
+            }
+            if (file.type !== 'application/pdf') {
+                showModal("Format File Tidak Didukung", "Harap unggah file dengan format PDF.");
+                return;
+            }
+            setCvFile(file);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!cvFile) {
+            showModal('CV Belum Diunggah', 'Harap unggah file CV Anda sebelum mengirim pendaftaran.');
+            return;
+        }
+        setMengirim(true);
+        try {
+            const fileExt = cvFile.name.split('.').pop();
+            const fileName = `${periodeAktif.tahun_angkatan}/${profile?.nama_lengkap?.replace(/\s+/g, '_')}_${session.user.id}.${fileExt}`;
+            const BUCKET_NAME = 'cvpendaftar';
+            const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(fileName, cvFile, { upsert: true });
+            if (uploadError) throw uploadError;
+            const { data: publicUrlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(uploadData.path);
+            const dataIsian = { persentase_minat: persentaseMinat, alasan_minat: alasanMinat, pengalaman_organisasi: pengalamanOrganisasi, pengalaman_kepanitiaan: pengalamanKepanitiaan, sepuluh_calon: sepuluhCalon, cv_url: publicUrlData.publicUrl };
+            const { error: submissionError } = await supabase.from('data_pendaftar').insert({ id_pengguna: session.user.id, id_periode: periodeAktif.id, data_isian: dataIsian });
+            if (submissionError) throw submissionError;
+            setSudahKirim(true);
+            if (pendaftaranDataCache) {
+                pendaftaranDataCache.sudahKirim = true;
+            }
+        } catch (error) {
+            showModal('Pendaftaran Gagal', error.message);
+        } finally {
+            setMengirim(false);
+        }
+    };
+    
+    // Render logic in the main component
+    if (authLoading || isFetchingData) {
+        return (
+            <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+                <div className="flex-grow flex justify-center items-center">
+                    <LoaderCircle className="animate-spin h-8 w-8 text-white" />
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!session) {
+        // useEffect already handles navigation, but this is a safeguard.
+        return null;
+    }
+
+    if (!periodeAktif || !periodeAktif.telah_dibuka) {
+        return (
+            <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+                <main className="flex-grow flex justify-center items-center text-center p-4">
+                    <div>
+                        <Lock className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                        <h1 className="text-3xl font-bold text-accent">{periodeAktif?.nama_periode || 'Pendaftaran'}</h1>
+                        <p className="mt-2 text-gray-300">Saat ini pendaftaran sedang ditutup atau belum ada periode yang dibuka.</p>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    // Pass all state and handlers to the content component
+    return (
+        <PendaftaranContent
+            periodeAktif={periodeAktif}
+            profile={profile}
+            handleSubmit={handleSubmit}
+            mengirim={mengirim}
+            sudahKirim={sudahKirim}
+            persentaseMinat={persentaseMinat}
+            setPersentaseMinat={setPersentaseMinat}
+            alasanMinat={alasanMinat}
+            setAlasanMinat={setAlasanMinat}
+            pengalamanOrganisasi={pengalamanOrganisasi}
+            setPengalamanOrganisasi={setPengalamanOrganisasi}
+            pengalamanKepanitiaan={pengalamanKepanitiaan}
+            setPengalamanKepanitiaan={setPengalamanKepanitiaan}
+            sepuluhCalon={sepuluhCalon}
+            setSepuluhCalon={setSepuluhCalon}
+            cvFile={cvFile}
+            setCvFile={setCvFile}
+            handleCvFileChange={handleCvFileChange}
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+            modalContent={modalContent}
+            showModal={showModal}
+        />
     );
 }
