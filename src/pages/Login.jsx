@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { supabase } from '../supabaseClient'; 
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 function Login() {
     const [loading, setLoading] = useState(false);
@@ -79,6 +80,10 @@ function Login() {
 
     return (
         <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
+            <Helmet>
+                <title>Login - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <AnimatePresence>
                 {feedback.type && (
                     <motion.div

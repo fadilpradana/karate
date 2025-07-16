@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { 
     LoaderCircle, 
     Lock, 
@@ -310,6 +311,10 @@ export default function Pendaftaran() {
 
     return (
         <div className="relative text-white h-full">
+            <Helmet>
+                <title>Pendaftaran - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <video
                 autoPlay
                 loop

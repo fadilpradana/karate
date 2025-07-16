@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { LoaderCircle, Plus, Edit, Trash2, Power, AlertTriangle, CheckCircle, XCircle, Users, ChevronLeft, Play, Square, Eye, PowerOff, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import Footer from '../components/Footer';
 import heroBg from '../assets/bg10.jpg';
 
@@ -280,6 +281,10 @@ export default function AdminPeriodeKomandan() {
     
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Admin Periode Komandan - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             
             <div className="relative z-10 flex flex-col min-h-screen">

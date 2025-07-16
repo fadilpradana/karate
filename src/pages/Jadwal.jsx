@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react"; // Tambahkan useState dan useEffect jika belum ada
 import { useInView } from "framer-motion";
+import { Helmet } from 'react-helmet-async'; // Import Helmet
 
 // Import brevetLogo untuk footer
 import Footer from '../components/Footer';
@@ -97,6 +98,19 @@ export default function Jadwal() {
       // Perubahan di sini: Menggunakan kelas background khusus untuk Jadwal
       className="min-h-screen text-white overflow-x-hidden flex flex-col jadwal-background-mobile md:jadwal-background-desktop" 
     >
+      <Helmet>
+        <title>Jadwal - Karate STMKG</title>
+        <meta name="description" content="Temukan jadwal lengkap latihan rutin dan program Bela Diri Taruna (BDT) di STMKG Karate Club. Informasi terkini seputar waktu dan lokasi latihan setiap pekan." />
+        <meta name="keywords" content="jadwal karate STMKG, latihan karate, jadwal BDT, waktu latihan STMKG, karateka STMKG, dojo STMKG" />
+        <meta property="og:title" content="Jadwal Latihan Karate STMKG" />
+        <meta property="og:description" content="Temukan jadwal latihan rutin dan khusus Bela Diri Taruna (BDT) di STMKG Karate Club." /> 
+        <meta property="og:url" content="https://karate.stmkg.ac.id/jadwal" />
+        <meta property="og:type" content="website" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="author" content="STMKG Karate Club" />
+        <link rel="canonical" href="https://karate.stmkg.ac.id/jadwal" />
+      </Helmet>
+
       {/* Bagian Detail Jadwal */}
       <section
         ref={jadwalRef} // Pasang ref di sini

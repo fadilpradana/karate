@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
+import { Helmet } from 'react-helmet-async';
 
 // Asset & Ikon
 import Footer from '../components/Footer';
@@ -333,6 +334,10 @@ export default function AdminPrestasi() {
 
     return (
         <div className="min-h-screen text-white">
+            <Helmet>
+                <title>Admin: Kelola Prestasi - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <motion.div
                 className="fixed inset-0 z-0"
                 initial={{ opacity: 0 }}

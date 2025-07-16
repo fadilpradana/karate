@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // Asset & Ikon
 import Footer from '../components/Footer';
@@ -637,8 +638,11 @@ function Dashboard() {
     const labelStyle = "block mb-1 text-[10px] text-gray-400 uppercase";
 
     return (
-        <div className="relative min-h-screen">
-            
+        <div className="relative min-h-screen">           
+            <Helmet>
+                <title>Dashboard - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="fixed inset-0 z-0">
                 <div
                     className="absolute inset-0 bg-cover bg-center"

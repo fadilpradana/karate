@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // Impor Ikon dan Aset
 import { Edit, Trash2, Send, Settings, BookOpen, Search, RefreshCcw, Loader2, Save, X, ChevronLeft, ArrowLeft } from 'lucide-react';
@@ -304,6 +305,10 @@ export default function ModerasiPengumuman() {
 
     return (
         <div className="relative min-h-screen flex flex-col justify-between text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
+            <Helmet>
+                <title>Moderasi Pengumuman - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="absolute inset-0 bg-black opacity-70"></div>
             <div className="relative z-10">
                 <motion.div initial={{ x: -100 }} animate={{ x: 0 }} className="fixed left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-20">

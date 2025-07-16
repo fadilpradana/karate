@@ -1,9 +1,9 @@
-// src/pages/Home.jsx
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { X } from 'lucide-react';
 import { supabase } from '../supabaseClient'; // Import Supabase client Anda
+import { Helmet } from 'react-helmet-async'; // Import Helmet
 
 // Import komponen PrestasiCard yang baru
 import PrestasiCard from '../components/PrestasiCard';
@@ -221,6 +221,7 @@ export default function Home() {
       inset -1px -1px 2px rgba(0, 0, 0, 0.25)
     `,
     transition: 'all 0.3s ease-in-out',
+    // transform: 'scale(1)', // Removed as it conflicts with framer-motion scaling
   };
 
   const glassButtonHoverStyle = (e) => {
@@ -322,6 +323,19 @@ export default function Home() {
       transition={{ duration: 0.5 }}
       className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
     >
+      <Helmet>
+        <title>STMKG Karate Club</title>
+        <meta name="description" content="Selamat datang di situs resmi STMKG Karate Club. Lihat prestasi para karateka kami, sampaikan kritik & saran, serta kenali semangat bela diri kami yang menjunjung kehormatan dan disiplin." />
+        <meta name="keywords" content="STMKG Karate Club, karate STMKG, prestasi karate STMKG, bela diri taruna stmkg, kritik saran dojo, karate kampus, organisasi STMKG, klub karate STMKG" />
+        <meta property="og:title" content="STMKG Karate Club - Situs Resmi" />
+        <meta property="og:description" content="Temukan prestasi karate STMKG dan sampaikan kritik atau saran untuk dojo kami. Kami menjunjung kehormatan, disiplin, dan semangat bela diri." /> 
+        <meta property="og:image" content="https://karate.stmkg.ac.id/IMG_5610.JPG" />
+        <meta property="og:url" content="https://karate.stmkg.ac.id" />
+        <meta property="og:type" content="website" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="author" content="STMKG Karate Club" />
+        <link rel="canonical" href="https://karate.stmkg.ac.id" />
+      </Helmet>
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="fixed inset-0 w-full h-full">

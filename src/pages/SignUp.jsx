@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient'; // Make sure this path is correct
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; // Make sure this path is correct
 
 import Footer from '../components/Footer';
@@ -178,6 +179,10 @@ function SignUp() {
 
     return (
         <div className="flex flex-col min-h-screen">
+            <Helmet>
+                <title>Sign Up - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <AnimatePresence>
                 {successMessage && (
                     <SuccessModal

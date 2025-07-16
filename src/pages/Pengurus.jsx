@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { LoaderCircle, Users, Shield, ServerCrash, FileText, Wallet, Megaphone, Wrench, Paintbrush, BarChart3, HeartPulse, X, Settings, UserPlus, UserRoundCheck, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import Footer from '../components/Footer';
 
 // Import gambar background
@@ -347,6 +348,17 @@ export default function Pengurus() {
 
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Struktur Kepengurusan - STMKG Karate Club</title>
+                <meta name="description" content={`Lihat struktur kepengurusan STMKG Karate Club untuk ${namaPeriode}. Kenali komandan, sekretaris, bendahara, dan seluruh anggota bidang.`} />
+                <meta name="keywords" content={`pengurus karate, struktur organisasi, ${namaPeriode}, STMKG, karate, stmkg karate club`} />
+                <meta property="og:title" content={`Struktur Kepengurusan - ${namaPeriode}`} />
+                <meta property="og:description" content={`Struktur organisasi dan daftar pengurus STMKG Karate Club periode ${namaPeriode}.`} />
+                <meta property="og:url" content="https://karate.stmkg.ac.id/pengurus" />
+                <meta property="og:type" content="website" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/pengurus" />
+            </Helmet>
+
             <motion.div
                 className="fixed inset-0 z-0"
                 initial={{ opacity: 0 }}
@@ -428,7 +440,7 @@ export default function Pengurus() {
                                     {/* Tombol ini untuk admin DAN pengurus */}
                                     <Link to="/pemilihan-komandan" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Pemilihan Komandan" >
                                         <Shield size={20} />
-                                    </Link>                                       
+                                    </Link>                                                
                                     <Link to="/data-pendaftar" className="p-1.5 rounded-full text-gray-300 hover:bg-[#FF9F1C] hover:text-white transition-colors duration-200 block" title="Data Pendaftar" >
                                         <UserRoundCheck size={20} />
                                     </Link>

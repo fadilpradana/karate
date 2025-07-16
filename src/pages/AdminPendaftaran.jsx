@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import bg9 from '../assets/bg9.jpg'; // Impor gambar latar belakang
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // --- KOMPONEN MODAL KUSTOM BARU ---
 const KonfirmasiModal = ({
@@ -363,6 +364,10 @@ export default function AdminPendaftaran() {
 
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Admin Pendaftaran - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div
                 className="fixed inset-0 z-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${bg9})` }}

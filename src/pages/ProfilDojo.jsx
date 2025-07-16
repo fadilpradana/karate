@@ -1,8 +1,7 @@
-// src/pages/ProfilDojo.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { LoaderCircle, AlertTriangle, CheckCircle, X, Edit, Trash2, Plus, ChevronDown, Save, ShieldCheck, ArrowLeft, Settings, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // --- Import Supabase Client (sesuaikan dengan proyek Anda) ---
 // Pastikan path ini benar sesuai dengan struktur proyek Anda
@@ -196,8 +195,8 @@ export default function ProfilDojo() {
                  console.error("Error fetching Misi:", misiError);
                  setError(`Gagal mengambil data Misi: ${misiError.message}.`);
             } else {
-                setMisiList(misiData || []);
-                setVisiInput(currentActiveVisi.teks_visi);
+                 setMisiList(misiData || []);
+                 setVisiInput(currentActiveVisi.teks_visi);
             }
         } else {
             setMisiList([]);
@@ -388,6 +387,17 @@ export default function ProfilDojo() {
 
     return (
         <div className="relative text-white bg-[#0E0004]">
+            <Helmet>
+                <title>Profil - STMKG Karate Club</title>
+                <meta name="description" content="Pelajari tentang sejarah, Sumpah Karate, visi, misi, dan filosofi logo STMKG Karate Club serta brevet STMKG Karate Club. Kenali lebih dalam tentang semangat dan dedikasi kami." />
+                <meta name="keywords" content="profil dojo, sejarah karate, sumpah karate, visi misi, stmkg karate club, filosofi logo" />
+                <meta property="og:title" content="Profil & Visi Misi | STMKG Karate Club" />
+                <meta property="og:description" content="Kenali lebih dalam tentang sejarah, Sumpah Karate, dan visi misi STMKG Karate Club." />
+                <meta property="og:image" content={logoBintang} />
+                <meta property="og:url" content="https://karate.stmkg.ac.id/profil" />
+                <meta property="og:type" content="website" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/profil" />
+            </Helmet>
             <motion.div
                 className="fixed inset-0 z-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${heroBg})` }}

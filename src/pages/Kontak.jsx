@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Footer from '../components/Footer';
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient.js"; 
+import { Helmet } from 'react-helmet-async'; // Import Helmet
 
 export default function Kontak() {
     const [sukses, setSukses] = useState(false);
@@ -100,7 +101,8 @@ export default function Kontak() {
 
         } catch (error) {
             console.error("Error memanggil Edge Function:", error.message);
-            alert("Gagal mengirim pesan. Silakan coba lagi nanti.");
+            // Mengganti alert dengan console.error atau implementasi modal kustom
+            console.error("Gagal mengirim pesan. Silakan coba lagi nanti.");
         }
     };
 
@@ -112,6 +114,19 @@ export default function Kontak() {
             transition={{ duration: 0.5 }}
             className="min-h-screen text-white overflow-x-hidden flex flex-col background-mobile md:background-desktop"
         >
+            <Helmet>
+                <title>Kontak - STMKG Karate Club</title>
+                <meta name="description" content="Hubungi STMKG Karate Club untuk informasi lebih lanjut. Temukan alamat dojo, email, dan kontak Humas kami. Kirim pesan langsung kepada kami." />
+                <meta name="keywords" content="kontak karate STMKG, alamat dojo STMKG, email STMKG Karate, nomor telepon humas karate, kirim pesan karate STMKG" />
+                <meta property="og:title" content="Kontak STMKG Karate Club" />
+                <meta property="og:description" content="Dapatkan informasi kontak lengkap STMKG Karate Club, termasuk alamat, email, dan cara menghubungi Humas." /> 
+                <meta property="og:url" content="https://karate.stmkg.ac.id/kontak" />
+                <meta property="og:type" content="website" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="author" content="STMKG Karate Club" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/kontak" />
+            </Helmet>
+
             <section className="pt-24 pb-16 px-4 md:px-16 text-center flex-grow flex flex-col justify-center items-center relative z-40">
                 <motion.h1
                     className="text-4xl md:text-6xl font-league font-semibold uppercase tracking-wide mb-10 text-accent"
@@ -252,7 +267,7 @@ export default function Kontak() {
                 >
                     <iframe
                         title="Lokasi Dojo"
-                        src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3966.6915280279854!2d106.6442658!3d-6.1720406!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f05e4e6d1c27%3A0x8f19299fa86d971f!2sSekolah%20Tinggi%20Meteorologi%20Klimatologi%20dan%20Geofisika%20(STMKG)!5e0!3m2!1sid!2sid!4v1751900924599!5m2!1sid!2sid"
+                        src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3966.6915280279854!2d106.6442658!3d-6.1720406!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f05e4e6d1c27%3A0x8f19299fa86d971f!2sSekolah%20Tinggi%20Meteorologi%20Klimatologi%20dan%20Geofisika%20(STMKG)!5e0!3m2!1sid!2sid!4v1752651778235!5m2!1sid!2sid"
                         width="100%"
                         height="300"
                         className="w-full border-none rounded-md"

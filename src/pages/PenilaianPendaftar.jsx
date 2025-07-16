@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LoaderCircle, User, Award, ClipboardEdit, Save, ChevronLeft, Lock, ChevronDown, Pencil, XCircle, BookOpen, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import heroBg from '../assets/bg9.jpg';
 
 // Gaya untuk efek glassmorphism
@@ -351,6 +352,10 @@ export default function PenilaianPendaftar() {
 
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Penilaian Pendaftaran - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 md:px-12 lg:px-20 xl:px-24">

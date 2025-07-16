@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // Impor dari TanStack Table
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
@@ -997,6 +998,10 @@ export default function DataPendaftar() {
     
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Data Pendaftar - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             
             {(authLoading || loading) ? (

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async'; // Import HelmetProvider
 
 // Impor Komponen Layout, Konteks, dan Penjaga Rute
 import App from './App.jsx';
@@ -137,7 +138,7 @@ const router = createBrowserRouter([
             <AdminPrestasi />
           </AdminRoute>
         ),
-      },      
+      },       
       {
         path: 'admin-pendaftaran',
         element: (
@@ -173,8 +174,10 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <HelmetProvider> {/* Membungkus aplikasi dengan HelmetProvider */}
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </HelmetProvider>
   </React.StrictMode>
 );

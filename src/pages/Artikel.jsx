@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // Import Helmet
+
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg'; // Import gambar background
-import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, FileText, Settings } from 'lucide-react';
+import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, FileText, Settings, Filter } from 'lucide-react'; // Tambahkan icon Filter
 
 // Nama komponen diubah menjadi Artikel
 export default function Artikel() {
@@ -17,6 +19,13 @@ export default function Artikel() {
     const articlesPerPage = 5;
     const location = useLocation();
     const navigate = useNavigate();
+
+    // State baru untuk filter tahun
+    const [selectedYear, setSelectedYear] = useState('');
+    const [availableYears, setAvailableYears] = useState([]);
+    // State baru untuk mengontrol visibilitas dropdown filter tahun kustom
+    const [isYearFilterOpen, setIsYearFilterOpen] = useState(false); 
+    const filterContainerRef = useRef(null); // Ref untuk container filter
 
     // State untuk menyimpan role pengguna dan username
     const [userRole, setUserRole] = useState(null);
@@ -75,7 +84,7 @@ export default function Artikel() {
         // Jika perlu update saat login/logout, bisa tambahkan supabase.auth.onAuthStateChange
     }, []);
 
-    // --- LOGIKA PENGAMBILAN ARTIKEL (EXISTING) ---
+    // --- LOGIKA PENGAMBILAN ARTIKEL (EXISTING) DAN PEMBUATAN DAFTAR TAHUN ---
     useEffect(() => {
         const fetchArtikelWithAuthor = async () => {
             setLoading(true);
@@ -95,19 +104,31 @@ export default function Artikel() {
             } else {
                 setArtikelList(data);
 
+                // Ekstrak tahun unik dari artikel untuk dropdown filter
+                const years = [...new Set(data.map(artikel => new Date(artikel.created_at).getFullYear()))].sort((a, b) => b - a);
+                setAvailableYears(['', ...years]); // Tambahkan opsi 'Semua Tahun'
+
                 const queryParams = new URLSearchParams(location.search);
                 const authorFromUrl = queryParams.get('author');
+                const yearFromUrl = queryParams.get('year'); // Ambil tahun dari URL
+
+                let results = data;
 
                 if (authorFromUrl) {
                     setSearchTerm(authorFromUrl);
-                    const results = data.filter(artikel =>
+                    results = results.filter(artikel =>
                         artikel.profiles?.username && artikel.profiles.username.toLowerCase() === authorFromUrl.toLowerCase()
                     );
-                    setFilteredArtikel(results);
-                } else {
-                    setFilteredArtikel(data);
                 }
 
+                if (yearFromUrl) {
+                    setSelectedYear(yearFromUrl);
+                    results = results.filter(artikel =>
+                        new Date(artikel.created_at).getFullYear().toString() === yearFromUrl
+                    );
+                }
+
+                setFilteredArtikel(results);
                 setCurrentPage(1);
             }
             setLoading(false);
@@ -118,21 +139,34 @@ export default function Artikel() {
 
     // --- LOGIKA FILTER ARTIKEL (EXISTING) ---
     useEffect(() => {
+        let results = artikelList;
+
+        // Filter berdasarkan tahun terlebih dahulu
+        if (selectedYear) {
+            results = results.filter(artikel =>
+                new Date(artikel.created_at).getFullYear().toString() === selectedYear
+            );
+        }
+
+        // Kemudian filter berdasarkan searchTerm
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
-        const results = artikelList.filter(artikel =>
+        results = results.filter(artikel =>
             artikel.judul.toLowerCase().includes(lowerCaseSearchTerm) ||
             (artikel.profiles?.username && artikel.profiles.username.toLowerCase().includes(lowerCaseSearchTerm))
         );
+
         setFilteredArtikel(results);
         setCurrentPage(1);
-    }, [searchTerm, artikelList]);
+    }, [searchTerm, selectedYear, artikelList]); // Tambahkan selectedYear sebagai dependency
 
     const handleResetSearch = () => {
         setSearchTerm('');
+        setSelectedYear(''); // Reset tahun juga
         setFilteredArtikel(artikelList);
         setCurrentPage(1);
         const url = new URL(window.location.href);
         url.searchParams.delete('author');
+        url.searchParams.delete('year'); // Hapus parameter tahun dari URL
         window.history.replaceState({}, '', url.toString());
     };
 
@@ -140,7 +174,7 @@ export default function Artikel() {
         if (loggedInUsername) {
             navigate(`/artikel?author=${loggedInUsername}`);
         } else {
-            alert('Anda harus login untuk melihat artikel Anda.');
+            console.log('Anda harus login untuk melihat artikel Anda.'); // Untuk debugging
         }
     };
 
@@ -179,9 +213,46 @@ export default function Artikel() {
         visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 100, damping: 10 } },
         exit: { opacity: 0, x: 50, transition: { duration: 0.2 } }
     };
+    
+    // Varian animasi untuk dropdown
+    const dropdownVariants = {
+        hidden: { opacity: 0, scale: 0.95, y: -10 },
+        visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+        exit: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.15, ease: "easeIn" } }
+    };
+
+    // Fungsi untuk mengaktifkan/menonaktifkan dropdown filter tahun
+    const toggleYearFilter = () => { 
+        setIsYearFilterOpen(prev => !prev);
+    };
+
+    // Efek untuk menutup dropdown saat klik di luar
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isYearFilterOpen && filterContainerRef.current && !filterContainerRef.current.contains(event.target)) {
+                setIsYearFilterOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isYearFilterOpen]);
 
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Artikel - STMKG Karate Club</title>
+                <meta name="description" content="Temukan berbagai artikel menarik seputar dunia karate, teknik, sejarah, dan tips latihan dari STMKG Karate Club." />
+                <meta name="keywords" content="artikel karate STMKG, berita karate, teknik karate, sejarah karate, tips latihan karate, stmkg karate club" />
+                <meta property="og:title" content="Daftar Artikel Karate STMKG" />
+                <meta property="og:description" content="Baca artikel terbaru tentang karate, teknik, dan berita dari STMKG Karate Club." /> 
+                <meta property="og:url" content="https://karate.stmkg.ac.id/artikel" />
+                <meta property="og:type" content="website" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="author" content="STMKG Karate Club" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/artikel" />
+            </Helmet>
             {/* --- PERUBAHAN: BACKGROUND DENGAN ANIMASI --- */}
             <motion.div
                 className="fixed inset-0 z-0"
@@ -273,42 +344,96 @@ export default function Artikel() {
 
                     {/* Konten Utama (Search Bar + Articles) */}
                     <div className="max-w-5xl mx-auto">
-                        {/* Search Bar */}
+                        {/* --- PERUBAHAN UTAMA: Search Bar and Year Filter --- */}
                         <motion.div
                             variants={itemVariants}
                             initial="hidden"
                             animate="visible"
-                            className="mb-8 p-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg flex items-center justify-between mx-auto max-w-lg"
+                            className="relative z-30 mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg flex items-center justify-between mx-auto max-w-[18rem] sm:max-w-md md:max-w-lg lg:max-w-xl"
                         >
-                            <Search size={20} className="text-gray-300 ml-2 mr-3" />
+                            {/* Grup untuk Search Icon, Input */}
+                            <div className="flex items-center flex-grow pl-2">
+                                <Search size={20} className="text-gray-400 mr-2 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    placeholder="Cari artikel..."
+                                    className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm sm:text-base"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
 
-                            <input
-                                type="text"
-                                placeholder="Cari artikel..."
-                                className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm sm:text-base"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                            {/* Grup untuk Ikon Filter dan Reset */}
+                            <div className="flex items-center space-x-1 pr-1">
+                                {/* Container untuk Filter dan Dropdown-nya */}
+                                <div className="relative" ref={filterContainerRef}>
+                                    <button
+                                        onClick={toggleYearFilter}
+                                        className={`p-2 rounded-full transition-colors duration-200 ${selectedYear ? 'bg-white/20 text-[#FF9F1C]' : 'text-gray-300 hover:bg-white/20'}`}
+                                        title="Filter berdasarkan tahun"
+                                    >
+                                        <Filter size={18} />
+                                    </button>
+                                    
+                                    {/* Dropdown Kustom */}
+                                    <AnimatePresence>
+                                        {isYearFilterOpen && (
+                                            <motion.div
+                                                variants={dropdownVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                className="absolute top-full right-0 mt-2 w-48 bg-black backdrop-blur-md border border-white/20 rounded-lg shadow-2xl z-50 overflow-hidden"
+                                            >
+                                                <div className="p-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedYear('');
+                                                            setIsYearFilterOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${!selectedYear ? 'text-[#FF9F1C] font-semibold' : 'text-gray-200 hover:bg-white/10'}`}
+                                                    >
+                                                        Semua Tahun
+                                                    </button>
+                                                    <div className="border-t border-white/10 my-1"></div>
+                                                    {availableYears.filter(y => y !== '').map(year => (
+                                                        <button
+                                                            key={year}
+                                                            onClick={() => {
+                                                                setSelectedYear(year.toString());
+                                                                setIsYearFilterOpen(false);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${selectedYear === year.toString() ? 'text-[#FF9F1C] font-semibold' : 'text-gray-200 hover:bg-white/10'}`}
+                                                        >
+                                                            {year}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
-                            <div className="flex items-center mr-2">
-                                {searchTerm && (
-                                    <RefreshCcw
-                                        size={20}
-                                        className="text-gray-300 cursor-pointer hover:text-white transition-colors"
+                                {/* Reset Icon */}
+                                {(searchTerm || selectedYear) && (
+                                    <button
                                         onClick={handleResetSearch}
-                                        title="Reset pencarian"
-                                    />
+                                        className="p-2 rounded-full text-gray-300 hover:bg-white/20 transition-colors duration-200"
+                                        title="Reset Filter"
+                                    >
+                                        <RefreshCcw size={18} />
+                                    </button>
                                 )}
                             </div>
                         </motion.div>
-                        {/* End Search Bar */}
+                        {/* --- END PERUBAHAN --- */}
 
                         {loading ? (
                             <p className="text-center text-base sm:text-lg">Memuat artikel...</p>
                         ) : error ? (
                             <p className="text-center text-red-400 text-base sm:text-lg">{error}</p>
                         ) : filteredArtikel.length === 0 ? (
-                            <p className="text-center text-gray-400 text-base sm:text-lg">Tidak ada artikel yang ditemukan untuk "{searchTerm}".</p>
+                            <p className="text-center text-gray-400 text-base sm:text-lg">Tidak ada artikel yang ditemukan untuk "{searchTerm}" {selectedYear ? `di tahun ${selectedYear}` : ''}.</p>
                         ) : (
                             <motion.div
                                 initial="hidden"
@@ -402,7 +527,7 @@ export default function Artikel() {
                                 )}
 
                                 {/* Paginasi */}
-                                {(articlesForPagination.length > (articlesPerPage - 1)) && searchTerm === '' && (
+                                {(articlesForPagination.length > (articlesPerPage - 1)) && searchTerm === '' && selectedYear === '' && (
                                     <motion.div
                                         variants={itemVariants}
                                         className="flex justify-center items-center gap-2 py-4 sm:py-6 border-t border-white/10 px-4"

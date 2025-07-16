@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // <-- [PERUBAHAN] Kembali menggunakan Link
 import { supabase } from '../supabaseClient';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Impor Konteks, Komponen, dan Aset
@@ -107,6 +108,10 @@ export default function TulisPengumumanBaru() {
     
     return (
         <div className="relative min-h-screen text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
+            <Helmet>
+                <title>Tulis Pengumuman - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>            
             <div className="absolute inset-0 bg-black opacity-70"></div>
             
             <AnimatePresence>

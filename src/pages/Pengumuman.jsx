@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // Import aset dan ikon
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg2.jpg'; 
-import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, Settings, Megaphone } from 'lucide-react';
+import { User, Calendar, Search, RefreshCcw, ChevronLeft, ChevronRight, Edit, Settings, Megaphone, Filter } from 'lucide-react'; // Tambahkan icon Filter
 
 // Helper function untuk membersihkan HTML dan memotong teks
 const stripHtmlAndTruncate = (html, length) => {
@@ -25,10 +26,16 @@ export default function Pengumuman() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredPengumuman, setFilteredPengumuman] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 5; // Jumlah pengumuman per halaman
     
     const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
+
+    // State baru untuk filter tahun
+    const [selectedYear, setSelectedYear] = useState('');
+    const [availableYears, setAvailableYears] = useState([]);
+    const [isYearFilterOpen, setIsYearFilterOpen] = useState(false); 
+    const filterContainerRef = useRef(null);
 
     // Logika untuk mendapatkan role pengguna, sama seperti di halaman Artikel
     useEffect(() => {
@@ -78,6 +85,10 @@ export default function Pengumuman() {
             } else {
                 setPengumumanList(data);
                 setFilteredPengumuman(data);
+
+                // Ekstrak tahun unik dari pengumuman untuk dropdown filter
+                const years = [...new Set(data.map(item => new Date(item.published_at).getFullYear()))].sort((a, b) => b - a);
+                setAvailableYears(['', ...years]); // Tambahkan opsi 'Semua Tahun'
             }
             setLoading(false);
         };
@@ -85,16 +96,34 @@ export default function Pengumuman() {
         fetchPengumuman();
     }, []);
 
-    // Efek untuk melakukan filter pencarian
+    // Efek untuk melakukan filter pencarian dan tahun
     useEffect(() => {
+        let results = pengumumanList;
+
+        // Filter berdasarkan tahun terlebih dahulu
+        if (selectedYear) {
+            results = results.filter(item =>
+                new Date(item.published_at).getFullYear().toString() === selectedYear
+            );
+        }
+
+        // Kemudian filter berdasarkan searchTerm
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
-        const results = pengumumanList.filter(item =>
+        results = results.filter(item =>
             item.judul.toLowerCase().includes(lowerCaseSearchTerm) ||
             (item.profiles?.nama_lengkap && item.profiles.nama_lengkap.toLowerCase().includes(lowerCaseSearchTerm))
         );
         setFilteredPengumuman(results);
+        setCurrentPage(1); // Reset halaman ke 1 setiap kali filter berubah
+    }, [searchTerm, selectedYear, pengumumanList]); // Tambahkan selectedYear sebagai dependency
+
+    // Fungsi untuk mereset pencarian dan filter tahun
+    const handleResetSearch = () => {
+        setSearchTerm('');
+        setSelectedYear(''); // Reset tahun juga
+        setFilteredPengumuman(pengumumanList);
         setCurrentPage(1);
-    }, [searchTerm, pengumumanList]);
+    };
 
     // Logika Paginasi
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -112,8 +141,42 @@ export default function Pengumuman() {
         visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 100 } }
     };
 
+    const dropdownVariants = {
+        hidden: { opacity: 0, scale: 0.95, y: -10 },
+        visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+        exit: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.15, ease: "easeIn" } }
+    };
+
+    const toggleYearFilter = () => { 
+        setIsYearFilterOpen(prev => !prev);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isYearFilterOpen && filterContainerRef.current && !filterContainerRef.current.contains(event.target)) {
+                setIsYearFilterOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isYearFilterOpen]);
+
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Pengumuman - STMKG Karate Club</title>
+                <meta name="description" content="Informasi dan berita terbaru seputar kegiatan STMKG Karate Club. Jangan lewatkan pengumuman penting dari kami." />
+                <meta name="keywords" content="pengumuman karate, berita karate, stmkg karate club, info karate, jadwal latihan" />
+                <meta property="og:title" content="Papan Pengumuman | STMKG Karate Club" />
+                <meta property="og:description" content="Informasi dan berita terbaru dari STMKG Karate Club." />
+                <meta property="og:url" content="https://karate.stmkg.ac.id/pengumuman" />
+                <meta property="og:type" content="website" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="author" content="STMKG Karate Club" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/pengumuman" />
+            </Helmet>
             {/* Latar Belakang dengan Animasi */}
             <motion.div
                 className="fixed inset-0 z-0"
@@ -175,22 +238,80 @@ export default function Pengumuman() {
                             Informasi dan berita terbaru seputar kegiatan karate.
                         </motion.p>
 
-                        {/* Search Bar */}
+                        {/* Search Bar and Year Filter */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
-                            className="mb-8 p-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg flex items-center justify-between mx-auto max-w-lg"
+                            className="relative z-30 mb-8 p-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full shadow-lg flex items-center justify-between mx-auto max-w-[18rem] sm:max-w-md md:max-w-lg lg:max-w-xl"
                         >
-                            <Search size={20} className="text-gray-300 ml-2 mr-3" />
-                            <input
-                                type="text"
-                                placeholder="Cari pengumuman..."
-                                className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm sm:text-base"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            {searchTerm && (
-                                <RefreshCcw size={20} className="text-gray-300 cursor-pointer hover:text-white transition-colors" onClick={() => setSearchTerm('')} title="Reset pencarian"/>
-                            )}
+                            <div className="flex items-center flex-grow pl-2">
+                                <Search size={20} className="text-gray-400 mr-2 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    placeholder="Cari pengumuman..."
+                                    className="flex-grow bg-transparent outline-none text-white placeholder-gray-400 text-sm sm:text-base"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex items-center space-x-1 pr-1">
+                                <div className="relative" ref={filterContainerRef}>
+                                    <button
+                                        onClick={toggleYearFilter}
+                                        className={`p-2 rounded-full transition-colors duration-200 ${selectedYear ? 'bg-white/20 text-[#FF9F1C]' : 'text-gray-300 hover:bg-white/20'}`}
+                                        title="Filter berdasarkan tahun"
+                                    >
+                                        <Filter size={18} />
+                                    </button>
+                                    
+                                    <AnimatePresence>
+                                        {isYearFilterOpen && (
+                                            <motion.div
+                                                variants={dropdownVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                className="absolute top-full right-0 mt-2 w-48 bg-black/90 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl z-50 overflow-hidden"
+                                            >
+                                                <div className="p-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedYear('');
+                                                            setIsYearFilterOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${!selectedYear ? 'text-[#FF9F1C] font-semibold' : 'text-gray-200 hover:bg-white/10'}`}
+                                                    >
+                                                        Semua Tahun
+                                                    </button>
+                                                    <div className="border-t border-white/10 my-1"></div>
+                                                    {availableYears.filter(y => y !== '').map(year => (
+                                                        <button
+                                                            key={year}
+                                                            onClick={() => {
+                                                                setSelectedYear(year.toString());
+                                                                setIsYearFilterOpen(false);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${selectedYear === year.toString() ? 'text-[#FF9F1C] font-semibold' : 'text-gray-200 hover:bg-white/10'}`}
+                                                        >
+                                                            {year}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {(searchTerm || selectedYear) && (
+                                    <button
+                                        onClick={handleResetSearch}
+                                        className="p-2 rounded-full text-gray-300 hover:bg-white/20 transition-colors duration-200"
+                                        title="Reset Filter"
+                                    >
+                                        <RefreshCcw size={18} />
+                                    </button>
+                                )}
+                            </div>
                         </motion.div>
 
                         {/* Konten Utama (List Pengumuman) */}

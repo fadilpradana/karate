@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { Edit, Trash2, Send, Settings, X, BookOpen, ChevronLeft, Save, Search, RefreshCcw, Image as ImageIcon, Replace, Loader2, ArrowLeft } from 'lucide-react';
 
 // Impor background baru
@@ -751,6 +752,10 @@ export default function ModerasiArtikel() {
     
     return (
         <div className="relative min-h-screen text-white">
+            <Helmet>
+                <title>Moderasi Artikel - STMKG Karate Club</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bg1})` }} />
             <div className="absolute inset-0 bg-black/70 z-0" />
             
