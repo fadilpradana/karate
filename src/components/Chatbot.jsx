@@ -33,7 +33,7 @@ const CheckIcon = () => (
 );
 
 
-// [PERUBAHAN] Ikon Regenerate yang lebih bersih
+// Ikon Regenerate yang lebih bersih
 const RegenerateIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 4 23 10 17 10"></polyline>
@@ -285,13 +285,40 @@ const Chatbot = () => {
     }
   };
 
+  // [PERUBAHAN] Menggunakan document.execCommand untuk kompatibilitas seluler
   const handleCopy = (textToCopy) => {
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    }, (err) => {
-        console.error('Gagal menyalin teks: ', err);
-    });
+    const textArea = document.createElement('textarea');
+    textArea.value = textToCopy;
+
+    // Membuat elemen tidak terlihat
+    textArea.style.position = 'fixed';
+    textArea.style.top = 0;
+    textArea.style.left = 0;
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = 0;
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } else {
+            console.error('Gagal menyalin: Perintah tidak berhasil');
+        }
+    } catch (err) {
+        console.error('Gagal menyalin', err);
+    }
+
+    document.body.removeChild(textArea);
   };
 
   const handleRegenerateResponse = async () => {
@@ -395,10 +422,10 @@ const Chatbot = () => {
                             </div>
                             {isLastMessage && isBot && !isLoading && (
                                 <div className="message-actions">
-                                    <button onClick={() => handleCopy(msg.text)} className="action-btn">
+                                    <button onClick={() => handleCopy(msg.text)} className="action-btn" title="Salin">
                                         {isCopied ? <CheckIcon /> : <CopyIcon />}
                                     </button>
-                                    <button onClick={handleRegenerateResponse} className="action-btn">
+                                    <button onClick={handleRegenerateResponse} className="action-btn" title="Ulangi">
                                         <RegenerateIcon />
                                     </button>
                                 </div>
