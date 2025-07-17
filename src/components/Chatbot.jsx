@@ -1,4 +1,3 @@
-// src/components/Chatbot.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './Chatbot.css';
@@ -18,6 +17,73 @@ const RefreshIcon = () => (
     </svg>
 );
 
+// Komponen untuk ikon Salin (SVG)
+const CopyIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+);
+
+// Komponen untuk ikon Centang setelah Salin (SVG)
+const CheckIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#34AF52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+);
+
+
+// [PERUBAHAN] Ikon Regenerate yang lebih bersih
+const RegenerateIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+);
+
+
+// Komponen untuk layar awal
+const InitialScreen = ({ onSuggestionClick }) => {
+    const suggestions = [
+        { 
+            text: 'Tanya Jadwal', 
+            emoji: '📅', 
+            query: 'Kapan jadwal latihan reguler dan latihan khusus STMKG Karate Club?' 
+        },
+        { 
+            text: 'Tanya Filosofi', 
+            emoji: '🥋',
+            query: 'Apa filosofi logo dan filosofi brevet STMKG Karate Club?' 
+        },      
+        { 
+            text: 'Struktur Pengurus', 
+            emoji: '👥',
+            query: 'Bagaimana struktur kepengurusan STMKG Karate Club?' 
+        },
+    ];
+
+    return (
+        <div className="initial-screen-container">
+            <div className="welcome-text">
+                Oss! Selamat datang di Dojo kami. Ada yang bisa saya bantu?
+            </div>
+            <div className="suggestion-buttons">
+                {suggestions.map((suggestion, index) => (
+                    <button 
+                        key={suggestion.text}
+                        onClick={() => onSuggestionClick(suggestion.query)} 
+                        className="suggestion-button suggestion-button-animated"
+                        style={{ '--animation-delay-index': index }}
+                    >
+                        <span role="img" aria-label="icon">{suggestion.emoji}</span>
+                        {suggestion.text}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +94,7 @@ const Chatbot = () => {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ y: window.innerHeight / 2 });
@@ -36,8 +103,6 @@ const Chatbot = () => {
   const dragStartPos = useRef(0);
   const buttonRef = useRef(null);
   const chatBodyRef = useRef(null);
-  // Ref chatWindowRef tidak lagi diperlukan untuk deteksi klik di luar,
-  // tetapi tetap dipertahankan jika ada kebutuhan lain di masa depan.
   const chatWindowRef = useRef(null); 
 
   const toggleChatbot = () => {
@@ -63,7 +128,7 @@ const Chatbot = () => {
     }
   };
 
-  const closeChat = useCallback(() => { // Menggunakan useCallback untuk stabilitas
+  const closeChat = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setIsOpen(false);
@@ -78,41 +143,19 @@ const Chatbot = () => {
     }
   }, [messages]);
 
-  // Efek untuk mengontrol scrolling halaman (khusus mobile)
   useEffect(() => {
-    const isMobile = window.innerWidth <= 768; // Cek apakah perangkat mobile
+    const isMobile = window.innerWidth <= 768;
 
-    if (isOpen && isMobile) { // Hanya mencegah scroll jika chatbot terbuka DAN di perangkat mobile
+    if (isOpen && isMobile) {
       document.body.style.overflow = 'hidden'; 
     } else {
-      document.body.style.overflow = 'unset'; // Mengembalikan scrolling normal
+      document.body.style.overflow = 'unset';
     }
 
-    // Cleanup function: pastikan overflow dikembalikan saat komponen di-unmount
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]); // Bergantung pada state isOpen
-
-  // MENGHAPUS: Efek untuk menutup chatbot saat klik di luar (khusus mobile)
-  // useEffect(() => {
-  //   const handleOutsideClickToCloseChat = (event) => {
-  //     const isMobile = window.innerWidth <= 768;
-  //     if (isOpen && isMobile && chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
-  //       closeChat();
-  //     }
-  //   };
-
-  //   if (isOpen) {
-  //     document.addEventListener('mousedown', handleOutsideClickToCloseChat);
-  //     document.addEventListener('touchstart', handleOutsideClickToCloseChat);
-  //   }
-
-  //   return () => {
-  //     document.removeEventListener('mousedown', handleOutsideClickToCloseChat);
-  //     document.removeEventListener('touchstart', handleOutsideClickToCloseChat);
-  //   };
-  // }, [isOpen, closeChat]);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -193,19 +236,21 @@ const Chatbot = () => {
     };
   }, [handleDragMove, handleDragEnd]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageText) => {
+    if (!messageText.trim() || isLoading) return;
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    const userMessage = { sender: 'user', text: messageText };
+    setMessages(prev => prev.length === 1 && prev[0].text === initialMessages[0].text ? [userMessage] : [...prev, userMessage]);
+    
     setInput('');
     setIsLoading(true);
     
-    const chatHistoryForAPI = messages.map(msg => ({
-        role: msg.sender === 'bot' ? 'assistant' : 'user',
-        content: msg.text,
-    }));
+    const chatHistoryForAPI = messages
+        .filter(msg => msg.text !== initialMessages[0].text)
+        .map(msg => ({
+            role: msg.sender === 'bot' ? 'assistant' : 'user',
+            content: msg.text,
+        }));
     chatHistoryForAPI.push({ role: 'user', content: userMessage.text });
 
     try {
@@ -232,12 +277,74 @@ const Chatbot = () => {
       setMessages(prevMessages => [...prevMessages, botMessage]);
 
     } catch (error) {
-      console.error("Error saat handleSend:", error);
+      console.error("Error saat sendMessage:", error);
       const errorMessage = { sender: 'bot', text: 'Oss! Maaf, sepertinya Sensei AI sedang beristirahat sejenak. 🙏 Silakan coba bertanya lagi dalam beberapa saat ya.' };
       setMessages(prevMessages => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCopy = (textToCopy) => {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    }, (err) => {
+        console.error('Gagal menyalin teks: ', err);
+    });
+  };
+
+  const handleRegenerateResponse = async () => {
+    if (isLoading) return;
+
+    const historyWithoutLastBot = messages.slice(0, -1);
+    const lastUserMessage = [...historyWithoutLastBot].reverse().find(msg => msg.sender === 'user');
+
+    if (!lastUserMessage) return;
+
+    setMessages(historyWithoutLastBot);
+    setIsLoading(true);
+
+    const chatHistoryForAPI = historyWithoutLastBot
+        .filter(msg => msg.text !== initialMessages[0].text)
+        .map(msg => ({
+            role: msg.sender === 'bot' ? 'assistant' : 'user',
+            content: msg.text,
+        }));
+
+    try {
+        const supabaseFunctionUrl = 'https://unkauvoourtaoxdpdlst.supabase.co/functions/v1/chat-proxy';
+        const response = await fetch(supabaseFunctionUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: chatHistoryForAPI }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || 'Gagal mendapatkan respon dari AI.');
+        }
+        
+        const data = await response.json();
+        const botMessage = { sender: 'bot', text: data.choices[0].message.content };
+        setMessages(prevMessages => [...prevMessages, botMessage]);
+
+    } catch (error) {
+        console.error("Error saat handleRegenerateResponse:", error);
+        const errorMessage = { sender: 'bot', text: 'Oss! Maaf, sepertinya Sensei AI sedang beristirahat sejenak. 🙏 Silakan coba bertanya lagi dalam beberapa saat ya.' };
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    sendMessage(input);
+  };
+
+  const handleSuggestionClick = (suggestionQuery) => {
+    setInput(suggestionQuery);
   };
 
   const handleRefresh = () => {
@@ -268,21 +375,41 @@ const Chatbot = () => {
             ref={chatBodyRef}
             style={{ backgroundImage: `url(${bgImage})` }}
           >
-            {messages.map((msg, index) => (
-              <div key={index} className={`chat-message ${msg.sender}`}>
-                <ReactMarkdown
-                  components={{
-                    a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                  }}
-                >
-                  {msg.text}
-                </ReactMarkdown>
-              </div>
-            ))}
-            {/* Indikator "mengetik..." saat isLoading true */}
+            {messages.length === 1 && messages[0].text === initialMessages[0].text ? (
+                <InitialScreen onSuggestionClick={handleSuggestionClick} />
+            ) : (
+                messages.map((msg, index) => {
+                    const isLastMessage = index === messages.length - 1;
+                    const isBot = msg.sender === 'bot';
+
+                    return (
+                        <div key={index} className={`chat-message-container ${msg.sender}`}>
+                            <div className={`chat-message ${msg.sender}`}>
+                                <ReactMarkdown
+                                    components={{
+                                        a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                                    }}
+                                >
+                                    {msg.text}
+                                </ReactMarkdown>
+                            </div>
+                            {isLastMessage && isBot && !isLoading && (
+                                <div className="message-actions">
+                                    <button onClick={() => handleCopy(msg.text)} className="action-btn">
+                                        {isCopied ? <CheckIcon /> : <CopyIcon />}
+                                    </button>
+                                    <button onClick={handleRegenerateResponse} className="action-btn">
+                                        <RegenerateIcon />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })
+            )}
             {isLoading && (
                <div className="chat-message bot typing-indicator">
-                   <p>Mengetik<span>.</span><span>.</span><span>.</span></p>
+                 <p>Mengetik<span>.</span><span>.</span><span>.</span></p>
                </div>
             )}
           </div>
