@@ -285,12 +285,10 @@ const Chatbot = () => {
     }
   };
 
-  // [PERUBAHAN] Menggunakan document.execCommand untuk kompatibilitas seluler
   const handleCopy = (textToCopy) => {
     const textArea = document.createElement('textarea');
     textArea.value = textToCopy;
 
-    // Membuat elemen tidak terlihat
     textArea.style.position = 'fixed';
     textArea.style.top = 0;
     textArea.style.left = 0;
@@ -370,8 +368,9 @@ const Chatbot = () => {
     sendMessage(input);
   };
 
+  // [PERUBAHAN] Fungsi ini sekarang langsung mengirim pesan
   const handleSuggestionClick = (suggestionQuery) => {
-    setInput(suggestionQuery);
+    sendMessage(suggestionQuery);
   };
 
   const handleRefresh = () => {
