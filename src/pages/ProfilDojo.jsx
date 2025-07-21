@@ -496,7 +496,7 @@ export default function ProfilDojo() {
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                             <form onSubmit={handleAddMisi}>
+                                                            <form onSubmit={handleAddMisi}>
                                                                 <input type="text" value={newMissionInput} onChange={(e) => setNewMissionInput(e.target.value)} placeholder="Tambah misi baru..." className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
                                                                 <button type="submit" className={`mt-2 w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all`}>
                                                                     <Plus size={16} className="inline mr-2" /> Tambah Misi
@@ -659,10 +659,11 @@ export default function ProfilDojo() {
                                                                     <img 
                                                                         src={testimonial.image_url || 'https://placehold.co/100x100/333/FFF?text=User'} 
                                                                         alt={testimonial.name} 
-                                                                        className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30 flex-shrink-0" 
+                                                                        className="w-28 h-28 rounded-full object-cover mb-4 border-2 border-white/30 flex-shrink-0" 
                                                                         onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
                                                                     />
-                                                                    <p className={`text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-words flex-grow ${!isCenter ? 'line-clamp-5' : ''}`}>&ldquo;{testimonial.quote}&rdquo;</p>
+                                                                    {/* --- BARIS YANG DIPERBAIKI --- */}
+                                                                    <p className={`text-sm font-[Montserrat] font-light italic text-white/80 mb-4 break-words ${!isCenter ? 'line-clamp-5' : 'flex-grow'}`}>&ldquo;{testimonial.quote}&rdquo;</p>
                                                                     <div className="mt-auto pt-2">
                                                                         <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm break-words">- {testimonial.name}</p>
                                                                         {testimonial.kelas && testimonial.angkatan && (
