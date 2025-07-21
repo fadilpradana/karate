@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { LoaderCircle, AlertTriangle, CheckCircle, X, Edit, Trash2, Plus, ChevronDown, Save, ShieldCheck, ArrowLeft, Settings, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import { Helmet } from 'react-helmet-async';
 
 // --- Import Supabase Client (sesuaikan dengan proyek Anda) ---
 // Pastikan path ini benar sesuai dengan struktur proyek Anda
-import { supabase } from '../supabaseClient.js'; 
+import { supabase } from '../supabaseClient.js';
 
 // --- Import Aset ---
 import Footer from '../components/Footer'; // Pastikan komponen Footer ada
@@ -152,6 +152,8 @@ export default function ProfilDojo() {
 
     // State untuk Testimonial Carousel
     const [activeIndex, setActiveIndex] = useState(0);
+    const [carouselHeight, setCarouselHeight] = useState(450); // State untuk tinggi carousel dinamis
+    const cardRefs = useRef([]); // Refs untuk kartu testimoni
 
     // --- Hooks untuk Animasi Scroll ---
     const scrollContainerRef = useRef(null);
@@ -263,7 +265,7 @@ export default function ProfilDojo() {
         };
     }, [fetchAndSetData, checkUserRole]);
 
-    // *** MODIFIED ***: useEffect for Testimonial Carousel Timer with reset on interaction
+    // Timer untuk auto-slide carousel
     useEffect(() => {
         if (testimonials.length > 1) {
             const timer = setInterval(() => {
@@ -272,7 +274,29 @@ export default function ProfilDojo() {
 
             return () => clearInterval(timer);
         }
-    }, [testimonials.length, activeIndex]); // Timer now resets when activeIndex changes
+    }, [testimonials.length, activeIndex]);
+
+    // Mengatur ulang array refs ketika data testimoni berubah
+    useEffect(() => {
+        cardRefs.current = cardRefs.current.slice(0, testimonials.length);
+    }, [testimonials]);
+
+    // Mengukur tinggi kartu aktif dan mengatur tinggi container
+    useEffect(() => {
+        const activeCard = cardRefs.current[activeIndex];
+        if (activeCard) {
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const newHeight = entry.contentRect.height;
+                    // Menambah sedikit margin dan memastikan ada tinggi minimal
+                    setCarouselHeight(newHeight > 0 ? newHeight + 20 : 450);
+                }
+            });
+            observer.observe(activeCard);
+            return () => observer.disconnect();
+        }
+    }, [activeIndex, testimonials]);
+
 
     // --- Carousel Navigation Handlers ---
     const nextTestimonial = () => {
@@ -297,7 +321,7 @@ export default function ProfilDojo() {
     const handleUpdateVisi = async () => {
         if (!activeVisi || visiInput === activeVisi.teks_visi) return;
         const { error } = await supabase.from('visi').update({ teks_visi: visiInput }).eq('id', activeVisi.id);
-        if (error) { showToast(`Gagal: ${error.message}`, "error"); } 
+        if (error) { showToast(`Gagal: ${error.message}`, "error"); }
         else {
             showToast("Visi berhasil diperbarui.");
             await fetchAndSetData();
@@ -331,7 +355,7 @@ export default function ProfilDojo() {
     const handleDeleteMisi = (misi) => {
         openModal(`Yakin ingin menghapus misi: "${misi.teks_misi}"?`, async () => {
             const { error } = await supabase.from('misi').delete().eq('id', misi.id);
-            if (error) { showToast(`Gagal: ${error.message}`, "error"); } 
+            if (error) { showToast(`Gagal: ${error.message}`, "error"); }
             else {
                 showToast("Misi berhasil dihapus.");
                 await fetchAndSetData();
@@ -472,7 +496,7 @@ export default function ProfilDojo() {
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                             <form onSubmit={handleAddMisi}>
+                                                            <form onSubmit={handleAddMisi}>
                                                                 <input type="text" value={newMissionInput} onChange={(e) => setNewMissionInput(e.target.value)} placeholder="Tambah misi baru..." className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
                                                                 <button type="submit" className={`mt-2 w-full py-2 px-4 ${glassEffect} text-accent rounded-lg hover:bg-accent/20 transition-all`}>
                                                                     <Plus size={16} className="inline mr-2" /> Tambah Misi
@@ -567,7 +591,7 @@ export default function ProfilDojo() {
                                     </div>
                                 </motion.section>
                                 
-                                {/* --- START: UPDATED TESTIMONIAL SECTION --- */}
+                                {/* --- START: REVISED TESTIMONIAL SECTION --- */}
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
                                     <div className="flex justify-center items-center mb-12 gap-4">
                                         <h2 className="text-3xl md:text-5xl font-league uppercase text-center text-accent">Gema Tapak Ksatria</h2>
@@ -579,9 +603,11 @@ export default function ProfilDojo() {
                                     </div>
 
                                     {testimonials.length > 0 && (
-                                        <div className="relative">
+                                        <div className="relative overflow-hidden">
                                             <motion.div 
-                                                className="relative w-full h-[420px] md:h-[380px] flex items-center justify-center overflow-hidden"
+                                                className="relative w-full flex items-center justify-center"
+                                                animate={{ height: carouselHeight }}
+                                                transition={{ type: 'spring', stiffness: 170, damping: 26 }}
                                                 drag="x"
                                                 dragConstraints={{ left: 0, right: 0 }}
                                                 onDragEnd={handleDragEnd}
@@ -597,7 +623,7 @@ export default function ProfilDojo() {
                                                     const isCenter = offset === 0;
                                                     
                                                     const animateProps = {
-                                                        x: `${offset * 80}%`,
+                                                        x: `${offset * 100}%`,
                                                         scale: isCenter ? 1 : 0.8,
                                                         opacity: isVisible ? 1 : 0,
                                                         zIndex: total - Math.abs(offset),
@@ -614,30 +640,36 @@ export default function ProfilDojo() {
                                                     return (
                                                         <motion.div
                                                             key={testimonial.id}
-                                                            className="absolute w-11/12 md:w-1/3 h-full p-2"
+                                                            className="absolute w-full md:w-1/3 h-auto p-2"
                                                             initial={false}
                                                             animate={animateProps}
                                                             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                                                         >
-                                                            <div className="relative w-full h-full">
+                                                            <div ref={el => cardRefs.current[index] = el} className="relative w-full h-auto">
                                                                 <motion.div 
                                                                     className={`absolute inset-0 ${glassEffect} rounded-2xl`}
                                                                     animate={backgroundAnimateProps}
                                                                     transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                                                                 />
                                                                 <motion.div 
-                                                                    className="relative flex flex-col items-center p-6 text-center h-full w-full"
+                                                                    className={`relative flex flex-col items-center p-6 text-center w-full min-h-[380px]`}
                                                                     animate={contentAnimateProps}
                                                                     transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                                                                 >
                                                                     <img 
                                                                         src={testimonial.image_url || 'https://placehold.co/100x100/333/FFF?text=User'} 
                                                                         alt={testimonial.name} 
-                                                                        className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30" 
+                                                                        className="w-28 h-28 rounded-full object-cover mb-4 border-2 border-white/30 flex-shrink-0" 
                                                                         onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/333/FFF?text=User'; }} 
                                                                     />
-                                                                    <p className="text-base font-[Montserrat] font-light italic text-white/80 mb-4 break-all flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
-                                                                    <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm break-words">- {testimonial.name}</p>
+                                                                    {/* --- BARIS YANG DIPERBAIKI --- */}
+                                                                    <p className={`text-sm font-[Montserrat] font-light italic text-white/80 mb-4 break-words ${!isCenter ? 'line-clamp-5' : 'flex-grow'}`}>&ldquo;{testimonial.quote}&rdquo;</p>
+                                                                    <div className="mt-auto pt-2">
+                                                                        <p className="font-[Montserrat] battery-style-gradient font-semibold text-sm break-words">- {testimonial.name}</p>
+                                                                        {testimonial.kelas && testimonial.angkatan && (
+                                                                            <p className="text-xs text-white/60 font-[Montserrat] mt-1">{testimonial.kelas} &bull; Angkatan {testimonial.angkatan}</p>
+                                                                        )}
+                                                                    </div>
                                                                 </motion.div>
                                                             </div>
                                                         </motion.div>
@@ -645,12 +677,12 @@ export default function ProfilDojo() {
                                                 })}
                                             </motion.div>
 
-                                            {/* Navigation Buttons */}
-                                            <button onClick={prevTestimonial} className={`absolute left-0 md:-left-8 top-1/2 -translate-y-1/2 p-2 rounded-full z-30 ${glassEffect}`}>
-                                                <ChevronLeft className="h-6 w-6 text-white/70 hover:text-white transition-colors" />
+                                            {/* Tombol Navigasi */}
+                                            <button onClick={prevTestimonial} className={`absolute left-[0px] md:-left-12 top-1/2 -translate-y-1/2 p-1 rounded-full z-30 ${glassEffect}`}>
+                                                <ChevronLeft className="h-4 w-4 text-white/70 hover:text-white transition-colors" />
                                             </button>
-                                            <button onClick={nextTestimonial} className={`absolute right-0 md:-right-8 top-1/2 -translate-y-1/2 p-2 rounded-full z-30 ${glassEffect}`}>
-                                                <ChevronRight className="h-6 w-6 text-white/70 hover:text-white transition-colors" />
+                                            <button onClick={nextTestimonial} className={`absolute right-[0px] md:-right-12 top-1/2 -translate-y-1/2 p-1 rounded-full z-30 ${glassEffect}`}>
+                                                <ChevronRight className="h-4 w-4 text-white/70 hover:text-white transition-colors" />
                                             </button>
                                         </div>
                                     )}
@@ -661,7 +693,7 @@ export default function ProfilDojo() {
                                         </div>
                                     )}
                                 </motion.section>
-                                {/* --- END: UPDATED TESTIMONIAL SECTION --- */}
+                                {/* --- END: REVISED TESTIMONIAL SECTION --- */}
                                 
                                 {/* --- START: UPDATED ORGANIZATION SECTION --- */}
                                 <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="py-12">
@@ -698,7 +730,7 @@ export default function ProfilDojo() {
 // (Tidak ada perubahan pada komponen ini, disertakan untuk kelengkapan)
 function TestimonialAdminModal({ onClose, showToast, testimonials, onDataChange }) {
     const [editingTestimonial, setEditingTestimonial] = useState(null); // null, 'new', or an object
-    const [formData, setFormData] = useState({ name: '', quote: '' });
+    const [formData, setFormData] = useState({ name: '', quote: '', kelas: '', angkatan: '' });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     
@@ -777,14 +809,14 @@ function TestimonialAdminModal({ onClose, showToast, testimonials, onDataChange 
 
     const startEditing = (testimonial) => {
         setEditingTestimonial(testimonial);
-        setFormData({ name: testimonial.name, quote: testimonial.quote });
+        setFormData({ name: testimonial.name, quote: testimonial.quote, kelas: testimonial.kelas || '', angkatan: testimonial.angkatan || '' });
         setImagePreview(testimonial.image_url);
         setImageFile(null);
     };
 
     const startNew = () => {
         setEditingTestimonial('new');
-        setFormData({ name: '', quote: '' });
+        setFormData({ name: '', quote: '', kelas: '', angkatan: '' });
         setImagePreview(null);
         setImageFile(null);
     };
@@ -808,6 +840,16 @@ function TestimonialAdminModal({ onClose, showToast, testimonials, onDataChange 
                             <div>
                                 <label className="block text-sm font-medium text-white/80 mb-1">Kutipan</label>
                                 <textarea value={formData.quote} onChange={e => setFormData({...formData, quote: e.target.value})} rows="4" className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} required></textarea>
+                            </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-white/80 mb-1">Kelas</label>
+                                    <input type="text" value={formData.kelas} onChange={e => setFormData({...formData, kelas: e.target.value})} className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-white/80 mb-1">Angkatan</label>
+                                    <input type="text" value={formData.angkatan} onChange={e => setFormData({...formData, angkatan: e.target.value})} className={`w-full p-2 text-sm ${glassEffect} bg-black/40 rounded-md font-[Montserrat]`} />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-white/80 mb-1">Foto</label>
