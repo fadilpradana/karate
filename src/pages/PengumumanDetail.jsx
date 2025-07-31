@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg';
+import favicon from '../assets/logo_bintangcompress.png';
 import { User, Calendar, ArrowLeft, MessageSquare, CornerDownRight, Send, Edit3, Trash2, X, AlertTriangle } from 'lucide-react';
 
 // Impor file CSS Tiptap yang sudah final
@@ -245,6 +246,7 @@ export default function PengumumanDetail() {
                 <meta property="og:description" content={metaDescription} />
                 <meta property="og:url" content={`https://karate.stmkg.ac.id/pengumuman/${pengumuman.id}`} />
                 <meta property="og:type" content="article" />
+                <link rel="icon" href={favicon} />
                 <meta name="author" content={pengumuman.profiles?.nama_lengkap || 'STMKG Karate Club'} />
                 <link rel="canonical" href={`https://karate.stmkg.ac.id/pengumuman/${pengumuman.id}`} />
             </Helmet>

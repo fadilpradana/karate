@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Import aset dan ikon
 import Footer from '../components/Footer';
@@ -176,6 +177,7 @@ export default function Pengumuman() {
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <meta name="author" content="STMKG Karate Club" />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/pengumuman" />
+                <link rel="icon" href={favicon} />
             </Helmet>
             {/* Latar Belakang dengan Animasi */}
             <motion.div

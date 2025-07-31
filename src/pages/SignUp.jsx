@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { compressAndConvertToWebP } from '../utils/imageCompressor'; // Make sure this path is correct
 
 import Footer from '../components/Footer';
+import favicon from '../assets/logo_bintangcompress.png';
 import { AnimatePresence } from 'framer-motion';
 import SuccessModal from '../components/SuccessModal';
 import ErrorModal from '../components/ErrorModal';
@@ -182,6 +183,7 @@ function SignUp() {
             <Helmet>
                 <title>Sign Up - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
+                <link rel="icon" href={favicon} />
             </Helmet>
             <AnimatePresence>
                 {successMessage && (

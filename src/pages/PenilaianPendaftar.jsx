@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import heroBg from '../assets/bg9.jpg';
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Gaya untuk efek glassmorphism
 const glassmorphismStyle = {
@@ -355,6 +356,7 @@ export default function PenilaianPendaftar() {
             <Helmet>
                 <title>Penilaian Pendaftaran - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
+                <link rel="icon" href={favicon} />
             </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             <div className="relative z-10 flex flex-col min-h-screen">

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { supabase } from '../supabaseClient'; 
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 function Login() {
     const [loading, setLoading] = useState(false);
@@ -82,6 +83,7 @@ function Login() {
         <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
             <Helmet>
                 <title>Login - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <AnimatePresence>

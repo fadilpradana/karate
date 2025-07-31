@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import bg9 from '../assets/bg9.jpg'; // Impor gambar latar belakang
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // --- KOMPONEN MODAL KUSTOM BARU ---
 const KonfirmasiModal = ({
@@ -366,6 +367,7 @@ export default function AdminPendaftaran() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Admin Pendaftaran - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div

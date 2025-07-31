@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useRef, useState, useEffect } from "react"; // Tambahkan useState dan useEffect jika belum ada
 import { useInView } from "framer-motion";
 import { Helmet } from 'react-helmet-async'; // Import Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Import brevetLogo untuk footer
 import Footer from '../components/Footer';
@@ -100,6 +101,7 @@ export default function Jadwal() {
     >
       <Helmet>
         <title>Jadwal - Karate STMKG</title>
+        <link rel="icon" href={favicon} />
         <meta name="description" content="Temukan jadwal lengkap latihan rutin dan program Bela Diri Taruna (BDT) di STMKG Karate Club. Informasi terkini seputar waktu dan lokasi latihan setiap pekan." />
         <meta name="keywords" content="jadwal karate STMKG, latihan karate, jadwal BDT, waktu latihan STMKG, karateka STMKG, dojo STMKG" />
         <meta property="og:title" content="Jadwal Latihan Karate STMKG" />

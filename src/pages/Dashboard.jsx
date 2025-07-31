@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Asset & Ikon
 import Footer from '../components/Footer';
@@ -641,6 +642,7 @@ function Dashboard() {
         <div className="relative min-h-screen">           
             <Helmet>
                 <title>Dashboard - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="fixed inset-0 z-0">

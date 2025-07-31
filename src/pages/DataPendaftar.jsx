@@ -7,6 +7,7 @@ import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, 
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Impor dari TanStack Table
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
@@ -1000,6 +1001,7 @@ export default function DataPendaftar() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Data Pendaftar - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>

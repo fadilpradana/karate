@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LoaderCircle, ShieldCheck, Users, UserPlus, Trash2, Save, ServerCrash, Edit, X, Check, PlusCircle, Power, ChevronLeft, Settings, CalendarCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
+import favicon from '../assets/logo_bintangcompress.png';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
 
 // Import gambar background
@@ -214,6 +215,7 @@ export default function ModerasiPengurus() {
             <div className="relative min-h-screen text-white">
                 <Helmet>
                     <title>Moderasi Pengurus - STMKG Karate Club</title>
+                    <link rel="icon" href={favicon} />
                     <meta name="robots" content="noindex, nofollow" />
                 </Helmet>
                 <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}>

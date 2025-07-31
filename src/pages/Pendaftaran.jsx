@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient'; // Pastikan path ini benar
 import { useAuth } from '../context/AuthContext'; // Pastikan path ini benar
 import { Helmet } from 'react-helmet-async';
+import favicon from '../assets/logo_bintangcompress.png';
 import { 
     LoaderCircle, 
     Lock, 
@@ -215,6 +216,7 @@ const PendaftaranContent = ({
         <div className="relative text-white h-full">
             <Helmet>
                 <title>Pendaftaran - UKM Karate STMKG</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet> 
             <video
