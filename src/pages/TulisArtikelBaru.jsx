@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
-
+import favicon from '../assets/logo_bintangcompress.png';
 import { Pencil, Image as ImageIcon, Send, FileText, Settings, ChevronLeft, UploadCloud, Replace, Trash2, X, Loader2, Save } from 'lucide-react';
 
 import Modal from '../components/Modal'; 
@@ -278,6 +278,7 @@ export default function TulisArtikelBaru() {
             <Helmet>
                 <title>Tulis Artikel - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
+                <link rel="icon" href={favicon} />
             </Helmet>
             <div className="absolute inset-0 bg-black opacity-70"></div>
 

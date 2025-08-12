@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient.js"; 
 import { Helmet } from 'react-helmet-async'; // Import Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 export default function Kontak() {
     const [sukses, setSukses] = useState(false);
@@ -116,6 +117,7 @@ export default function Kontak() {
         >
             <Helmet>
                 <title>Kontak - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="description" content="Hubungi STMKG Karate Club untuk informasi lebih lanjut. Temukan alamat dojo, email, dan kontak Humas kami. Kirim pesan langsung kepada kami." />
                 <meta name="keywords" content="kontak karate STMKG, alamat dojo STMKG, email STMKG Karate, nomor telepon humas karate, kirim pesan karate STMKG" />
                 <meta property="og:title" content="Kontak STMKG Karate Club" />

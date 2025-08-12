@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import Footer from '../components/Footer';
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Import gambar background
 import heroBg from '../assets/bg9.jpg';
@@ -356,6 +357,7 @@ export default function Pengurus() {
                 <meta property="og:description" content={`Struktur organisasi dan daftar pengurus STMKG Karate Club periode ${namaPeriode}.`} />
                 <meta property="og:url" content="https://karate.stmkg.ac.id/pengurus" />
                 <meta property="og:type" content="website" />
+                <link rel="icon" href={favicon} />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/pengurus" />
             </Helmet>
 

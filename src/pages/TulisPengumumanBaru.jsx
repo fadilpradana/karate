@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'; // <-- [PERUBAHAN] Kembali
 import { supabase } from '../supabaseClient';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
 import { motion, AnimatePresence } from 'framer-motion';
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Impor Konteks, Komponen, dan Aset
 import { useAuth } from '../context/AuthContext';
@@ -111,6 +112,7 @@ export default function TulisPengumumanBaru() {
             <Helmet>
                 <title>Tulis Pengumuman - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
+                <link rel="icon" href={favicon} />
             </Helmet>            
             <div className="absolute inset-0 bg-black opacity-70"></div>
             

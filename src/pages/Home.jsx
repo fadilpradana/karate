@@ -13,6 +13,7 @@ import heroVideo from "../assets/hero.mp4";
 import ctaBackground from "../assets/background1.jpg";
 import Footer from '../components/Footer';
 import totalMedalsBackground from "../assets/bg-total-medali.jpg";
+import favicon from '../assets/logo_bintangcompress.png';
 // ------------------
 
 const mainTitleWords = ["Karate", "Club"];
@@ -335,6 +336,7 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="author" content="STMKG Karate Club" />
         <link rel="canonical" href="https://karate.stmkg.ac.id" />
+        <link rel="icon" href={favicon} />
       </Helmet>
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import heroBg from '../assets/bg10.jpg';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // --- Komponen Modal Notifikasi (Reusable) ---
 const glassmorphismStyle = {
@@ -213,6 +214,7 @@ export default function PemilihanKomandan() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Pemilihan Komandan - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertTriangle, LoaderCircle, Phone, Lock, KeyRound, ArrowLeft } from 'lucide-react';
 import Footer from '../components/Footer';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 function LupaPassword() {
     const [step, setStep] = useState(1);
@@ -184,6 +185,7 @@ function LupaPassword() {
         <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
             <Helmet>
                 <title>Lupa Password - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <AnimatePresence>

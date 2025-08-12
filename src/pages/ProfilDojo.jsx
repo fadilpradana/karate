@@ -9,6 +9,7 @@ import { supabase } from '../supabaseClient.js';
 
 // --- Import Aset ---
 import Footer from '../components/Footer'; // Pastikan komponen Footer ada
+import favicon from '../assets/logo_bintangcompress.png';
 import heroBg from '../assets/bg12.jpg';
 import logoBintang from '../assets/logo_bintangcompress.png';
 import brevet from '../assets/brevet.png';
@@ -421,6 +422,7 @@ export default function ProfilDojo() {
                 <meta property="og:url" content="https://karate.stmkg.ac.id/profil" />
                 <meta property="og:type" content="website" />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/profil" />
+                <link rel="icon" href={favicon} />
             </Helmet>
             <motion.div
                 className="fixed inset-0 z-0 bg-cover bg-center"

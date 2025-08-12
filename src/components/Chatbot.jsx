@@ -98,7 +98,7 @@ const Chatbot = () => {
 
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ y: window.innerHeight / 2 });
-  const [panelSide, setPanelSide] = useState('right');
+  const [panelSide, setPanelSide] = useState('left');
   
   const dragStartPos = useRef(0);
   const buttonRef = useRef(null);

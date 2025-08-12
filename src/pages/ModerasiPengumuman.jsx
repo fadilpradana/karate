@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Impor Ikon dan Aset
 import { Edit, Trash2, Send, Settings, BookOpen, Search, RefreshCcw, Loader2, Save, X, ChevronLeft, ArrowLeft } from 'lucide-react';
@@ -307,6 +308,7 @@ export default function ModerasiPengumuman() {
         <div className="relative min-h-screen flex flex-col justify-between text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
             <Helmet>
                 <title>Moderasi Pengumuman - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="absolute inset-0 bg-black opacity-70"></div>

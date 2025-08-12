@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; // Import Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg'; // Import gambar background
@@ -243,6 +244,7 @@ export default function Artikel() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Artikel - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="description" content="Temukan berbagai artikel menarik seputar dunia karate, teknik, sejarah, dan tips latihan dari STMKG Karate Club." />
                 <meta name="keywords" content="artikel karate STMKG, berita karate, teknik karate, sejarah karate, tips latihan karate, stmkg karate club" />
                 <meta property="og:title" content="Daftar Artikel Karate STMKG" />

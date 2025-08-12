@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg';
+import favicon from '../assets/logo_bintangcompress.png';
 import { User, Calendar, ArrowLeft, MessageSquare, CornerDownRight, Send, Edit3, Trash2, X, AlertTriangle } from 'lucide-react';
 
 // Impor file CSS Tiptap yang sudah final
@@ -323,6 +324,7 @@ export default function ArtikelDetail() {
                 <meta property="og:url" content={`https://karate.stmkg.ac.id/artikel/${artikel.id}`} />
                 <meta property="og:type" content="article" />
                 <meta name="author" content={artikel.profiles?.nama_lengkap || 'STMKG Karate Club'} />
+                <link rel="icon" href={favicon} />
                 <link rel="canonical" href={`https://karate.stmkg.ac.id/artikel/${artikel.id}`} />
             </Helmet>
 

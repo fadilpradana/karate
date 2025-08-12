@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { compressAndConvertToWebP } from '../utils/imageCompressor';
 import { Helmet } from 'react-helmet-async';
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Asset & Ikon
 import Footer from '../components/Footer';
@@ -336,6 +337,7 @@ export default function AdminPrestasi() {
         <div className="min-h-screen text-white">
             <Helmet>
                 <title>Admin: Kelola Prestasi - STMKG Karate Club</title>
+                <link rel="icon" href={favicon} />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <motion.div

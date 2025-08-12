@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import favicon from '../assets/logo_bintangcompress.png';
 
 // Import aset dan ikon
 import Footer from '../components/Footer';
@@ -166,24 +167,19 @@ export default function Pengumuman() {
 
     return (
         <div className="relative min-h-screen text-white">
-            <SEO 
-                title="Papan Pengumuman"
-                description="Informasi dan berita terbaru seputar kegiatan karate STMKG. Jangan lewatkan pengumuman penting dari klub karate kami."
-                keywords="pengumuman karate, berita karate, stmkg karate club, info karate, jadwal latihan, klub karate"
-                url="https://your-domain.com/pengumuman"
-                structuredData={{
-                  "@context": "https://schema.org",
-                  "@type": "WebPage",
-                  "name": "Papan Pengumuman Karate STMKG",
-                  "description": "Informasi dan berita terbaru seputar kegiatan karate STMKG",
-                  "url": "https://your-domain.com/pengumuman",
-                  "mainEntity": {
-                    "@type": "ItemList",
-                    "name": "Daftar Pengumuman Karate",
-                    "description": "Kumpulan pengumuman dan berita terkini seputar kegiatan karate STMKG"
-                  }
-                }}
-            />
+            <Helmet>
+                <title>Pengumuman - STMKG Karate Club</title>
+                <meta name="description" content="Informasi dan berita terbaru seputar kegiatan STMKG Karate Club. Jangan lewatkan pengumuman penting dari kami." />
+                <meta name="keywords" content="pengumuman karate, berita karate, stmkg karate club, info karate, jadwal latihan" />
+                <meta property="og:title" content="Papan Pengumuman | STMKG Karate Club" />
+                <meta property="og:description" content="Informasi dan berita terbaru dari STMKG Karate Club." />
+                <meta property="og:url" content="https://karate.stmkg.ac.id/pengumuman" />
+                <meta property="og:type" content="website" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="author" content="STMKG Karate Club" />
+                <link rel="canonical" href="https://karate.stmkg.ac.id/pengumuman" />
+                <link rel="icon" href={favicon} />
+            </Helmet>
             {/* Latar Belakang dengan Animasi */}
             <motion.div
                 className="fixed inset-0 z-0"
