@@ -5,6 +5,19 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 
+  // Konfigurasi untuk SEO dan production
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['framer-motion', 'lucide-react']
+        }
+      }
+    }
+  },
+
   // Tambahkan atau modifikasi bagian ini
   preview: {
     host: true, // Memungkinkan akses dari jaringan
