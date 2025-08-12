@@ -1,5 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Konfigurasi website
 const config = {
@@ -88,10 +93,10 @@ function updateLastmod() {
 }
 
 // Main execution
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('🚀 Generating sitemap...');
   updateLastmod();
   writeSitemap();
 }
 
-module.exports = { generateSitemap, writeSitemap, config }; 
+export { generateSitemap, writeSitemap, config }; 
