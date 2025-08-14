@@ -324,7 +324,7 @@ export default function ArtikelDetail() {
                 <meta property="og:url" content={`https://karate.stmkg.ac.id/artikel/${artikel.id}`} />
                 <meta property="og:type" content="article" />
                 <meta name="author" content={artikel.profiles?.nama_lengkap || 'STMKG Karate Club'} />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <link rel="canonical" href={`https://karate.stmkg.ac.id/artikel/${artikel.id}`} />
             </Helmet>
 

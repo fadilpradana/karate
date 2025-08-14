@@ -246,7 +246,7 @@ export default function PengumumanDetail() {
                 <meta property="og:description" content={metaDescription} />
                 <meta property="og:url" content={`https://karate.stmkg.ac.id/pengumuman/${pengumuman.id}`} />
                 <meta property="og:type" content="article" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" href={favicon} /><link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="author" content={pengumuman.profiles?.nama_lengkap || 'STMKG Karate Club'} />
                 <link rel="canonical" href={`https://karate.stmkg.ac.id/pengumuman/${pengumuman.id}`} />
             </Helmet>

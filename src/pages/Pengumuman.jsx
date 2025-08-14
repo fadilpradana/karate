@@ -178,7 +178,7 @@ export default function Pengumuman() {
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <meta name="author" content="STMKG Karate Club" />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/pengumuman" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
             </Helmet>
             {/* Latar Belakang dengan Animasi */}
             <motion.div

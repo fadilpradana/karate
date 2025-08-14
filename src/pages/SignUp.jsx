@@ -183,7 +183,7 @@ function SignUp() {
             <Helmet>
                 <title>Sign Up - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
             </Helmet>
             <AnimatePresence>
                 {successMessage && (

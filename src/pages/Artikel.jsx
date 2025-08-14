@@ -244,7 +244,7 @@ export default function Artikel() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Artikel - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="description" content="Temukan berbagai artikel menarik seputar dunia karate, teknik, sejarah, dan tips latihan dari STMKG Karate Club." />
                 <meta name="keywords" content="artikel karate STMKG, berita karate, teknik karate, sejarah karate, tips latihan karate, stmkg karate club" />
                 <meta property="og:title" content="Daftar Artikel Karate STMKG" />

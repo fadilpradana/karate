@@ -422,7 +422,7 @@ export default function ProfilDojo() {
                 <meta property="og:url" content="https://karate.stmkg.ac.id/profil" />
                 <meta property="og:type" content="website" />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/profil" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
             </Helmet>
             <motion.div
                 className="fixed inset-0 z-0 bg-cover bg-center"

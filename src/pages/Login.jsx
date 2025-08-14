@@ -83,7 +83,7 @@ function Login() {
         <div className="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
             <Helmet>
                 <title>Login - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <AnimatePresence>

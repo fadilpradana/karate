@@ -642,7 +642,7 @@ function Dashboard() {
         <div className="relative min-h-screen">           
             <Helmet>
                 <title>Dashboard - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="fixed inset-0 z-0">

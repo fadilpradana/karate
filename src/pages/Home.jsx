@@ -325,18 +325,32 @@ export default function Home() {
       className="bg-[#0E0004] min-h-screen text-white overflow-x-hidden"
     >
       <Helmet>
+        {/* --- TAGS DASAR & SEO UTAMA --- */}
         <title>STMKG Karate Club</title>
         <meta name="description" content="Selamat datang di situs resmi STMKG Karate Club. Lihat prestasi para karateka kami, sampaikan kritik & saran, serta kenali semangat bela diri kami yang menjunjung kehormatan dan disiplin." />
         <meta name="keywords" content="STMKG Karate Club, karate STMKG, prestasi karate STMKG, bela diri taruna stmkg, kritik saran dojo, karate kampus, organisasi STMKG, klub karate STMKG" />
+        <meta name="author" content="STMKG Karate Club" />
+        <meta name="robots" content="index, follow" /> {/* Tag baru: Memberitahu Google untuk mengindeks halaman ini */}
+        <link rel="canonical" href="https://karate.stmkg.ac.id" />
+  
+        {/* --- OPEN GRAPH (UNTUK FACEBOOK, WHATSAPP, DLL.) --- */}
         <meta property="og:title" content="STMKG Karate Club - Situs Resmi" />
         <meta property="og:description" content="Temukan prestasi karate STMKG dan sampaikan kritik atau saran untuk dojo kami. Kami menjunjung kehormatan, disiplin, dan semangat bela diri." /> 
         <meta property="og:image" content="https://karate.stmkg.ac.id/IMG_5610.JPG" />
         <meta property="og:url" content="https://karate.stmkg.ac.id" />
+        <meta property="og:site_name" content="Karate STMKG" /> {/* Tag baru: Nama situs Anda */}
+        <meta property="og:locale" content="id_ID" /> {/* Tag baru: Menentukan bahasa dan negara */}
         <meta property="og:type" content="website" />
+  
+        {/* --- TWITTER CARD (UNTUK TWITTER & PLATFORM LAIN) --- */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="STMKG Karate Club - Situs Resmi" />
+        <meta name="twitter:description" content="Temukan prestasi karate STMKG dan sampaikan kritik atau saran untuk dojo kami. Kami menjunjung kehormatan, disiplin, dan semangat bela diri." />
+        <meta name="twitter:image" content="https://karate.stmkg.ac.id/IMG_5610.JPG" />
+  
+        {/* --- TAGS TEKNIS --- */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="author" content="STMKG Karate Club" />
-        <link rel="canonical" href="https://karate.stmkg.ac.id" />
-        <link rel="icon" href={favicon} />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
       </Helmet>
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">

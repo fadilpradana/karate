@@ -367,7 +367,7 @@ export default function AdminPendaftaran() {
         <div className="relative min-h-screen text-white">
             <Helmet>
                 <title>Admin Pendaftaran - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div

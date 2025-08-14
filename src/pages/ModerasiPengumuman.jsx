@@ -308,7 +308,7 @@ export default function ModerasiPengumuman() {
         <div className="relative min-h-screen flex flex-col justify-between text-white bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${bg1})` }}>
             <Helmet>
                 <title>Moderasi Pengumuman - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="absolute inset-0 bg-black opacity-70"></div>

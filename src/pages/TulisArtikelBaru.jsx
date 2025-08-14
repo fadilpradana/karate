@@ -278,7 +278,7 @@ export default function TulisArtikelBaru() {
             <Helmet>
                 <title>Tulis Artikel - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
             </Helmet>
             <div className="absolute inset-0 bg-black opacity-70"></div>
 

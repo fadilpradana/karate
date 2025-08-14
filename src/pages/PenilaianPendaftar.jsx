@@ -356,7 +356,7 @@ export default function PenilaianPendaftar() {
             <Helmet>
                 <title>Penilaian Pendaftaran - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
             </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             <div className="relative z-10 flex flex-col min-h-screen">

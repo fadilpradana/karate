@@ -101,7 +101,7 @@ export default function Jadwal() {
     >
       <Helmet>
         <title>Jadwal - Karate STMKG</title>
-        <link rel="icon" href={favicon} />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
         <meta name="description" content="Temukan jadwal lengkap latihan rutin dan program Bela Diri Taruna (BDT) di STMKG Karate Club. Informasi terkini seputar waktu dan lokasi latihan setiap pekan." />
         <meta name="keywords" content="jadwal karate STMKG, latihan karate, jadwal BDT, waktu latihan STMKG, karateka STMKG, dojo STMKG" />
         <meta property="og:title" content="Jadwal Latihan Karate STMKG" />

@@ -117,7 +117,7 @@ export default function Kontak() {
         >
             <Helmet>
                 <title>Kontak - STMKG Karate Club</title>
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="description" content="Hubungi STMKG Karate Club untuk informasi lebih lanjut. Temukan alamat dojo, email, dan kontak Humas kami. Kirim pesan langsung kepada kami." />
                 <meta name="keywords" content="kontak karate STMKG, alamat dojo STMKG, email STMKG Karate, nomor telepon humas karate, kirim pesan karate STMKG" />
                 <meta property="og:title" content="Kontak STMKG Karate Club" />

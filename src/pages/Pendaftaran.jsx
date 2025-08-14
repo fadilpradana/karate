@@ -215,8 +215,8 @@ const PendaftaranContent = ({
     return (
         <div className="relative text-white h-full">
             <Helmet>
-                <title>Pendaftaran - UKM Karate STMKG</title>
-                <link rel="icon" href={favicon} />
+                <title>Pendaftaran - STMKG Karate Club</title>
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet> 
             <video

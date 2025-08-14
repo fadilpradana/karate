@@ -215,7 +215,7 @@ export default function ModerasiPengurus() {
             <div className="relative min-h-screen text-white">
                 <Helmet>
                     <title>Moderasi Pengurus - STMKG Karate Club</title>
-                    <link rel="icon" href={favicon} />
+                   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                     <meta name="robots" content="noindex, nofollow" />
                 </Helmet>
                 <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}>

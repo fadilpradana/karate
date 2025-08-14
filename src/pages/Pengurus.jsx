@@ -357,7 +357,7 @@ export default function Pengurus() {
                 <meta property="og:description" content={`Struktur organisasi dan daftar pengurus STMKG Karate Club periode ${namaPeriode}.`} />
                 <meta property="og:url" content="https://karate.stmkg.ac.id/pengurus" />
                 <meta property="og:type" content="website" />
-                <link rel="icon" href={favicon} />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
                 <link rel="canonical" href="https://karate.stmkg.ac.id/pengurus" />
             </Helmet>
 
