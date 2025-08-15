@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 3000; // Anda bisa ganti port ini jika mau
+const port = process.env.PORT || 9083; // Anda bisa ganti port ini jika mau
 
 // Ganti dengan URL sitemap Anda dari Supabase
 const SUPABASE_SITEMAP_URL = 'https://unkauvoourtaoxdpdlst.supabase.co/storage/v1/object/public/sitemap/sitemap.xml';
