@@ -12,7 +12,8 @@ const SEO = ({
   const fullTitle = title ? `${title} - Karate STMKG` : 'Karate STMKG - Klub Karate STMKG';
   const fullDescription = description || 'Karate STMKG - Tempat belajar dan berlatih karate untuk Taruna/i STMKG. Informasi jadwal latihan, pengumuman, dan kegiatan karate.';
   const fullKeywords = keywords || 'karate, STMKG, klub karate, bela diri, latihan karate, pengumuman karate';
-  const fullImage = image || '/src/assets/logo_bintangcompress.png';
+  // Gunakan URL absolut untuk gambar logo agar dapat diakses oleh mesin pencari
+  const fullImage = image || 'https://karate.stmkg.ac.id/assets/logo_bintangcompress.png';
   const fullUrl = url || 'https://karate.stmkg.ac.id';
 
   return (
@@ -28,6 +29,9 @@ const SEO = ({
       <meta property="og:type" content={type} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:image" content={fullImage} />
+      <meta property="og:image:width" content="128" />
+      <meta property="og:image:height" content="128" />
+      <meta property="og:image:alt" content="Logo Karate STMKG" />
       <meta property="og:site_name" content="Karate STMKG" />
       
       {/* Twitter Card Meta Tags */}
@@ -35,9 +39,13 @@ const SEO = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={fullDescription} />
       <meta name="twitter:image" content={fullImage} />
+      <meta name="twitter:image:alt" content="Logo Karate STMKG" />
       
       {/* Canonical URL */}
       <link rel="canonical" href={fullUrl} />
+      
+      {/* Image Meta Tags untuk SEO */}
+      <meta name="image" content={fullImage} />
       
       {/* Structured Data */}
       {structuredData && (
