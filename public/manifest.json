@@ -1,0 +1,32 @@
+{
+  "name": "Karate STMKG",
+  "short_name": "Karate STMKG",
+  "description": "Klub Karate STMKG - Tempat belajar dan berlatih karate untuk Taruna/i STMKG",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "/assets/logo_bintangcompress.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo_bintangcompress.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo_bintangcompress.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "education", "martial-arts"],
+  "lang": "id",
+  "dir": "ltr"
+}

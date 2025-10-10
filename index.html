@@ -3,38 +3,47 @@
 
 <head>
   <meta charset="UTF-8" />
+
+  <!-- Favicon sudah dipindahkan ke folder /public -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Google Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Montserrat:wght@300;400;500;700&display=swap"
     rel="stylesheet">
 
-  <title>__META_TITLE__</title>
-  
-  <meta name="description" content="__META_DESCRIPTION__" />
+  <!-- Judul dasar sebagai fallback. Ini akan ditimpa oleh Helmet di setiap halaman. -->
+  <title>Karate STMKG</title>
 
-  <meta property="og:title" content="__META_TITLE__" />
-  <meta property="og:description" content="__META_DESCRIPTION__" />
-  <meta property="og:image" content="__META_OG_IMAGE__" />
-  <meta property="og:url" content="__META_URL__" />
-  <meta property="og:type" content="website" />
-  
+  <!-- Structured Data untuk Organisasi (PENTING UNTUK SEO) -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SportsOrganization",
       "name": "STMKG Karate Club",
+      "alternateName": "Karate STMKG",
       "description": "Dojo Karate untuk Taruna/i STMKG",
       "url": "https://karate.stmkg.ac.id/",
-      "logo": "https://karate.stmkg.ac.id/favicon.png",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://karate.stmkg.ac.id/logo_bintangcompress.png",
+        "width": 300,
+        "height": 300
+      },
+      "image": "https://karate.stmkg.ac.id/logo_bintangcompress.png",
       "sport": "Karate",
+      "foundingDate": "2020",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Tangerang",
         "addressRegion": "Banten",
         "addressCountry": "ID"
-      }
+      },
+      "sameAs": [
+        "https://karate.stmkg.ac.id"
+      ]
     }
   </script>
 </head>
