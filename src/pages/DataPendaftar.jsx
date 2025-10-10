@@ -111,29 +111,35 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
                     onClick={onClose}
                 >
+                    {/* PERBAIKAN: Modal dijadikan flex container dengan tinggi terbatas di mobile */}
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className="relative p-6 shadow-lg max-w-3xl w-full"
+                        className="relative p-6 shadow-lg max-w-3xl w-full h-[90vh] md:h-auto md:max-h-[90vh] flex flex-col"
                         style={glassmorphismStyle}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-amber-400 transition-colors"><X size={24} /></button>
-                        <div className="flex items-center gap-4 mb-4">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-amber-400 transition-colors z-20"><X size={24} /></button>
+                        {/* PERBAIKAN: Header dibuat agar tidak menyusut */}
+                        <div className="flex items-start gap-4 mb-4 flex-shrink-0">
                             <img 
                                 src={profiles.avatar_url || `https://placehold.co/80x80/1a202c/FFFFFF?text=${profiles.nama_lengkap.charAt(0)}`} 
                                 alt="Foto Profil" 
-                                className="w-20 h-20 rounded-lg object-cover border-2 border-white/30"
+                                className="w-20 h-20 rounded-lg object-cover border-2 border-white/30 flex-shrink-0"
                                 onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/80x80/1a202c/FFFFFF?text=${profiles.nama_lengkap.charAt(0)}`; }}
                             />
-                            <div>
-                                <h2 className="text-2xl font-semibold flex items-center gap-3"><User className="text-amber-400" />{profiles.nama_lengkap}</h2>
-                                <p className="text-gray-400">NPT: {profiles.npt || 'N/A'} | {profiles.jenis_kelamin === 'lakilaki' ? 'Laki-laki' : 'Perempuan'}</p>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-2xl font-semibold flex items-start gap-3">
+                                    <User className="text-amber-400 mt-1 flex-shrink-0 w-6 h-6" />
+                                    <span className="break-words">{profiles.nama_lengkap}</span>
+                                </h2>
+                                <p className="text-gray-400 break-words">NPT: {profiles.npt || 'N/A'} | {profiles.jenis_kelamin === 'lakilaki' ? 'Laki-laki' : 'Perempuan'}</p>
                             </div>
                         </div>
 
-                        <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                        {/* PERBAIKAN: Area accordion diubah menjadi area scroll */}
+                        <div className="flex-grow min-h-0 overflow-y-auto space-y-4 pr-2 -mr-2">
                             <AccordionSection title="Penilaian Jasmani" icon={<Award className="text-amber-400" />} isOpen={openSection === 'jasmani'} onToggle={() => setOpenSection(openSection === 'jasmani' ? null : 'jasmani')}>
                                 <div className='mt-2 pt-2 border-t border-white/10'>
                                     {penilaian_jasmani_individu && penilaian_jasmani_individu.length > 0 && standard ? (
@@ -180,43 +186,44 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                             </AccordionSection>
 
                             <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
-                                   <div className='mt-2 pt-2 border-t border-white/10'>
-                                       {penilaian_materi.length > 0 ? (
-                                           <div className="space-y-2 mt-1">
-                                               {penilaian_materi.map(p => (
-                                                   <div key={p.id_penilai} className="text-sm text-gray-400">
-                                                       <div className="flex justify-between items-center">
-                                                           <span>{p.penilai.nama_lengkap}</span>
-                                                           <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
-                                                       </div>
-                                                       {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
-                                                   </div>
-                                               ))}
-                                           </div>
-                                       ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
-                                   </div>
+                                  <div className='mt-2 pt-2 border-t border-white/10'>
+                                      {penilaian_materi.length > 0 ? (
+                                          <div className="space-y-2 mt-1">
+                                              {penilaian_materi.map(p => (
+                                                  <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                      <div className="flex justify-between items-center">
+                                                          <span>{p.penilai.nama_lengkap}</span>
+                                                          <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                      </div>
+                                                      {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                  </div>
                             </AccordionSection>
                             
                             <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
-                                   <div className='mt-2 pt-2 border-t border-white/10'>
-                                       {penilaian_wawancara.length > 0 ? (
-                                           <div className="space-y-2 mt-1">
-                                               {penilaian_wawancara.map(p => (
-                                                   <div key={p.id_penilai} className="text-sm text-gray-400">
-                                                       <div className="flex justify-between items-center">
-                                                           <span>{p.penilai.nama_lengkap}</span>
-                                                           <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
-                                                       </div>
-                                                       {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
-                                                   </div>
-                                               ))}
-                                           </div>
-                                       ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
-                                   </div>
+                                  <div className='mt-2 pt-2 border-t border-white/10'>
+                                      {penilaian_wawancara.length > 0 ? (
+                                          <div className="space-y-2 mt-1">
+                                              {penilaian_wawancara.map(p => (
+                                                  <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                      <div className="flex justify-between items-center">
+                                                          <span>{p.penilai.nama_lengkap}</span>
+                                                          <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                      </div>
+                                                      {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                  </div>
                             </AccordionSection>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-gray-600 text-center">
+                        {/* PERBAIKAN: Footer dibuat agar tidak menyusut */}
+                        <div className="mt-6 pt-4 border-t border-gray-600 text-center flex-shrink-0">
                             <h3 className="text-xl font-bold">Nilai Akhir Rata-rata</h3>
                             <div className="flex justify-around items-start mt-2">
                                 <div>
@@ -1185,3 +1192,4 @@ export default function DataPendaftar() {
         </div>
     );
 }
+

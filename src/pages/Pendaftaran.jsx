@@ -313,7 +313,7 @@ const PendaftaranContent = ({
                                     </div>
                                     {cvFile && (
                                         <div className="mt-4 flex items-center justify-between bg-green-900/50 border border-green-700 text-sm text-white rounded-md p-3">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
                                                 <FileIcon className="h-5 w-5 text-green-400 flex-shrink-0" />
                                                 <span className="truncate">{cvFile.name}</span>
                                             </div>
