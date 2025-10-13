@@ -186,39 +186,39 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                             </AccordionSection>
 
                             <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
-                                  <div className='mt-2 pt-2 border-t border-white/10'>
-                                      {penilaian_materi.length > 0 ? (
-                                          <div className="space-y-2 mt-1">
-                                              {penilaian_materi.map(p => (
-                                                  <div key={p.id_penilai} className="text-sm text-gray-400">
-                                                      <div className="flex justify-between items-center">
-                                                          <span>{p.penilai.nama_lengkap}</span>
-                                                          <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
-                                                      </div>
-                                                      {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
-                                                  </div>
-                                              ))}
-                                          </div>
-                                      ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
-                                  </div>
+                                <div className='mt-2 pt-2 border-t border-white/10'>
+                                    {penilaian_materi.length > 0 ? (
+                                        <div className="space-y-2 mt-1">
+                                            {penilaian_materi.map(p => (
+                                                <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                    <div className="flex justify-between items-center">
+                                                        <span>{p.penilai.nama_lengkap}</span>
+                                                        <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                    </div>
+                                                    {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                </div>
                             </AccordionSection>
                             
                             <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
-                                  <div className='mt-2 pt-2 border-t border-white/10'>
-                                      {penilaian_wawancara.length > 0 ? (
-                                          <div className="space-y-2 mt-1">
-                                              {penilaian_wawancara.map(p => (
-                                                  <div key={p.id_penilai} className="text-sm text-gray-400">
-                                                      <div className="flex justify-between items-center">
-                                                          <span>{p.penilai.nama_lengkap}</span>
-                                                          <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
-                                                      </div>
-                                                      {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
-                                                  </div>
-                                              ))}
-                                          </div>
-                                      ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
-                                  </div>
+                                <div className='mt-2 pt-2 border-t border-white/10'>
+                                    {penilaian_wawancara.length > 0 ? (
+                                        <div className="space-y-2 mt-1">
+                                            {penilaian_wawancara.map(p => (
+                                                <div key={p.id_penilai} className="text-sm text-gray-400">
+                                                    <div className="flex justify-between items-center">
+                                                        <span>{p.penilai.nama_lengkap}</span>
+                                                        <span className="font-bold text-white">{p.nilai || 'N/A'}</span>
+                                                    </div>
+                                                    {p.keterangan && <p className="text-xs italic pl-2">- {p.keterangan}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
+                                </div>
                             </AccordionSection>
                         </div>
 
@@ -650,6 +650,13 @@ export default function DataPendaftar() {
     };
     
     const columns = useMemo(() => [
+        // [MODIFIKASI] Menambahkan kolom Nomor
+        {
+            id: 'nomor',
+            header: 'No.',
+            size: 60,
+            cell: ({ row }) => <span>{row.index + 1}</span>
+        },
         {
             accessorKey: 'profiles.nama_lengkap',
             header: 'Nama Lengkap',
@@ -1085,7 +1092,11 @@ export default function DataPendaftar() {
                             </motion.section>
                             <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
-                                    <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3"><UserRoundCheck className="text-amber-400" />Daftar Pendaftar</motion.h2>
+                                    {/* [MODIFIKASI] Menambahkan jumlah pendaftar */}
+                                    <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3">
+                                        <UserRoundCheck className="text-amber-400" />
+                                        Daftar Pendaftar ({filteredPendaftar.length})
+                                    </motion.h2>
                                     <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                                         <button
                                             onClick={() => setSortType(prev => prev === 'label' ? 'default' : 'label')}
@@ -1117,10 +1128,8 @@ export default function DataPendaftar() {
                                 {loadingPendaftar ? (
                                     <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /><span className="ml-3 text-gray-300">Memuat data pendaftar...</span></div>
                                 ) : filteredPendaftar.length > 0 ? (
-                                    <div 
-                                        className="overflow-auto rounded-lg border border-gray-700 shadow-inner transition-all duration-300 ease-in-out" 
-                                        style={{ maxHeight: expandedRows.size > 0 ? '80vh' : '60vh' }}
-                                    >
+                                    // [MODIFIKASI] Menghapus style maxHeight agar ukuran dinamis
+                                    <div className="overflow-auto rounded-lg border border-gray-700 shadow-inner">
                                         <table className="min-w-full text-sm text-left">
                                             <thead className="sticky top-0 z-10 bg-gray-800">
                                                 {table.getHeaderGroups().map(headerGroup => (
@@ -1192,4 +1201,3 @@ export default function DataPendaftar() {
         </div>
     );
 }
-
