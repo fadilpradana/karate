@@ -1,47 +1,25 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+// [MODIFIKASI] Menambahkan ikon Palette untuk filter warna
+import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import favicon from '../assets/logo_bintangcompress.png';
 
-// Menggunakan CDN untuk dependensi eksternal untuk mengatasi masalah resolusi
-import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, ZoomIn, ZoomOut, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette } from 'https://esm.sh/lucide-react';
-import { motion, AnimatePresence } from 'https://esm.sh/framer-motion';
-import { Helmet } from 'https://esm.sh/react-helmet-async';
-import { useReactTable, getCoreRowModel, flexRender } from 'https://esm.sh/@tanstack/react-table@8.17.3';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Impor dari TanStack Table
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
-// --- DEPENDENSI YANG DI-INLINE ATAU DI-MOCK ---
+// Impor PDF.js Library
+import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
-// 1. Inisialisasi Klien Supabase
-// CATATAN: Ganti dengan URL dan Kunci Anon Supabase Anda yang sebenarnya
-const supabaseUrl = 'https://xyzabcdefghijklmnopqrst.supabase.co'; // Ganti dengan URL Proyek Anda
-const supabaseAnonKey = 'your-anon-key-goes-here'; // Ganti dengan Kunci Anon Anda
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// ATUR WORKER UNTUK PDF.JS
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf-worker/pdf.worker.min.mjs';
 
-// 2. Mock AuthContext
-// Hook ini mensimulasikan hook useAuth() untuk menyediakan peran pengguna dan status loading.
-const useAuth = () => ({
-    role: 'admin', // Bisa 'admin' atau 'pengurus' untuk tujuan pengujian
-    loading: false,
-});
-
-// 3. Komponen Footer yang Di-inline
-const Footer = () => (
-    <footer className="w-full text-center p-4 mt-auto text-gray-400 text-sm z-10 relative">
-        © {new Date().getFullYear()} STMKG Karate Club. Hak Cipta Dilindungi.
-    </footer>
-);
-
-// 4. Library PDF.js
-// PENTING: Komponen ini memerlukan library PDF.js untuk dimuat secara global.
-// Pastikan tag skrip berikut ada di file HTML utama Anda:
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-const pdfjsLib = window.pdfjsLib;
-if (pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-}
-
-// 5. Aset Gambar Latar Belakang
-const heroBg = 'https://images.unsplash.com/photo-1554147090-e1221a04a025?q=80&w=2550&auto=format&fit=crop';
-
+// Import gambar background
+import heroBg from '../assets/bg9.jpg';
 
 // Gaya untuk efek glassmorphism
 const glassmorphismStyle = {
@@ -133,6 +111,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
                     onClick={onClose}
                 >
+                    {/* PERBAIKAN: Modal dijadikan flex container dengan tinggi terbatas di mobile */}
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -142,6 +121,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-amber-400 transition-colors z-20"><X size={24} /></button>
+                        {/* PERBAIKAN: Header dibuat agar tidak menyusut */}
                         <div className="flex items-start gap-4 mb-4 flex-shrink-0">
                             <img 
                                 src={profiles.avatar_url || `https://placehold.co/80x80/1a202c/FFFFFF?text=${profiles.nama_lengkap.charAt(0)}`} 
@@ -158,6 +138,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                             </div>
                         </div>
 
+                        {/* PERBAIKAN: Area accordion diubah menjadi area scroll */}
                         <div className="flex-grow min-h-0 overflow-y-auto space-y-4 pr-2 -mr-2">
                             <AccordionSection title="Penilaian Jasmani" icon={<Award className="text-amber-400" />} isOpen={openSection === 'jasmani'} onToggle={() => setOpenSection(openSection === 'jasmani' ? null : 'jasmani')}>
                                 <div className='mt-2 pt-2 border-t border-white/10'>
@@ -206,7 +187,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
 
                             <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
                                 <div className='mt-2 pt-2 border-t border-white/10'>
-                                    {penilaian_materi && penilaian_materi.length > 0 ? (
+                                    {penilaian_materi.length > 0 ? (
                                         <div className="space-y-2 mt-1">
                                             {penilaian_materi.map(p => (
                                                 <div key={p.id_penilai} className="text-sm text-gray-400">
@@ -224,7 +205,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                             
                             <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
                                 <div className='mt-2 pt-2 border-t border-white/10'>
-                                    {penilaian_wawancara && penilaian_wawancara.length > 0 ? (
+                                    {penilaian_wawancara.length > 0 ? (
                                         <div className="space-y-2 mt-1">
                                             {penilaian_wawancara.map(p => (
                                                 <div key={p.id_penilai} className="text-sm text-gray-400">
@@ -241,6 +222,7 @@ const PenilaianModal = ({ isOpen, onClose, pendaftar }) => {
                             </AccordionSection>
                         </div>
 
+                        {/* PERBAIKAN: Footer dibuat agar tidak menyusut */}
                         <div className="mt-6 pt-4 border-t border-gray-600 text-center flex-shrink-0">
                             <h3 className="text-xl font-bold">Nilai Akhir Rata-rata</h3>
                             <div className="flex justify-around items-start mt-2">
@@ -430,10 +412,7 @@ const CvModal = ({ cvUrl, onClose, modalGlassmorphismStyle }) => {
     }, []);
 
     useEffect(() => {
-        if (!cvUrl || !pdfjsLib) {
-             if (!pdfjsLib) setPdfError("PDF.js library not loaded. Please check your HTML file.");
-            return;
-        }
+        if (!cvUrl) return;
         setLoadingPdf(true); setPdfError(null); setCurrentPage(1); setScale(1.0); lastScaleRef.current = 1.0; zoomScrollRatiosRef.current = null;
         if (renderTaskRef.current) { try { renderTaskRef.current.cancel(); } catch (e) { /* abaikan */ } finally { renderTaskRef.current = null; } }
         if (pdfDocumentRef.current) { pdfDocumentRef.current.destroy(); pdfDocumentRef.current = null; }
@@ -607,8 +586,6 @@ export default function DataPendaftar() {
     const [sortType, setSortType] = useState('default');
     const [isPenilaianModalOpen, setIsPenilaianModalOpen] = useState(false);
     const [selectedPendaftarForNilai, setSelectedPendaftarForNilai] = useState(null);
-    
-    const tableContainerRef = useRef(null);
 
     const titleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.5 } } };
     const subtitleVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", delay: 0.7 } } };
@@ -672,27 +649,8 @@ export default function DataPendaftar() {
         }
     };
     
-    useEffect(() => {
-        const element = tableContainerRef.current;
-        if (element) {
-            const onWheel = (e) => {
-                if (element.scrollWidth > element.clientWidth) {
-                    e.preventDefault();
-                    element.scrollLeft += e.deltaY;
-                }
-            };
-
-            element.addEventListener('wheel', onWheel, { passive: false });
-
-            return () => {
-                if (element) {
-                    element.removeEventListener('wheel', onWheel);
-                }
-            };
-        }
-    }, [loadingPendaftar]);
-
     const columns = useMemo(() => [
+        // [MODIFIKASI] Menambahkan kolom Nomor
         {
             id: 'nomor',
             header: 'No.',
@@ -1134,6 +1092,7 @@ export default function DataPendaftar() {
                             </motion.section>
                             <motion.section className="p-6 shadow-lg" style={glassmorphismStyle} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                                    {/* [MODIFIKASI] Menambahkan jumlah pendaftar */}
                                     <motion.h2 variants={headingVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} className="text-2xl font-semibold flex items-center gap-3">
                                         <UserRoundCheck className="text-amber-400" />
                                         Daftar Pendaftar ({filteredPendaftar.length})
@@ -1169,10 +1128,8 @@ export default function DataPendaftar() {
                                 {loadingPendaftar ? (
                                     <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /><span className="ml-3 text-gray-300">Memuat data pendaftar...</span></div>
                                 ) : filteredPendaftar.length > 0 ? (
-                                    <div
-                                        ref={tableContainerRef}
-                                        className="overflow-auto rounded-lg border border-gray-700 shadow-inner"
-                                    >
+                                    // [MODIFIKASI] Menghapus style maxHeight agar ukuran dinamis
+                                    <div className="overflow-auto rounded-lg border border-gray-700 shadow-inner">
                                         <table className="min-w-full text-sm text-left">
                                             <thead className="sticky top-0 z-10 bg-gray-800">
                                                 {table.getHeaderGroups().map(headerGroup => (
@@ -1244,4 +1201,3 @@ export default function DataPendaftar() {
         </div>
     );
 }
-
