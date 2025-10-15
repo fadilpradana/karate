@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'reac
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, Pencil, Save, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette, Users, ChevronsUpDown, CheckCircle, XCircle } from 'lucide-react';
+import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette, Users, ChevronsUpDown, CheckCircle, XCircle, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import { Helmet } from 'react-helmet-async';
@@ -158,7 +158,7 @@ export default function PenilaianPendaftar() {
                 const beepTest = jasmaniData.find(d => d.jenis_tes === 'beep_test');
                 const plank = jasmaniData.find(d => d.jenis_tes === 'plank');
                 const beepLevel = beepTest?.nilai || '';
-                const beepShuttle = beepTest?.keterangan || ''; 
+                const beepShuttle = beepTest?.keterangan || '';
                 const plankSecondsTotal = plank?.nilai || 0;
                 const plankMinutes = Math.floor(plankSecondsTotal / 60) || '';
                 const plankSeconds = plankSecondsTotal % 60 || '';
@@ -194,7 +194,7 @@ export default function PenilaianPendaftar() {
             setLoading(false);
         }
     }, [pendaftarList, user]);
-    
+
     useEffect(() => {
         if (selectedPendaftarId && !filteredPendaftarList.some(p => p.id === parseInt(selectedPendaftarId))) {
             setSelectedPendaftarId('');
@@ -363,7 +363,6 @@ export default function PenilaianPendaftar() {
                         <div className="text-center md:text-left mb-8">
                             <h1 className="text-4xl md:text-5xl font-league uppercase text-accent drop-shadow-lg">Penilaian Pendaftar</h1>
                         </div>
-
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="p-6 mb-8" style={glassmorphismStyle}>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
@@ -386,51 +385,48 @@ export default function PenilaianPendaftar() {
                                                 placeholder="Ketik nama atau NPT..."
                                             />
                                             <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                                <ChevronsUpDown
-                                                    className="h-5 w-5 text-gray-400"
-                                                    aria-hidden="true"
-                                                />
+                                                <ChevronsUpDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                             </Combobox.Button>
-                                        </div>
-                                        <Transition
-                                            as={Fragment}
-                                            leave="transition ease-in duration-100"
-                                            leaveFrom="opacity-100"
-                                            leaveTo="opacity-0"
-                                            afterLeave={() => setPendaftarSearchQuery('')}
-                                        >
-                                            <Combobox.Options className="absolute mt-1 max-h-60 w-full md:w-[calc(50%-1.5rem)] overflow-auto rounded-md bg-[#2d2d2d] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
-                                                {filteredPendaftarList.length === 0 && pendaftarSearchQuery !== '' ? (
-                                                    <div className="relative cursor-default select-none py-2 px-4 text-gray-400">
-                                                        Tidak ada pendaftar ditemukan.
-                                                    </div>
-                                                ) : (
-                                                    filteredPendaftarList.map((pendaftar) => (
-                                                        <Combobox.Option
-                                                            key={pendaftar.id}
-                                                            className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${ active ? 'bg-amber-600 text-white' : 'text-gray-200' }`}
-                                                            value={pendaftar.id}
-                                                        >
-                                                            {({ selected, active }) => (
-                                                                <>
-                                                                    <span className={`block truncate ${ selected ? 'font-medium' : 'font-normal' }`}>
-                                                                        {pendaftar.profiles?.nama_lengkap}
-                                                                    </span>
-                                                                    <span className={`block text-xs truncate ${ active ? 'text-amber-100' : 'text-gray-400' }`}>
-                                                                        {pendaftar.profiles?.npt}
-                                                                    </span>
-                                                                    {selected ? (
-                                                                        <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${ active ? 'text-white' : 'text-amber-600' }`}>
-                                                                            <CheckCircle className="h-5 w-5" aria-hidden="true" />
+                                            <Transition
+                                                as={Fragment}
+                                                leave="transition ease-in duration-100"
+                                                leaveFrom="opacity-100"
+                                                leaveTo="opacity-0"
+                                                afterLeave={() => setPendaftarSearchQuery('')}
+                                            >
+                                                <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#2d2d2d] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
+                                                    {filteredPendaftarList.length === 0 && pendaftarSearchQuery !== '' ? (
+                                                        <div className="relative cursor-default select-none py-2 px-4 text-gray-400">
+                                                            Tidak ada pendaftar ditemukan.
+                                                        </div>
+                                                    ) : (
+                                                        filteredPendaftarList.map((pendaftar) => (
+                                                            <Combobox.Option
+                                                                key={pendaftar.id}
+                                                                className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${ active ? 'bg-amber-600 text-white' : 'text-gray-200' }`}
+                                                                value={pendaftar.id}
+                                                            >
+                                                                {({ selected, active }) => (
+                                                                    <>
+                                                                        <span className={`block truncate ${ selected ? 'font-medium' : 'font-normal' }`}>
+                                                                            {pendaftar.profiles?.nama_lengkap}
                                                                         </span>
-                                                                    ) : null}
-                                                                </>
-                                                            )}
-                                                        </Combobox.Option>
-                                                    ))
-                                                )}
-                                            </Combobox.Options>
-                                        </Transition>
+                                                                        <span className={`block text-xs truncate ${ active ? 'text-amber-100' : 'text-gray-400' }`}>
+                                                                            {pendaftar.profiles?.npt}
+                                                                        </span>
+                                                                        {selected ? (
+                                                                            <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${ active ? 'text-white' : 'text-amber-600' }`}>
+                                                                                <CheckCircle className="h-5 w-5" aria-hidden="true" />
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </>
+                                                                )}
+                                                            </Combobox.Option>
+                                                        ))
+                                                    )}
+                                                </Combobox.Options>
+                                            </Transition>
+                                        </div>
                                     </Combobox>
                                 </div>
                             </div>
