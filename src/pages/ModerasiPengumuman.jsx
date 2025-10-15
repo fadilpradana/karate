@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Helmet } from 'react-helmet-async'; // Impor Helmet
-import favicon from '../assets/logo_bintangcompress.png';
+import { Helmet } from 'react-helmet-async';
 
-// Impor Ikon dan Aset
-import { Edit, Trash2, Send, Settings, BookOpen, Search, RefreshCcw, Loader2, Save, X, ChevronLeft, ArrowLeft } from 'lucide-react';
+// Ikon yang dibutuhkan (termasuk untuk PDF)
+import { 
+    Edit, Trash2, Send, Settings, BookOpen, Search, RefreshCcw, Loader2, 
+    Save, X, ChevronLeft, ArrowLeft, Paperclip, FileText, CheckCircle
+} from 'lucide-react';
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg2.jpg';
 
@@ -27,11 +29,17 @@ const stripHtml = (html) => {
 };
 
 // =================================================================
-// KOMPONEN FORM UNTUK EDIT PENGUMUMAN
+// KOMPONEN FORM UNTUK EDIT PENGUMUMAN (DENGAN FUNGSI PDF)
 // =================================================================
 const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
     const [judul, setJudul] = useState('');
     
+    // State untuk manajemen PDF
+    const [pdfUrl, setPdfUrl] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [newFile, setNewFile] = useState(null);
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -44,9 +52,62 @@ const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
     useEffect(() => {
         if (currentPengumuman && editor) {
             setJudul(currentPengumuman.judul || '');
+            setPdfUrl(currentPengumuman.pdf_url || '');
             editor.commands.setContent(currentPengumuman.konten || '', false);
+            // Reset state file saat item baru dipilih
+            setNewFile(null);
+            setUploadError('');
         }
     }, [currentPengumuman, editor]);
+
+    const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setUploadError('');
+        if (file.type !== 'application/pdf') {
+            setUploadError('Hanya file PDF yang diizinkan.');
+            return;
+        }
+        if (file.size > 1 * 1024 * 1024) { // Limit 1MB
+            setUploadError('Ukuran file tidak boleh melebihi 1MB.');
+            return;
+        }
+
+        setIsUploading(true);
+        setNewFile(file);
+
+        try {
+            // Hapus file lama jika ada sebelum upload yang baru (opsional, tapi praktik yang baik)
+            if (pdfUrl) {
+                const oldFileName = pdfUrl.split('/').pop();
+                await supabase.storage.from('pengumuman-pdf').remove([oldFileName]);
+            }
+
+            const fileName = `${Date.now()}-${file.name}`;
+            const { error: uploadError } = await supabase.storage.from('pengumuman-pdf').upload(fileName, file);
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('pengumuman-pdf').getPublicUrl(fileName);
+            if (data.publicUrl) {
+                setPdfUrl(data.publicUrl);
+            }
+        } catch (error) {
+            setUploadError(error.message || "Gagal mengunggah file.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+    
+    const handleRemovePdf = async () => {
+        if (pdfUrl) {
+            const fileName = pdfUrl.split('/').pop();
+            await supabase.storage.from('pengumuman-pdf').remove([fileName]);
+        }
+        setPdfUrl('');
+        setNewFile(null);
+        setUploadError('');
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -54,6 +115,7 @@ const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
             ...currentPengumuman,
             judul,
             konten: editor.getHTML(),
+            pdf_url: pdfUrl,
         });
     };
 
@@ -85,7 +147,47 @@ const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
                         <EditorContent editor={editor} />
                     </div>
                 </div>
-                <button type="submit" className="w-full mt-2 flex justify-center items-center gap-2 bg-[#FF9F1C] text-black py-2.5 rounded-lg font-semibold hover:bg-orange-400 transition-colors disabled:opacity-50" disabled={isSaving}>
+
+                <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-1">Lampiran PDF</label>
+                    {pdfUrl && !newFile ? (
+                        <div className="mt-2 flex items-center justify-between p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-green-300 hover:underline">
+                                <FileText size={16} /><span className="truncate max-w-xs">Lihat PDF yang terlampir</span>
+                            </a>
+                            <button type="button" onClick={handleRemovePdf} className="p-1 text-red-400 hover:text-white rounded-full hover:bg-red-500/20" title="Hapus PDF">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                         <>
+                            <div className="mt-2 flex items-center justify-center w-full">
+                               <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-28 border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10">
+                                    <div className="flex flex-col items-center justify-center text-center px-2">
+                                        <Paperclip size={24} className="text-gray-400 mb-1"/>
+                                        <p className="text-xs text-gray-400"><span className="font-semibold text-[#FF9F1C]">Klik untuk unggah PDF baru</span></p>
+                                        <p className="text-xs text-gray-500">Maks. 1MB</p>
+                                    </div>
+                                    <input id="file-upload" type="file" className="hidden" accept="application/pdf" onChange={handleFileChange} disabled={isUploading} />
+                                </label>
+                            </div>
+                            {uploadError && <p className="mt-2 text-sm text-red-400">{uploadError}</p>}
+                            {isUploading && <div className="mt-2 flex items-center gap-2 text-sm text-gray-300"><Loader2 className="animate-spin h-4 w-4" /> Mengunggah...</div>}
+                            {newFile && pdfUrl && !isUploading && (
+                                <div className="mt-2 flex items-center justify-between p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                                    <div className="flex items-center gap-2 text-sm text-green-300">
+                                        <FileText size={16} /><span className="truncate max-w-xs">{newFile.name}</span><CheckCircle size={16} className="text-green-400" />
+                                    </div>
+                                    <button type="button" onClick={handleRemovePdf} className="p-1 text-red-400 hover:text-white rounded-full hover:bg-red-500/20">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            )}
+                         </>
+                    )}
+                </div>
+
+                <button type="submit" className="w-full mt-2 flex justify-center items-center gap-2 bg-[#FF9F1C] text-black py-2.5 rounded-lg font-semibold hover:bg-orange-400 transition-colors disabled:opacity-50" disabled={isSaving || isUploading}>
                     {isSaving ? <><Loader2 className="animate-spin" size={20} /> Menyimpan...</> : <><Save size={18} /> Simpan Perubahan</>}
                 </button>
             </form>
@@ -94,7 +196,7 @@ const PengumumanForm = ({ currentPengumuman, onSave, onCancel, isSaving }) => {
 };
 
 // =================================================================
-// KOMPONEN MODAL UNTUK KONFIRMASI AKSI
+// KOMPONEN MODAL UNTUK KONFIRMASI AKSI (KODE LENGKAP)
 // =================================================================
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, actionText, isProcessing, status, confirmAction }) => {
     if (!isOpen) return null;
@@ -105,21 +207,16 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, action
         return 'text-gray-300';
     };
 
-    // [PERUBAHAN] Fungsi untuk menentukan style tombol konfirmasi secara dinamis
     const getConfirmButtonClass = () => {
         const baseClass = "px-6 py-2 rounded-md disabled:opacity-50 flex items-center justify-center gap-2 w-36 transition-colors border";
         switch (confirmAction) {
             case 'publish':
-                // Tombol kaca transparan dengan teks hijau
                 return `${baseClass} bg-transparent border-green-400/50 text-green-400 hover:bg-green-500/10 hover:border-green-400`;
             case 'unpublish':
-                // Tombol kaca transparan dengan teks ungu
                 return `${baseClass} bg-transparent border-purple-400/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400`;
             case 'delete':
-                // Pertahankan tombol merah solid untuk aksi hapus
                 return `${baseClass} bg-red-600 text-white border-red-600 hover:bg-red-700`;
             default:
-                // Fallback untuk kasus yang tidak terduga
                 return `${baseClass} bg-gray-600 text-white border-gray-600 hover:bg-gray-700`;
         }
     };
@@ -137,7 +234,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, action
                 {!status.message && (
                     <div className="flex justify-center gap-4">
                         <button onClick={onClose} disabled={isProcessing} className="px-6 py-2 bg-white/10 rounded-md hover:bg-white/20 disabled:opacity-50">Batal</button>
-                        {/* [PERUBAHAN] Menggunakan fungsi untuk menerapkan class dinamis */}
                         <button onClick={onConfirm} disabled={isProcessing} className={getConfirmButtonClass()}>
                             {isProcessing ? <><Loader2 className="animate-spin" size={20} /></> : actionText}
                         </button>
@@ -150,7 +246,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children, action
 
 
 // =================================================================
-// KOMPONEN UTAMA HALAMAN MODERASI PENGUMUMAN
+// KOMPONEN UTAMA HALAMAN MODERASI PENGUMUMAN (KODE LENGKAP)
 // =================================================================
 export default function ModerasiPengumuman() {
     const [draftPengumuman, setDraftPengumuman] = useState([]);
@@ -194,7 +290,13 @@ export default function ModerasiPengumuman() {
         const { type, ...updateData } = editedPengumuman;
         const tableName = type === 'draft' ? 'draft_pengumuman' : 'pengumuman';
 
-        const { error } = await supabase.from(tableName).update({ judul: updateData.judul, konten: updateData.konten }).eq('id', updateData.id);
+        const { error } = await supabase.from(tableName)
+            .update({ 
+                judul: updateData.judul, 
+                konten: updateData.konten,
+                pdf_url: updateData.pdf_url
+            })
+            .eq('id', updateData.id);
 
         if (error) {
             alert(`Gagal menyimpan perubahan: ${error.message}`);
@@ -221,20 +323,25 @@ export default function ModerasiPengumuman() {
         try {
             switch (confirmAction) {
                 case 'publish':
-                    const { error: insertErr } = await supabase.from('pengumuman').insert({ judul: pengumumanForAction.judul, konten: pengumumanForAction.konten, penulis_id: pengumumanForAction.penulis_id, created_at: pengumumanForAction.created_at, published_at: new Date().toISOString() });
+                    const { error: insertErr } = await supabase.from('pengumuman').insert({ judul: pengumumanForAction.judul, konten: pengumumanForAction.konten, penulis_id: pengumumanForAction.penulis_id, created_at: pengumumanForAction.created_at, published_at: new Date().toISOString(), pdf_url: pengumumanForAction.pdf_url });
                     if (insertErr) throw insertErr;
                     await supabase.from('draft_pengumuman').delete().eq('id', pengumumanForAction.id);
                     statusUpdate.message = 'Pengumuman berhasil dipublikasi!';
                     break;
                 
                 case 'unpublish':
-                    const { error: insertDraftErr } = await supabase.from('draft_pengumuman').insert({ judul: pengumumanForAction.judul, konten: pengumumanForAction.konten, penulis_id: pengumumanForAction.penulis_id, created_at: pengumumanForAction.created_at });
+                    const { error: insertDraftErr } = await supabase.from('draft_pengumuman').insert({ judul: pengumumanForAction.judul, konten: pengumumanForAction.konten, penulis_id: pengumumanForAction.penulis_id, created_at: pengumumanForAction.created_at, pdf_url: pengumumanForAction.pdf_url });
                     if (insertDraftErr) throw insertDraftErr;
                     await supabase.from('pengumuman').delete().eq('id', pengumumanForAction.id);
                     statusUpdate.message = 'Pengumuman berhasil dipindahkan ke draft.';
                     break;
 
                 case 'delete':
+                    if (pengumumanForAction.pdf_url) {
+                        const fileName = pengumumanForAction.pdf_url.split('/').pop();
+                        const { error: removeError } = await supabase.storage.from('pengumuman-pdf').remove([fileName]);
+                        if (removeError) console.error("Gagal menghapus file dari storage:", removeError.message);
+                    }
                     const tableName = pengumumanForAction.type === 'draft' ? 'draft_pengumuman' : 'pengumuman';
                     const { error: deleteErr } = await supabase.from(tableName).delete().eq('id', pengumumanForAction.id);
                     if (deleteErr) throw deleteErr;
@@ -251,7 +358,10 @@ export default function ModerasiPengumuman() {
             setActionStatus({ type: 'error', message: `Terjadi kesalahan: ${error.message}` });
         } finally {
             setIsProcessingAction(false);
-            setTimeout(() => { setShowConfirmModal(false); }, 2000);
+            setTimeout(() => { 
+                setShowConfirmModal(false);
+                setActionStatus({ type: null, message: '' }); // Reset status
+            }, 2000);
         }
     };
 
@@ -267,12 +377,21 @@ export default function ModerasiPengumuman() {
                     <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
             </div>
-            {isLoading ? <p>Memuat...</p> : errorMsg ? <p className="text-red-400">{errorMsg}</p> : (
+            {isLoading ? <p className="text-center py-4"><Loader2 className="animate-spin mx-auto" /></p> : errorMsg ? <p className="text-red-400">{errorMsg}</p> : (
                 <div className="space-y-4">
                     {items.length > 0 ? items.map(item => (
                         <div key={item.id} className="bg-white/5 p-4 rounded-lg flex flex-col md:flex-row justify-between md:items-center gap-4">
                             <div className="flex-grow min-w-0">
-                                <h3 className="font-semibold truncate">{item.judul}</h3>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-semibold truncate">{item.judul}</h3>
+                                    {item.pdf_url && (
+                                        <a href={item.pdf_url} target="_blank" rel="noopener noreferrer" title="Lihat PDF" 
+                                           className="flex items-center gap-1 text-xs bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full hover:bg-cyan-500/20">
+                                            <Paperclip size={12} />
+                                            <span>PDF</span>
+                                        </a>
+                                    )}
+                                </div>
                                 <p className="text-xs text-gray-400">Oleh: {item.profiles?.username || 'N/A'} | Dibuat: {new Date(item.created_at).toLocaleDateString()}</p>
                                 <p className="text-sm text-gray-300 line-clamp-2 mt-1">{stripHtml(item.konten)}</p>
                             </div>
@@ -322,32 +441,32 @@ export default function ModerasiPengumuman() {
 
                 <main className="flex-grow px-4 md:px-12 pt-28 pb-16">
                      <motion.div initial={{ y: -50 }} animate={{ y: 0 }} className="md:hidden mx-auto mb-8 p-2 bg-white/5 backdrop-blur border border-white/10 rounded-full shadow-lg z-10 w-fit">
-                        <nav className="flex space-x-4 justify-center">
-                            <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={menuLinkClass}><Edit size={20} /></Link>
-                            <Link to="/pengumuman" title="Lihat Pengumuman" className={menuLinkClass}><BookOpen size={20} /></Link>
-                        </nav>
-                    </motion.div>
+                         <nav className="flex space-x-4 justify-center">
+                             <Link to="/tulis-pengumuman-baru" title="Tulis Baru" className={menuLinkClass}><Edit size={20} /></Link>
+                             <Link to="/pengumuman" title="Lihat Pengumuman" className={menuLinkClass}><BookOpen size={20} /></Link>
+                         </nav>
+                     </motion.div>
                     
-                    <h1 className="text-4xl sm:text-6xl uppercase font-league text-center mb-10 text-accent">
-                        Moderasi Pengumuman
-                    </h1>
+                     <h1 className="text-4xl sm:text-6xl uppercase font-league text-center mb-10 text-accent">
+                         Moderasi Pengumuman
+                     </h1>
                     
-                    <AnimatePresence mode="wait">
-                        {currentPengumuman ? (
-                            <PengumumanForm 
-                                key="form"
-                                currentPengumuman={currentPengumuman}
-                                onSave={handleSavePengumuman}
-                                onCancel={handleCancelEdit}
-                                isSaving={isSaving}
-                            />
-                        ) : (
-                            <motion.div key="lists" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="max-w-6xl mx-auto space-y-10">
-                                {renderList('Pengumuman Draft', filteredDrafts, 'draft', loading.drafts, error.drafts, searchTerm.drafts, (val) => setSearchTerm(p => ({...p, drafts: val})))}
-                                {renderList('Pengumuman Publikasi', filteredPublished, 'published', loading.published, error.published, searchTerm.published, (val) => setSearchTerm(p => ({...p, published: val})))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                     <AnimatePresence mode="wait">
+                         {currentPengumuman ? (
+                             <PengumumanForm 
+                                 key="form"
+                                 currentPengumuman={currentPengumuman}
+                                 onSave={handleSavePengumuman}
+                                 onCancel={handleCancelEdit}
+                                 isSaving={isSaving}
+                             />
+                         ) : (
+                             <motion.div key="lists" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="max-w-6xl mx-auto space-y-10">
+                                 {renderList('Pengumuman Draft', filteredDrafts, 'draft', loading.drafts, error.drafts, searchTerm.drafts, (val) => setSearchTerm(p => ({...p, drafts: val})))}
+                                 {renderList('Pengumuman Publikasi', filteredPublished, 'published', loading.published, error.published, searchTerm.published, (val) => setSearchTerm(p => ({...p, published: val})))}
+                             </motion.div>
+                         )}
+                     </AnimatePresence>
                 </main>
             </div>
 
