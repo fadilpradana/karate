@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, User, Award, ClipboardEdit, Save, ChevronLeft, Lock, ChevronDown, Pencil, XCircle, BookOpen, Users, CheckCircle, AlertTriangle } from 'lucide-react';
+import { LoaderCircle, Pencil, Save, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette, Users, ChevronsUpDown, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
-import { Helmet } from 'react-helmet-async'; // Impor Helmet
+import { Helmet } from 'react-helmet-async';
 import heroBg from '../assets/bg9.jpg';
 import favicon from '../assets/logo_bintangcompress.png';
+import { Combobox, Transition } from '@headlessui/react';
 
 // Gaya untuk efek glassmorphism
 const glassmorphismStyle = {
@@ -68,36 +69,41 @@ const STANDARDS = { 'lakilaki': { beepShuttles: calculateTotalShuttles(9, 1), pu
 const calculateScore = (value, target) => { if (!value || !target || value <= 0 || target <= 0) return 0; const score = (value / target) * 100; return Math.min(Math.round(score), 100); };
 const ScoreDisplay = ({ label, value }) => ( <div className="text-sm mt-1"> <span className="font-semibold text-gray-300">{label}: </span> <span className="font-bold text-amber-400">{value}</span> <span className="text-gray-400"> / 100</span> </div> );
 
-
 export default function PenilaianPendaftar() {
     const { user, role, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
     const [daftarPeriode, setDaftarPeriode] = useState([]);
     const [selectedPeriodeId, setSelectedPeriodeId] = useState('');
     const [pendaftarList, setPendaftarList] = useState([]);
     const [selectedPendaftarId, setSelectedPendaftarId] = useState('');
     const [selectedPendaftar, setSelectedPendaftar] = useState(null);
-
+    const [pendaftarSearchQuery, setPendaftarSearchQuery] = useState('');
     const [existingJasmaniScores, setExistingJasmaniScores] = useState([]);
     const [jasmaniInput, setJasmaniInput] = useState({ beep_level: '', beep_shuttle: '', push_up: '', sit_up: '', plank_minutes: '', plank_seconds: '' });
-    
     const [materiInput, setMateriInput] = useState({ nilai: '', keterangan: '' });
     const [wawancaraInput, setWawancaraInput] = useState({ nilai: '', keterangan: '' });
-
     const [existingWawancara, setExistingWawancara] = useState([]);
     const [existingMateri, setExistingMateri] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
     const [currentUserMateri, setCurrentUserMateri] = useState(null);
     const [isMateriFormActive, setIsMateriFormActive] = useState(false);
     const [currentUserWawancara, setCurrentUserWawancara] = useState(null);
     const [isWawancaraFormActive, setIsWawancaraFormActive] = useState(false);
-
     const [openSection, setOpenSection] = useState('jasmani');
     const [notification, setNotification] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+
+    const filteredPendaftarList = useMemo(() => {
+        if (pendaftarSearchQuery === '') {
+            return pendaftarList;
+        }
+        const lowerCaseQuery = pendaftarSearchQuery.toLowerCase();
+        return pendaftarList.filter(p =>
+            p.profiles?.nama_lengkap.toLowerCase().includes(lowerCaseQuery) ||
+            p.profiles?.npt?.toLowerCase().includes(lowerCaseQuery)
+        );
+    }, [pendaftarList, pendaftarSearchQuery]);
 
     useEffect(() => {
         const fetchPeriode = async () => {
@@ -120,6 +126,7 @@ export default function PenilaianPendaftar() {
                 setPendaftarList(data);
                 setSelectedPendaftarId('');
                 setSelectedPendaftar(null);
+                setPendaftarSearchQuery('');
                 setExistingWawancara([]);
                 setExistingMateri([]);
                 setExistingJasmaniScores([]);
@@ -135,40 +142,28 @@ export default function PenilaianPendaftar() {
         setError(null);
         setExistingJasmaniScores([]);
         setJasmaniInput({ beep_level: '', beep_shuttle: '', push_up: '', sit_up: '', plank_minutes: '', plank_seconds: '' });
-        
         setCurrentUserMateri(null);
         setIsMateriFormActive(false);
         setCurrentUserWawancara(null);
         setIsWawancaraFormActive(false);
-        
         const pendaftarData = pendaftarList.find(p => p.id === parseInt(pendaftarId));
         setSelectedPendaftar(pendaftarData);
-
         try {
-            const { data: jasmaniData, error: jasmaniError } = await supabase
-                .from('penilaian_jasmani_individu')
-                .select('*, penilai:id_penilai (id, nama_lengkap)')
-                .eq('id_pendaftar', pendaftarId);
-
+            const { data: jasmaniData, error: jasmaniError } = await supabase.from('penilaian_jasmani_individu').select('*, penilai:id_penilai (id, nama_lengkap)').eq('id_pendaftar', pendaftarId);
             if (jasmaniError) throw jasmaniError;
-            
             if (jasmaniData) {
                 setExistingJasmaniScores(jasmaniData);
                 const pushUp = jasmaniData.find(d => d.jenis_tes === 'push_up')?.nilai || '';
                 const sitUp = jasmaniData.find(d => d.jenis_tes === 'sit_up')?.nilai || '';
                 const beepTest = jasmaniData.find(d => d.jenis_tes === 'beep_test');
                 const plank = jasmaniData.find(d => d.jenis_tes === 'plank');
-                
                 const beepLevel = beepTest?.nilai || '';
                 const beepShuttle = beepTest?.keterangan || ''; 
-                
                 const plankSecondsTotal = plank?.nilai || 0;
                 const plankMinutes = Math.floor(plankSecondsTotal / 60) || '';
                 const plankSeconds = plankSecondsTotal % 60 || '';
-
                 setJasmaniInput({ push_up: pushUp, sit_up: sitUp, beep_level: beepLevel, beep_shuttle: beepShuttle, plank_minutes: plankMinutes, plank_seconds: plankSeconds });
             }
-
             const { data: materiData, error: materiError } = await supabase.from('penilaian_materi').select('*, penilai:id_penilai(nama_lengkap)').eq('id_pendaftar', pendaftarId);
             if (materiError) throw materiError;
             setExistingMateri(materiData || []);
@@ -181,7 +176,6 @@ export default function PenilaianPendaftar() {
                 setMateriInput({ nilai: '', keterangan: '' });
                 setIsMateriFormActive(true);
             }
-
             const { data: wawancaraData, error: wawancaraError } = await supabase.from('penilaian_wawancara').select('*, penilai:id_penilai(nama_lengkap)').eq('id_pendaftar', pendaftarId);
             if (wawancaraError) throw wawancaraError;
             setExistingWawancara(wawancaraData || []);
@@ -200,6 +194,12 @@ export default function PenilaianPendaftar() {
             setLoading(false);
         }
     }, [pendaftarList, user]);
+    
+    useEffect(() => {
+        if (selectedPendaftarId && !filteredPendaftarList.some(p => p.id === parseInt(selectedPendaftarId))) {
+            setSelectedPendaftarId('');
+        }
+    }, [filteredPendaftarList, selectedPendaftarId]);
 
     useEffect(() => {
         if (selectedPendaftarId) { fetchDetails(selectedPendaftarId); }
@@ -211,21 +211,12 @@ export default function PenilaianPendaftar() {
         const originalSitUp = existingJasmaniScores.find(d => d.jenis_tes === 'sit_up')?.nilai || '';
         const originalBeepTest = existingJasmaniScores.find(d => d.jenis_tes === 'beep_test');
         const originalPlank = existingJasmaniScores.find(d => d.jenis_tes === 'plank');
-
         const originalBeepLevel = originalBeepTest?.nilai || '';
         const originalBeepShuttle = originalBeepTest?.keterangan || '';
         const originalPlankSecondsTotal = originalPlank?.nilai || 0;
         const originalPlankMinutes = Math.floor(originalPlankSecondsTotal / 60) || '';
         const originalPlankSeconds = originalPlankSecondsTotal % 60 || '';
-        
-        return (
-            String(jasmaniInput.push_up) !== String(originalPushUp) ||
-            String(jasmaniInput.sit_up) !== String(originalSitUp) ||
-            String(jasmaniInput.beep_level) !== String(originalBeepLevel) ||
-            String(jasmaniInput.beep_shuttle) !== String(originalBeepShuttle) ||
-            String(jasmaniInput.plank_minutes) !== String(originalPlankMinutes) ||
-            String(jasmaniInput.plank_seconds) !== String(originalPlankSeconds)
-        );
+        return ( String(jasmaniInput.push_up) !== String(originalPushUp) || String(jasmaniInput.sit_up) !== String(originalSitUp) || String(jasmaniInput.beep_level) !== String(originalBeepLevel) || String(jasmaniInput.beep_shuttle) !== String(originalBeepShuttle) || String(jasmaniInput.plank_minutes) !== String(originalPlankMinutes) || String(jasmaniInput.plank_seconds) !== String(originalPlankSeconds) );
     }, [jasmaniInput, existingJasmaniScores]);
 
     const isMateriDirty = useMemo(() => { if (!isMateriFormActive) return false; if (!currentUserMateri) return materiInput.nilai !== '' || materiInput.keterangan !== ''; return (String(materiInput.nilai) !== String(currentUserMateri.nilai || '') || materiInput.keterangan !== (currentUserMateri.keterangan || '')); }, [materiInput, currentUserMateri, isMateriFormActive]);
@@ -251,7 +242,6 @@ export default function PenilaianPendaftar() {
         if (!selectedPendaftar?.profiles?.jenis_kelamin) return { jasmani: 0, materi: 0, wawancara: 0 };
         const standard = STANDARDS[selectedPendaftar.profiles.jenis_kelamin];
         if (!standard) return { jasmani: 0, materi: 0, wawancara: 0 };
-
         let jasmaniFinalScore = 0;
         if (existingJasmaniScores.length > 0) {
             const beepTest = existingJasmaniScores.find(d => d.jenis_tes === 'beep_test');
@@ -284,7 +274,6 @@ export default function PenilaianPendaftar() {
             return;
         }
         setIsSubmitting(true);
-        
         try {
             const submissionPromises = [];
             if (isJasmaniDirty) {
@@ -293,7 +282,6 @@ export default function PenilaianPendaftar() {
                     const originalData = existingJasmaniScores.find(d => d.jenis_tes === test);
                     let hasChanged = false;
                     let payload = {};
-
                     if (test === 'plank') {
                         const newPlankSeconds = (parseInt(jasmaniInput.plank_minutes || 0) * 60) + parseInt(jasmaniInput.plank_seconds || 0);
                         if (newPlankSeconds !== (originalData?.nilai || 0)) { hasChanged = true; payload = { nilai: newPlankSeconds }; }
@@ -305,14 +293,12 @@ export default function PenilaianPendaftar() {
                         const newValue = parseInt(jasmaniInput[test]) || null;
                         if (newValue !== (originalData?.nilai || null)) { hasChanged = true; payload = { nilai: newValue }; }
                     }
-
                     if (hasChanged) {
                         const submission = supabase.from('penilaian_jasmani_individu').upsert({ id_pendaftar: selectedPendaftarId, jenis_tes: test, id_penilai: user.id, ...payload }, { onConflict: 'id_pendaftar, jenis_tes' });
                         submissionPromises.push(submission);
                     }
                 }
             }
-
             if (isMateriFormActive && isMateriDirty && materiInput.nilai && parseInt(materiInput.nilai, 10) > 0) {
                 const submission = supabase.from('penilaian_materi').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, nilai: parseInt(materiInput.nilai), keterangan: materiInput.keterangan }, { onConflict: 'id_pendaftar, id_penilai' });
                 submissionPromises.push(submission);
@@ -321,20 +307,16 @@ export default function PenilaianPendaftar() {
                 const submission = supabase.from('penilaian_wawancara').upsert({ id_pendaftar: selectedPendaftarId, id_penilai: user.id, nilai: parseInt(wawancaraInput.nilai), keterangan: wawancaraInput.keterangan }, { onConflict: 'id_pendaftar, id_penilai' });
                 submissionPromises.push(submission);
             }
-
             if (submissionPromises.length === 0) {
                 setNotification({ isOpen: true, type: 'warning', title: 'Tidak Ada Perubahan', message: 'Tidak ada data baru atau perubahan yang perlu disimpan.' });
                 setIsSubmitting(false);
                 return;
             }
-
             const results = await Promise.all(submissionPromises);
             const aSubmissionFailed = results.some(res => res.error);
             if (aSubmissionFailed) { const firstError = results.find(res => res.error).error; throw firstError; }
-            
             setNotification({ isOpen: true, type: 'success', title: 'Berhasil', message: 'Penilaian Anda telah berhasil disimpan atau diperbarui.' });
             await fetchDetails(selectedPendaftarId);
-
         } catch (error) {
             console.error("Error submitting assessment:", error);
             setNotification({ isOpen: true, type: 'error', title: 'Gagal Menyimpan', message: `Terjadi kesalahan: ${error.message}` });
@@ -356,7 +338,7 @@ export default function PenilaianPendaftar() {
             <Helmet>
                 <title>Penilaian Pendaftaran - STMKG Karate Club</title>
                 <meta name="robots" content="noindex, nofollow" />
-                <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+                <link rel="icon" type="image/png" sizes="32x32" href={favicon} />
             </Helmet>
             <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }}><div className="absolute inset-0 bg-black/50 backdrop-brightness-30"></div></div>
             <div className="relative z-10 flex flex-col min-h-screen">
@@ -384,12 +366,77 @@ export default function PenilaianPendaftar() {
 
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="p-6 mb-8" style={glassmorphismStyle}>
                             <div className="grid md:grid-cols-2 gap-6">
-                                <div> <label htmlFor="periode-select" className="block text-sm font-medium text-gray-300 mb-2">Pilih Periode</label> <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer border border-gray-600 rounded-lg"> <option value="" disabled className="bg-gray-800">-- Pilih Periode --</option> {daftarPeriode.map(p => <option key={p.id} value={p.id} className="bg-gray-800">{p.nama_periode}</option>)} </select> </div>
-                                <div> <label htmlFor="pendaftar-select" className="block text-sm font-medium text-gray-300 mb-2">Pilih Pendaftar</label> <select id="pendaftar-select" value={selectedPendaftarId} onChange={(e) => setSelectedPendaftarId(e.target.value)} disabled={!selectedPeriodeId || loading} className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer border border-gray-600 rounded-lg disabled:opacity-50"> <option value="" disabled className="bg-gray-800">-- Pilih Pendaftar --</option> {pendaftarList.map(p => <option key={p.id} value={p.id} className="bg-gray-800">{p.profiles?.nama_lengkap || `Pendaftar ID ${p.id}`} ({p.profiles?.npt || 'N/A'})</option>)} </select> </div>
+                                <div>
+                                    <label htmlFor="periode-select" className="block text-sm font-medium text-gray-300 mb-2">Pilih Periode</label>
+                                    <select id="periode-select" value={selectedPeriodeId} onChange={(e) => setSelectedPeriodeId(e.target.value)} className="w-full bg-transparent p-2.5 pr-8 text-white focus:outline-none appearance-none cursor-pointer border border-gray-600 rounded-lg">
+                                        <option value="" disabled className="bg-gray-800">-- Pilih Periode --</option>
+                                        {daftarPeriode.map(p => <option key={p.id} value={p.id} className="bg-gray-800">{p.nama_periode}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <Combobox value={selectedPendaftarId} onChange={setSelectedPendaftarId} disabled={!selectedPeriodeId || loading}>
+                                        <Combobox.Label className="block text-sm font-medium text-gray-300 mb-2">Pilih Pendaftar (Bisa Dicari)</Combobox.Label>
+                                        <div className="relative">
+                                            <Combobox.Input
+                                                className="w-full bg-transparent p-2.5 pl-4 pr-10 text-white focus:outline-none border border-gray-600 rounded-lg disabled:opacity-50"
+                                                displayValue={(pendaftarId) => 
+                                                    pendaftarList.find(p => p.id === pendaftarId)?.profiles?.nama_lengkap || ''
+                                                }
+                                                onChange={(event) => setPendaftarSearchQuery(event.target.value)}
+                                                placeholder="Ketik nama atau NPT..."
+                                            />
+                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                <ChevronsUpDown
+                                                    className="h-5 w-5 text-gray-400"
+                                                    aria-hidden="true"
+                                                />
+                                            </Combobox.Button>
+                                        </div>
+                                        <Transition
+                                            as={Fragment}
+                                            leave="transition ease-in duration-100"
+                                            leaveFrom="opacity-100"
+                                            leaveTo="opacity-0"
+                                            afterLeave={() => setPendaftarSearchQuery('')}
+                                        >
+                                            <Combobox.Options className="absolute mt-1 max-h-60 w-full md:w-[calc(50%-1.5rem)] overflow-auto rounded-md bg-[#2d2d2d] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
+                                                {filteredPendaftarList.length === 0 && pendaftarSearchQuery !== '' ? (
+                                                    <div className="relative cursor-default select-none py-2 px-4 text-gray-400">
+                                                        Tidak ada pendaftar ditemukan.
+                                                    </div>
+                                                ) : (
+                                                    filteredPendaftarList.map((pendaftar) => (
+                                                        <Combobox.Option
+                                                            key={pendaftar.id}
+                                                            className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${ active ? 'bg-amber-600 text-white' : 'text-gray-200' }`}
+                                                            value={pendaftar.id}
+                                                        >
+                                                            {({ selected, active }) => (
+                                                                <>
+                                                                    <span className={`block truncate ${ selected ? 'font-medium' : 'font-normal' }`}>
+                                                                        {pendaftar.profiles?.nama_lengkap}
+                                                                    </span>
+                                                                    <span className={`block text-xs truncate ${ active ? 'text-amber-100' : 'text-gray-400' }`}>
+                                                                        {pendaftar.profiles?.npt}
+                                                                    </span>
+                                                                    {selected ? (
+                                                                        <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${ active ? 'text-white' : 'text-amber-600' }`}>
+                                                                            <CheckCircle className="h-5 w-5" aria-hidden="true" />
+                                                                        </span>
+                                                                    ) : null}
+                                                                </>
+                                                            )}
+                                                        </Combobox.Option>
+                                                    ))
+                                                )}
+                                            </Combobox.Options>
+                                        </Transition>
+                                    </Combobox>
+                                </div>
                             </div>
                         </motion.div>
-
-                        {loading && !selectedPendaftarId && <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /></div>}
+                        
+                        {loading && selectedPendaftarId && <div className="flex justify-center items-center py-8"><LoaderCircle className="animate-spin h-8 w-8 text-amber-400" /></div>}
                         {error && <p className="text-center text-red-400">{error}</p>}
                         
                         {selectedPendaftar && selectedPendaftar.profiles && (
@@ -407,21 +454,18 @@ export default function PenilaianPendaftar() {
                                                     <ScoreDisplay label="Skor" value={calculatedScores.beepScore || 0} />
                                                     {getTestProps('beep_test').data && !getTestProps('beep_test').canEdit && <p className="text-xs text-red-300 mt-1">Dinilai oleh: {getTestProps('beep_test').data.penilai?.nama_lengkap || 'N/A'}</p>}
                                                 </div>
-
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300">Push Up</label>
                                                     <input type="number" placeholder="Jumlah" disabled={!getTestProps('push_up').canEdit} value={jasmaniInput.push_up} onChange={e => setJasmaniInput({...jasmaniInput, push_up: e.target.value})} className="w-full bg-white/10 p-2 rounded-md mt-1 disabled:opacity-60 disabled:cursor-not-allowed" />
                                                     <ScoreDisplay label="Skor" value={calculatedScores.pushUpScore || 0} />
                                                     {getTestProps('push_up').data && !getTestProps('push_up').canEdit && <p className="text-xs text-red-300 mt-1">Dinilai oleh: {getTestProps('push_up').data.penilai?.nama_lengkap || 'N/A'}</p>}
                                                 </div>
-                                                
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300">Sit Up</label>
                                                     <input type="number" placeholder="Jumlah" disabled={!getTestProps('sit_up').canEdit} value={jasmaniInput.sit_up} onChange={e => setJasmaniInput({...jasmaniInput, sit_up: e.target.value})} className="w-full bg-white/10 p-2 rounded-md mt-1 disabled:opacity-60 disabled:cursor-not-allowed" />
                                                     <ScoreDisplay label="Skor" value={calculatedScores.sitUpScore || 0} />
                                                     {getTestProps('sit_up').data && !getTestProps('sit_up').canEdit && <p className="text-xs text-red-300 mt-1">Dinilai oleh: {getTestProps('sit_up').data.penilai?.nama_lengkap || 'N/A'}</p>}
                                                 </div>
-
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300">Plank</label>
                                                     <div className="flex gap-2 mt-1">
@@ -431,11 +475,9 @@ export default function PenilaianPendaftar() {
                                                     <ScoreDisplay label="Skor" value={calculatedScores.plankScore || 0} />
                                                     {getTestProps('plank').data && !getTestProps('plank').canEdit && <p className="text-xs text-red-300 mt-1">Dinilai oleh: {getTestProps('plank').data.penilai?.nama_lengkap || 'N/A'}</p>}
                                                 </div>
-
                                                 <div className="pt-4 mt-2 border-t border-gray-700/50 text-lg font-bold text-center">Rata-rata Jasmani: <span className="text-amber-400">{finalScores.jasmani || 0}</span></div>
                                             </div>
                                         </AccordionSection>
-
                                         <AccordionSection title="Penilaian Materi Karate" icon={<BookOpen className="text-amber-400" />} isOpen={openSection === 'materi'} onToggle={() => setOpenSection(openSection === 'materi' ? null : 'materi')}>
                                             <div className="space-y-4 pt-4 border-t border-gray-700/50">
                                                 <div className="mb-4"> {currentUserMateri && !isMateriFormActive && <button type="button" onClick={() => setIsMateriFormActive(true)} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"><Pencil size={18}/> Aktifkan Mode Edit</button>} {isMateriFormActive && currentUserMateri && <button type="button" onClick={handleCancelMateriEdit} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-red-400 hover:bg-red-500/20 font-bold transition-colors"><XCircle size={18}/> Batal Edit</button>} </div>
@@ -443,7 +485,6 @@ export default function PenilaianPendaftar() {
                                                 <div> <label className="block text-sm font-medium text-gray-300 mb-1">Keterangan Materi</label> <textarea placeholder="Catatan tambahan (opsional)" disabled={!isMateriFormActive} value={materiInput.keterangan} onChange={e => setMateriInput({...materiInput, keterangan: e.target.value})} rows="2" className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"></textarea> </div>
                                             </div>
                                         </AccordionSection>
-                                        
                                         <AccordionSection title="Penilaian Wawancara" icon={<ClipboardEdit className="text-amber-400" />} isOpen={openSection === 'wawancara'} onToggle={() => setOpenSection(openSection === 'wawancara' ? null : 'wawancara')}>
                                             <div className="space-y-4 pt-4 border-t border-gray-700/50">
                                                 <div className="mb-4"> {currentUserWawancara && !isWawancaraFormActive && <button type="button" onClick={() => setIsWawancaraFormActive(true)} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"><Pencil size={18}/> Aktifkan Mode Edit</button>} {isWawancaraFormActive && currentUserWawancara && <button type="button" onClick={handleCancelWawancaraEdit} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-2 px-4 text-red-400 hover:bg-red-500/20 font-bold transition-colors"><XCircle size={18}/> Batal Edit</button>} </div>
@@ -451,26 +492,22 @@ export default function PenilaianPendaftar() {
                                                 <div> <label className="block text-sm font-medium text-gray-300 mb-1">Keterangan Wawancara</label> <textarea placeholder="Catatan tambahan (opsional)" disabled={!isWawancaraFormActive} value={wawancaraInput.keterangan} onChange={e => setWawancaraInput({...wawancaraInput, keterangan: e.target.value})} rows="2" className="w-full bg-white/10 p-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"></textarea> </div>
                                             </div>
                                         </AccordionSection>
-
                                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
                                             <button type="submit" disabled={isButtonDisabled} style={glassmorphismStyle} className="w-full flex items-center justify-center gap-2 py-3 px-4 font-bold transition-all duration-300 disabled:cursor-not-allowed hover:enabled:bg-green-500/20 hover:enabled:scale-[1.02]">
                                                 {isSubmitting ? ( <span className="flex items-center gap-2 text-gray-400"> <LoaderCircle className="animate-spin" /> Menyimpan... </span> ) : ( <> <Save className={`transition-colors duration-300 ${isButtonDisabled ? 'text-gray-500' : 'text-[#A8EB4B]'}`} /> <span className={`transition-colors duration-300 ${isButtonDisabled ? 'text-gray-500' : 'battery-style-gradient'}`}> Simpan Penilaian Saya </span> </> )}
                                             </button>
                                         </motion.div>
                                     </div>
-                                    
                                     <div className="lg:w-3/5 order-1 lg:order-2">
                                         <div className="p-6" style={glassmorphismStyle}>
                                             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3"><User className="text-amber-400" />Hasil Penilaian: {selectedPendaftar.profiles.nama_lengkap}</h2>
                                             <p className="mb-4 text-gray-400"> Jenis Kelamin: {selectedPendaftar.profiles.jenis_kelamin === 'lakilaki' ? 'Laki-laki' : selectedPendaftar.profiles.jenis_kelamin === 'perempuan' ? 'Perempuan' : 'N/A'} </p>
-                                            
                                             <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
                                                 <div className="p-3 rounded-lg bg-white/5">
                                                     <div className='flex justify-between items-center'> <h3 className="font-bold text-lg">Penilaian Jasmani</h3> <div className="font-bold text-amber-300 text-lg">{finalScores.jasmani}</div> </div>
                                                     {existingJasmaniScores.length > 0 ? (
                                                         <div className='mt-2 pt-2 border-t border-white/10 space-y-2'>
                                                             {existingJasmaniScores.map(score => {
-                                                                // [PERUBAHAN] Logika untuk menampilkan nilai plank dalam format menit dan detik
                                                                 let displayValue;
                                                                 if (score.jenis_tes === 'beep_test') {
                                                                     displayValue = `${score.nilai || 'N/A'} / ${score.keterangan || 'N/A'}`;
@@ -482,7 +519,6 @@ export default function PenilaianPendaftar() {
                                                                 } else {
                                                                     displayValue = score.nilai ?? 'N/A';
                                                                 }
-
                                                                 return (
                                                                     <div key={score.jenis_tes} className="text-xs text-gray-400 flex justify-between">
                                                                         <span className="capitalize">{score.jenis_tes.replace('_', ' ')}: <span className="text-white font-bold">{displayValue}</span></span>
@@ -493,18 +529,15 @@ export default function PenilaianPendaftar() {
                                                         </div>
                                                     ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian jasmani.</p>}
                                                 </div>
-
                                                 <div className="p-3 rounded-lg bg-white/5">
                                                     <div className='flex justify-between items-center'> <h3 className="font-bold text-lg">Penilaian Materi</h3> <div className="font-bold text-amber-300 text-lg">{finalScores.materi}</div> </div>
                                                     {existingMateri.length > 0 ? ( <div className='mt-2 pt-2 border-t border-white/10'> <p className="text-sm text-gray-400">Telah dinilai oleh: {existingMateri.length} penilai</p> <div className="space-y-2 mt-1"> {existingMateri.map(p => ( <div key={p.id_penilai} className="text-xs text-gray-400"> <div className="flex justify-between items-center"> <span>{p.penilai?.nama_lengkap || 'N/A'}</span> <span className="font-bold text-white text-sm">{p.nilai || 'N/A'}</span> </div> {p.keterangan && <p className="italic pl-2">- {p.keterangan}</p>} </div> ))} </div> </div> ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
                                                 </div>
-                                                
                                                 <div className="p-3 rounded-lg bg-white/5">
                                                     <div className='flex justify-between items-center'> <h3 className="font-bold text-lg">Penilaian Wawancara</h3> <div className="font-bold text-amber-300 text-lg">{finalScores.wawancara}</div> </div>
                                                     {existingWawancara.length > 0 ? ( <div className='mt-2 pt-2 border-t border-white/10'> <p className="text-sm text-gray-400">Telah dinilai oleh: {existingWawancara.length} penilai</p> <div className="space-y-2 mt-1"> {existingWawancara.map(p => ( <div key={p.id_penilai} className="text-xs text-gray-400"> <div className="flex justify-between items-center"> <span>{p.penilai?.nama_lengkap || 'N/A'}</span> <span className="font-bold text-white text-sm">{p.nilai || 'N/A'}</span> </div> {p.keterangan && <p className="italic pl-2">- {p.keterangan}</p>} </div> ))} </div> </div> ) : <p className="text-gray-400 text-center py-3 text-sm">Belum ada penilaian.</p>}
                                                 </div>
                                             </div>
-
                                             <div className="mt-6 pt-4 border-t border-gray-600 text-center">
                                                 <h3 className="text-xl font-bold">Nilai Akhir Rata-rata</h3>
                                                 <div className="flex justify-around items-start mt-2">
