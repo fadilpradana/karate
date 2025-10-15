@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'reac
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoaderCircle, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette, Users, ChevronsUpDown, CheckCircle, XCircle, Save } from 'lucide-react';
+import { LoaderCircle, Pencil, ServerCrash, CalendarCheck, UserRoundCheck, ChevronLeft, UserPlus, X, Search, Trash2, AlertTriangle, ClipboardCheck, Award, BookOpen, ClipboardEdit, ChevronDown, User, Heart, Trophy, Flag, Palette, Users, ChevronsUpDown, CheckCircle, XCircle, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import { Helmet } from 'react-helmet-async';
