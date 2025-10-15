@@ -11,10 +11,14 @@ import favicon from '../assets/logo_bintangcompress.png';
 import { User, Calendar, ArrowLeft, MessageSquare, CornerDownRight, Send, Edit3, Trash2, X, AlertTriangle, FileText, ZoomIn, ZoomOut, LoaderCircle } from 'lucide-react';
 import '../TiptapStyles.css';
 
-// Impor pdf.js, sama seperti di DataPendaftar.jsx
+// Impor pdf.js
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
-// Helper function (tidak berubah)
+// [FIX] Menambahkan konfigurasi workerSrc untuk mengatasi PDF yang terus memuat
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+
+// Helper function untuk membersihkan HTML dan memotong teks
 const stripHtmlAndTruncate = (html, length) => {
     if (!html) return '';
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -24,12 +28,189 @@ const stripHtmlAndTruncate = (html, length) => {
     return truncated.substring(0, truncated.lastIndexOf(' ')) + '...';
 };
 
-// --- Komponen Lokal untuk Komentar (tidak berubah) ---
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => { /* ... kode asli Anda ... */ };
-const CommentForm = ({ onSubmit, placeholder, initialValue, isSubmitting, submitLabel }) => { /* ... kode asli Anda ... */ };
-const Comment = ({ comment, ...props }) => { /* ... kode asli Anda ... */ };
 
-// [FINAL] Komponen PDF Viewer Inline yang teknologinya sama persis dengan CvModal Anda
+// --- Komponen Lokal untuk Komentar (Lengkap) ---
+
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-black/50 border border-white/20 backdrop-blur-xl rounded-2xl p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl"
+                    >
+                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/20 mb-4">
+                            <AlertTriangle className="h-6 w-6 text-red-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">{title}</h3>
+                        <p className="text-sm text-gray-300 mt-2 mb-6">{message}</p>
+                        <div className="flex justify-center gap-4">
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-sm hover:bg-white/20 text-white transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={onConfirm}
+                                className="px-6 py-2 rounded-lg bg-red-500/20 border border-red-500/30 backdrop-blur-sm hover:bg-red-500/40 text-red-400 transition-colors"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
+const CommentForm = ({ onSubmit, placeholder = "Tulis komentarmu...", initialValue = "", isSubmitting = false, submitLabel = <Send size={20} /> }) => {
+    const [content, setContent] = useState(initialValue);
+
+    useEffect(() => {
+        setContent(initialValue);
+    }, [initialValue]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (content.trim()) {
+            onSubmit(content);
+            if (initialValue === "") {
+                setContent("");
+            }
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex flex-row items-start gap-3 mt-4">
+            <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={placeholder}
+                className="flex-grow bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9F1C] transition-all text-sm"
+                rows="2"
+                disabled={isSubmitting}
+            />
+            <button
+                type="submit"
+                className="flex-shrink-0 bg-white/10 border border-white/20 backdrop-blur-sm hover:bg-white/20 text-[#FF9F1C] font-bold p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!content.trim() || isSubmitting}
+            >
+                {isSubmitting ? '...' : submitLabel}
+            </button>
+        </form>
+    );
+};
+
+const Comment = ({ comment, onReply, activeReplyId, setActiveReplyId, onReplySubmit, user, isSubmitting, onUpdate, onDeleteRequest, onViewImage }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const replies = comment.replies || [];
+    const isReplying = activeReplyId === comment.id;
+    const profile = comment.profiles;
+    const isAuthor = user && user.id === comment.user_id;
+
+    const handleUpdate = (newContent) => {
+        onUpdate(comment.id, newContent);
+        setIsEditing(false);
+    };
+
+    return (
+        <div className="flex gap-3 sm:gap-4 mt-4">
+            <button onClick={() => profile.avatar_url && onViewImage(profile.avatar_url)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black/50 focus:ring-[#FF9F1C]">
+                {profile.avatar_url ? (
+                    <motion.img layoutId={profile.avatar_url + comment.id} src={profile.avatar_url} alt={profile.nama_lengkap} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center font-bold text-[#FF9F1C]">{profile.nama_lengkap.charAt(0).toUpperCase()}</div>
+                )}
+            </button>
+            <div className="flex-grow min-w-0">
+                <div className="bg-white/5 p-3 sm:p-4 rounded-lg rounded-tl-none">
+                    <div className="flex justify-between items-start">
+                        <div className="min-w-0">
+                            <p className="font-bold text-white text-sm truncate">{profile.nama_lengkap}</p>
+                            <p className="text-xs text-gray-400 mb-2">
+                                {new Date(comment.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                                {comment.is_edited && <span className="ml-2 italic">(diedit)</span>}
+                            </p>
+                        </div>
+                        {isAuthor && !isEditing && (
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                <button onClick={() => setIsEditing(true)} className="text-gray-400 hover:text-white p-1"><Edit3 size={14} /></button>
+                                <button onClick={() => onDeleteRequest(comment.id)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 size={14} /></button>
+                            </div>
+                        )}
+                    </div>
+
+                    {isEditing ? (
+                        <div>
+                            <CommentForm
+                                onSubmit={handleUpdate}
+                                initialValue={comment.konten}
+                                isSubmitting={isSubmitting}
+                                submitLabel="Simpan"
+                            />
+                            <button onClick={() => setIsEditing(false)} className="text-xs text-gray-400 hover:text-white mt-2">Batal</button>
+                        </div>
+                    ) : (
+                        <p className="text-gray-300 text-sm break-words whitespace-pre-wrap">{comment.konten}</p>
+                    )}
+                </div>
+                <div className="mt-1 flex items-center gap-4">
+                    {user && !isEditing && (
+                        <button onClick={() => onReply(comment.id)} className="text-xs text-[#FF9F1C] hover:text-orange-400 font-semibold flex items-center gap-1 p-1">
+                            <CornerDownRight size={14} /> Balas
+                        </button>
+                    )}
+                </div>
+
+                {isReplying && (
+                    <div className="mt-2">
+                        <CommentForm
+                            onSubmit={(content) => onReplySubmit(content, comment.id)}
+                            placeholder={`Membalas ${profile.nama_lengkap}...`}
+                            isSubmitting={isSubmitting}
+                        />
+                        <button onClick={() => setActiveReplyId(null)} className="text-xs text-gray-400 hover:text-white mt-2">Batal</button>
+                    </div>
+                )}
+
+                {replies.length > 0 && (
+                    <div className="mt-4 pl-4 border-l-2 border-white/10">
+                        {replies.map(reply => (
+                            <Comment
+                                key={reply.id}
+                                comment={reply}
+                                onReply={onReply}
+                                activeReplyId={activeReplyId}
+                                setActiveReplyId={setActiveReplyId}
+                                onReplySubmit={onReplySubmit}
+                                user={user}
+                                isSubmitting={isSubmitting}
+                                onUpdate={onUpdate}
+                                onDeleteRequest={onDeleteRequest}
+                                onViewImage={onViewImage}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// Komponen PDF Viewer Inline (Sama seperti kode Anda)
 const EmbeddedPdfViewer = ({ fileUrl }) => {
     const canvasRef = useRef(null);
     const renderTaskRef = useRef(null);
@@ -43,8 +224,8 @@ const EmbeddedPdfViewer = ({ fileUrl }) => {
     const renderPage = useCallback(async (pdf, pageNum, currentScale) => {
         setLoadingPdf(true);
         if (renderTaskRef.current) {
-            try { renderTaskRef.current.cancel(); } 
-            catch (e) { console.warn("Gagal membatalkan render task:", e); } 
+            try { renderTaskRef.current.cancel(); }
+            catch (e) { console.warn("Gagal membatalkan render task:", e); }
             finally { renderTaskRef.current = null; }
         }
         const canvas = canvasRef.current;
@@ -84,23 +265,24 @@ const EmbeddedPdfViewer = ({ fileUrl }) => {
         loadingTask.promise.then(pdf => {
             pdfDocumentRef.current = pdf;
             setNumPages(pdf.numPages);
+            renderPage(pdf, 1, 1.0); // Render halaman pertama saat PDF berhasil dimuat
         }).catch(reason => {
             console.error('Gagal memuat dokumen PDF:', reason);
-            setPdfError('Gagal memuat CV. Pastikan URL valid dan file tidak rusak.');
+            setPdfError('Gagal memuat lampiran. Pastikan URL valid dan file tidak rusak.');
             setLoadingPdf(false);
         });
 
         return () => {
             if (renderTaskRef.current) { try { renderTaskRef.current.cancel(); } catch (e) { /* abaikan */ } }
-            if (pdfDocumentRef.current) { pdfDocumentRef.current.destroy(); }
+            if (pdfDocumentRef.current) { pdfDocumentRef.current.destroy(); pdfDocumentRef.current = null; }
         };
-    }, [fileUrl]);
+    }, [fileUrl, renderPage]);
 
     useEffect(() => {
-        if (pdfDocumentRef.current && currentPage && canvasRef.current) {
+        if (pdfDocumentRef.current && currentPage) {
             renderPage(pdfDocumentRef.current, currentPage, scale);
         }
-    }, [pdfDocumentRef.current, currentPage, scale, renderPage]);
+    }, [currentPage, scale, renderPage]);
 
     const goToNextPage = () => { if (pdfDocumentRef.current && currentPage < numPages) setCurrentPage(p => p + 1); };
     const goToPrevPage = () => { if (pdfDocumentRef.current && currentPage > 1) setCurrentPage(p => p - 1); };
@@ -128,7 +310,7 @@ const EmbeddedPdfViewer = ({ fileUrl }) => {
                         </div>
                     )}
                     <div className="w-full flex-grow relative overflow-auto flex items-start justify-center" style={{ minHeight: '400px', maxHeight: '80vh' }}>
-                        {loadingPdf && (
+                        {(loadingPdf || !numPages) && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                                 <LoaderCircle className="animate-spin h-10 w-10 text-amber-400" />
                             </div>
@@ -144,7 +326,6 @@ const EmbeddedPdfViewer = ({ fileUrl }) => {
 
 // --- KOMPONEN UTAMA ---
 export default function PengumumanDetail() {
-    // ... (Semua state dan fungsi di dalam PengumumanDetail tetap sama, saya sertakan lengkap di bawah)
     const { id } = useParams();
     const navigate = useNavigate();
     const [pengumuman, setPengumuman] = useState(null);
@@ -175,7 +356,12 @@ export default function PengumumanDetail() {
 
     const fetchComments = useCallback(async () => {
         if (!id) return;
-        const { data, error } = await supabase.from('komentar_pengumuman').select(`*, profiles:user_id (id, username, nama_lengkap, avatar_url)`).eq('pengumuman_id', id).order('created_at', { ascending: true });
+        const { data, error } = await supabase
+            .from('komentar_pengumuman')
+            .select(`*, profiles:user_id (id, username, nama_lengkap, avatar_url)`)
+            .eq('pengumuman_id', id)
+            .order('created_at', { ascending: true });
+
         if (error) {
             console.error("Error fetching comments:", error);
         } else {
@@ -198,6 +384,9 @@ export default function PengumumanDetail() {
             if (!id) return;
             setLoading(true);
             setError(null);
+            
+            // Scroll ke atas halaman setiap kali ID berubah
+            window.scrollTo(0, 0);
 
             const { data: pengumumanData, error: pengumumanError } = await supabase.from('pengumuman').select(`*, profiles!penulis_id (nama_lengkap)`).eq('id', id).single();
             if (pengumumanError) {
@@ -229,7 +418,7 @@ export default function PengumumanDetail() {
 
     const handleCommentUpdate = async (commentId, newContent) => {
         setIsSubmitting(true);
-        const { error } = await supabase.from('komentar_pengumuman').update({ konten: newContent }).eq('id', commentId);
+        const { error } = await supabase.from('komentar_pengumuman').update({ konten: newContent, is_edited: true, updated_at: new Date() }).eq('id', commentId);
         if (error) { console.error('Error updating comment:', error); alert('Gagal memperbarui komentar.'); }
         else { await fetchComments(); }
         setIsSubmitting(false);
@@ -265,6 +454,7 @@ export default function PengumumanDetail() {
             </Helmet>
 
             <ConfirmationModal isOpen={!!deletingCommentId} onClose={() => setDeletingCommentId(null)} onConfirm={handleCommentDelete} title="Hapus Komentar" message="Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat diurungkan." />
+            
             <AnimatePresence>
                 {viewingImage && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingImage(null)} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -300,9 +490,29 @@ export default function PengumumanDetail() {
                         <div className="mt-16 border-t-2 border-white/10 pt-8">
                             <div id="komentar" className="mb-16">
                                 <h2 className="text-2xl font-bold flex items-center gap-3 mb-4"><MessageSquare /> Komentar ({comments.reduce((acc, c) => acc + 1 + c.replies.length, 0)})</h2>
-                                {user ? <CommentForm onSubmit={(content) => handleCommentSubmit(content)} isSubmitting={isSubmitting} /> : <div className="bg-white/10 border border-white/20 rounded-lg p-4 text-center text-gray-300"><Link to="/login" className="font-bold text-[#FF9F1C] hover:underline">Masuk</Link> untuk meninggalkan komentar.</div>}
+                                {user ? (
+                                    <CommentForm onSubmit={(content) => handleCommentSubmit(content)} isSubmitting={isSubmitting} />
+                                ) : (
+                                    <div className="bg-white/10 border border-white/20 rounded-lg p-4 text-center text-gray-300">
+                                        <Link to="/login" className="font-bold text-[#FF9F1C] hover:underline">Masuk</Link> untuk meninggalkan komentar.
+                                    </div>
+                                )}
                                 <div className="mt-6">
-                                    {comments.map(comment => <Comment key={comment.id} comment={comment} onReply={setActiveReplyId} activeReplyId={activeReplyId} setActiveReplyId={setActiveReplyId} onReplySubmit={handleCommentSubmit} user={user} isSubmitting={isSubmitting} onUpdate={handleCommentUpdate} onDeleteRequest={setDeletingCommentId} onViewImage={setViewingImage} />)}
+                                    {comments.map(comment => (
+                                        <Comment
+                                            key={comment.id}
+                                            comment={comment}
+                                            onReply={setActiveReplyId}
+                                            activeReplyId={activeReplyId}
+                                            setActiveReplyId={setActiveReplyId}
+                                            onReplySubmit={handleCommentSubmit}
+                                            user={user}
+                                            isSubmitting={isSubmitting}
+                                            onUpdate={handleCommentUpdate}
+                                            onDeleteRequest={setDeletingCommentId}
+                                            onViewImage={setViewingImage}
+                                        />
+                                    ))}
                                     {comments.length === 0 && !loading && <p className="text-gray-400 text-center mt-8">Jadilah yang pertama berkomentar!</p>}
                                 </div>
                             </div>
