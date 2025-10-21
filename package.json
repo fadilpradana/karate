@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "start": "node server.js",
+    "start": "npm run build && node server.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve": "node server.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.51.0",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-image": "^2.23.0",

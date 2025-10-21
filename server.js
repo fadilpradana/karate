@@ -15,8 +15,8 @@ const port = process.env.PORT || 9083;
 // =======================================================
 // ==         KONEKSI KE DATABASE SUPABASE              ==
 // =======================================================
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key-here';
 const supabase = createClient(supabaseUrl, supabaseKey);
 // =======================================================
 
