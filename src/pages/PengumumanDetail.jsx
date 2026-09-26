@@ -5,6 +5,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg';
 import favicon from '../assets/logo_bintangcompress.png';
@@ -475,7 +476,7 @@ export default function PengumumanDetail() {
                                 <div className="flex items-center gap-2"><User size={16} /><span>Ditulis oleh <span className="font-semibold text-white">{pengumuman.profiles?.nama_lengkap || 'Admin'}</span></span></div>
                                 <div className="flex items-center gap-2"><Calendar size={16} /><span>{new Date(pengumuman.published_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
                             </div>
-                            <div className="tiptap text-gray-200" dangerouslySetInnerHTML={{ __html: pengumuman.konten }} />
+                            <div className="tiptap text-gray-200" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(pengumuman.konten) }} />
                         </div>
 
                         {pengumuman.pdf_url && (

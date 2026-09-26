@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { LoaderCircle, AlertTriangle, CheckCircle, X, Edit, Trash2, Plus, ChevronDown, Save, ShieldCheck, ArrowLeft, Settings, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 
 // --- Import Supabase Client (sesuaikan dengan proyek Anda) ---
 // Pastikan path ini benar sesuai dengan struktur proyek Anda
@@ -468,7 +469,7 @@ export default function ProfilDojo() {
                                     <div className="grid md:grid-cols-2 gap-8 md:gap-12">
                                         <motion.div variants={itemVariants} className="text-left">
                                             <h3 className="text-xl md:text-3xl font-league uppercase mb-4 text-accent">Sejarah Singkat</h3>
-                                            <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-justify" dangerouslySetInnerHTML={{ __html: profilData.about.history }}></p>
+                                            <p className="text-base text-white/80 font-[Montserrat] font-light leading-relaxed text-justify" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(profilData.about.history) }}></p>
                                         </motion.div>
                                         <motion.div variants={itemVariants} className="text-left relative">
                                             {error ? (

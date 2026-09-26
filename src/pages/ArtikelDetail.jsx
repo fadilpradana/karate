@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 import Footer from '../components/Footer';
 import bg1 from '../assets/bg1.jpg';
 import favicon from '../assets/logo_bintangcompress.png';
@@ -405,7 +406,7 @@ export default function ArtikelDetail() {
                         
                         <div
                             className="tiptap text-gray-300"
-                            dangerouslySetInnerHTML={{ __html: artikel.deskripsi }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(artikel.deskripsi) }}
                         />
 
                         <div className="mt-16 border-t-2 border-white/10 pt-8">
